@@ -1,13 +1,13 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v7.2: COMBINATORIAL EXHAUSTION ENGINE (STABLE INPUT EDITION)
+# SYSTEM CORE v7.3: COMBINATORIAL EXHAUSTION (ANTI-DUPLICATE GAME ENGINE)
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8, manual_cards_used=0, manual_games_played=0):
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
     
-    # CHẶN LỖI LOGIC DỮ LIỆU
+    # CHẶN LỖI LOGIC DỮ LIỆU CƠ BẢN
     if manual_cards_used > total_initial_cards:
         return f"❌ Bất hợp lý: Số lá bài đã dùng ({manual_cards_used} lá) vượt quá tổng số bài trong khay ({total_initial_cards} lá)!", {}, 0.0, 0.0, "LỖI DỮ LIỆU", total_initial_cards
 
@@ -77,7 +77,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
         bacc_val = 0 if card_num >= 10 else card_num
         score_deck[bacc_val] += count
 
-    # Khấu trừ các lá hiển thị hiện tại
+    # Khấu trừ các lá hiển thị hiện tại của ván đang xét
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0:
@@ -155,7 +155,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate Edge v7.2", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate Edge v7.3", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -167,9 +167,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# KHỞI TẠO BỘ NHỚ TRẠNG THÁI HỆ THỐNG
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'game_counter' not in st.session_state: st.session_state.game_counter = 0
 if 'last_results' not in st.session_state: st.session_state.last_results = None
+if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
 
 # --- SIDEBAR CẤU HÌNH ---
 st.sidebar.header("⚙️ Cấu Hình Hệ Thống")
@@ -184,6 +186,7 @@ if st.sidebar.button("🔄 RESET KHAY BÀI MỚI", use_container_width=True):
     st.session_state.shoe_history = []
     st.session_state.game_counter = 0
     st.session_state.last_results = None
+    st.session_state.last_played_cards = ""
     st.rerun()
 
 # --- HIỂN THỊ KẾT QUẢ XUẤT RA MÀN HÌNH ---
@@ -265,24 +268,12 @@ with col_p: p_input = st.text_input("PLAYER (Lá bài):", value="", placeholder=
 with col_b: b_input = st.text_input("BANKER (Lá bài):", value="", placeholder="Ví dụ: J,7 hoặc 9,8,Q")
 
 
-# =========================================================================
-# BỘ XỬ LÝ PYTHON NỘI NỘI (THAY THẾ JAVASCRIPT XUNG ĐỘT)
-# =========================================================================
 def clean_and_parse_input(raw_str):
-    """
-    Xử lý thông minh chuỗi nhập vào trực tiếp bằng Python để không làm mất ký tự khi đổi ô chuột.
-    Chấp nhận mọi kiểu gõ: gõ liền (5k2), gõ cách (5 k 2) hoặc có dấu phẩy (5,k,2).
-    """
     if not raw_str:
         return []
-    
-    # Chuẩn hóa: Biến thành chữ hoa, thay thế khoảng trắng và các ký tự lạ
     normalized = raw_str.upper().replace(" ", "")
-    
-    # Tách chuỗi xử lý quân bài 10 biệt lập
     tokens = []
     i = 0
-    # Nếu người dùng nhập có dấu phẩy sẵn, ta ưu tiên tách theo dấu phẩy
     if "," in normalized:
         parts = normalized.split(",")
         for p in parts:
@@ -290,7 +281,6 @@ def clean_and_parse_input(raw_str):
             if p_clean:
                 tokens.append(p_clean)
     else:
-        # Nếu gõ liền (ví dụ: A10J), bóc tách ký tự thông minh
         while i < len(normalized):
             if normalized[i:i+2] == "10":
                 tokens.append("10")
@@ -301,7 +291,6 @@ def clean_and_parse_input(raw_str):
             else:
                 i += 1
                 
-    # Chuyển đổi mảng ký tự sang định dạng số nguyên của Khay bài gốc
     mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13}
     result_list = []
     for tok in tokens:
@@ -311,30 +300,47 @@ def clean_and_parse_input(raw_str):
             val = int(tok)
             if 2 <= val <= 10:
                 result_list.append(val)
-                
     return result_list
 
 
+# --- XỬ LÝ NÚT BẤM VỚI BỘ LỌC CHỐNG TRÙNG LẶP ---
 if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH", use_container_width=True, type="primary"):
-    # Phân tách dữ liệu an toàn bằng hàm Python nội bộ
-    p_list = clean_and_parse_input(p_input)
-    b_list = clean_and_parse_input(b_input)
+    # Tạo chuỗi nhận diện độc nhất cho ván bài hiện tại
+    current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
     
-    if p_list or b_list:
-        p_calc = p_list[:2]
-        b_calc = b_list[:2]
+    if not p_input.strip() and not b_input.strip():
+        st.warning("⚠️ Bạn chưa nhập điểm cho ván này. Hãy điền bài vào ô Player và Banker!")
+    
+    # KÍCH HOẠT KHÓA CHỐNG NHẢY VÁN TRÙNG LIÊN TIẾP
+    elif current_game_signature == st.session_state.last_played_cards:
+        st.error("⛔ CHẶN TRÙNG LẶP: Bạn vừa chạy ván này rồi! Vui lòng nhập điểm số của ván mới tiếp theo vào ô nhập liệu để tính toán.")
+    
+    else:
+        p_list = clean_and_parse_input(p_input)
+        b_list = clean_and_parse_input(b_input)
         
-        core_output = calculate_baccarat_ultimate_core(
-            p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
-            manual_cards_used=manual_cards, manual_games_played=manual_games
-        )
-        
-        if isinstance(core_output, str):
-            st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0)
-        else:
-            res, remaining_deck, p_pair, b_pair, mode, cards_left = core_output
-            st.session_state.last_results = (res, p_pair, b_pair, remaining_deck, mode, cards_left)
+        if p_list or b_list:
+            p_calc = p_list[:2]
+            b_calc = b_list[:2]
             
-            if not mode.startswith("LỖI"):
-                st.session_state.shoe_history.extend(p_list + b_list)
-                st.session_state.game_counter = (st.session_state.game_counter if st.session_state.game_counter > 0 else manual_games) + 1
+            core_output = calculate_baccarat_ultimate_core(
+                p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
+                manual_cards_used=manual_cards, manual_games_played=manual_games
+            )
+            
+            if isinstance(core_output, str):
+                st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0)
+            else:
+                res, remaining_deck, p_pair, b_pair, mode, cards_left = core_output
+                st.session_state.last_results = (res, p_pair, b_pair, remaining_deck, mode, cards_left)
+                
+                if not mode.startswith("LỖI"):
+                    # Ghi nhận bộ bài đã chạy thành công để khóa cho lượt bấm tiếp theo
+                    st.session_state.last_played_cards = current_game_signature
+                    
+                    # Nạp bài vào khay lịch sử chính và tăng ván
+                    st.session_state.shoe_history.extend(p_list + b_list)
+                    st.session_state.game_counter = (st.session_state.game_counter if st.session_state.game_counter > 0 else manual_games) + 1
+                    
+                    # Buộc giao diện cập nhật ngay lập tức hiển thị ván mới
+                    st.rerun()
