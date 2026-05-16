@@ -1,16 +1,32 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE: ADVANCED COMBINATORIAL ENGINE (FLEXIBLE INPUT EDITION)
+# SYSTEM CORE: ADVANCED COMBINATORIAL ENGINE (VALIDATION EDITION v3.1)
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8, manual_cards_used=0, manual_games_played=0):
     """
-    Hệ thống lõi nâng cấp: Tự động điều chỉnh thuật toán dựa trên mức độ chi tiết của dữ liệu đầu vào.
+    Hệ thống lõi v3.1: Tích hợp bộ lọc kiểm tra tính hợp lý dữ liệu đầu vào trước khi quét ma trận.
     """
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: 4 * shoe_decks for i in range(1, 14)}
     
-    # 1. XỬ LÝ LỊCH SỬ NHẬP CHI TIẾT (ƯU TIÊN 1)
+    # --- BỘ LỌC KIỂM TRA TÍNH HỢP LÝ CỦA DỮ LIỆU (VALIDATION MATRIX) ---
+    if manual_cards_used > total_initial_cards:
+        return f"❌ Bất hợp lý: Số lá bài đã dùng ({manual_cards_used} lá) vượt quá tổng số bài trong khay ({total_initial_cards} lá)!", {}, 0.0, 0.0, "LỖI DỮ LIỆU", total_initial_cards
+
+    # Một khay 8 bộ (416 lá) tối đa chỉ chạy được khoảng 80-83 ván là hết bài
+    max_possible_games = int(total_initial_cards / 4)
+    if manual_games_played > max_possible_games:
+        return f"❌ Bất hợp lý: Số ván đã chạy ({manual_games_played} ván) vượt quá giới hạn vật lý của khay bài ({max_possible_games} ván)!", {}, 0.0, 0.0, "LỖI DỮ LIỆU", total_initial_cards
+
+    # Nếu người dùng nhập CẢ HAI: Kiểm tra tính mâu thuẫn giữa Số ván và Số lá
+    if manual_cards_used > 0 and manual_games_played > 0:
+        min_cards_needed = manual_games_played * 4  # Tối thiểu 4 lá/ván
+        max_cards_needed = manual_games_played * 6  # Tối đa 6 lá/ván
+        if manual_cards_used < min_cards_needed or manual_cards_used > max_cards_needed:
+            return f"❌ Mâu thuẫn dữ liệu: {manual_games_played} ván thì số lá bài phải nằm trong khoảng từ {min_cards_needed} đến {max_cards_needed} lá. Bạn đang nhập {manual_cards_used} lá!", {}, 0.0, 0.0, "LỖI MÂU THUẪN", total_initial_cards
+
+    # --- TIẾN TRÌNH PHÂN TÍCH MA TRẬN TOÁN HỌC ---
     detailed_cards_count = len(shoe_history)
     
     if detailed_cards_count > 0:
@@ -20,22 +36,19 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
         cards_left = total_initial_cards - detailed_cards_count
         mode = "Phân tích Đệ Quy Tổ Hợp Chi Tiết (Chính xác cao)"
     else:
-        # 2. XỬ LÝ DỮ LIỆU ƯỚC LƯỢNG TỪ SIDEBAR (ƯU TIÊN 2)
         cards_removed = 0
         if manual_cards_used > 0:
             cards_removed = manual_cards_used
             mode = "Ước lượng Ma Trận Phẳng (Theo số lượng lá)"
         elif manual_games_played > 0:
-            # Quy đổi toán học tiêu chuẩn: 1 ván Baccarat trung bình tiêu thụ ~4.93 lá bài
             cards_removed = int(manual_games_played * 4.93)
             mode = f"Ước lượng Ma Trận Phẳng (Theo số ván: ~{cards_removed} lá)"
         else:
             cards_removed = 0
             mode = "Khay bài Mới tinh (Tỷ lệ mặc định của Sòng)"
 
-        cards_left = max(6, total_initial_cards - cards_removed)
+        cards_left = max(0, total_initial_cards - cards_removed)
         
-        # Phân phối đều tỷ lệ hao hụt cho các quân bài
         if cards_removed > 0:
             ratio = cards_left / total_initial_cards
             for card_num in deck_structure:
@@ -43,9 +56,9 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 
     N = sum(deck_structure.values())
     if N <= 6:
-        return "Dữ liệu khay bài chạm giới hạn an toàn!", {}, 0.0, 0.0, mode, cards_left
+        return "⚠️ Cảnh báo: Khay bài đã vơi quá giới hạn an toàn để tính toán!", {}, 0.0, 0.0, mode, cards_left
     
-    # Tính xác suất Cửa Đôi
+    # Xác suất Cửa Đôi
     p_pair_prob = 0.0
     for count in deck_structure.values():
         if count >= 2:
@@ -64,13 +77,12 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
                                 p_rem_2 * (max(0.0, b_count - 2) / (N - 2)) * (max(0.0, b_count - 3) / (N - 3)))
     b_pair_odds = round(b_pair_prob * 100, 2)
 
-    # Đổi sang hệ điểm Baccarat (0-9)
+    # Hệ điểm Baccarat (0-9)
     score_deck = {i: 0.0 for i in range(10)}
     for card_num, count in deck_structure.items():
         bacc_val = 0 if card_num >= 10 else card_num
         score_deck[bacc_val] += count
 
-    # Khấu trừ bài ván hiện tại đang nhập
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0:
@@ -89,7 +101,6 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
         
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # Quét không gian mẫu rút bài
     if not (p_score <= 5):
         if b_score <= 5:
             for card3_b in range(10):
@@ -162,12 +173,12 @@ if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'game_counter' not in st.session_state: st.session_state.game_counter = 0
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 
-# --- SIDEBAR CẤU HÌNH MỞ RỘNG ---
+# --- SIDEBAR CẤU HÌNH ---
 st.sidebar.header("⚙️ Cấu Hình Hệ Thống")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("### 📊 Thiết lập nhanh khay bài")
-st.sidebar.caption("Lưu ý: Nếu bạn có lịch sử gõ bài chi tiết ở ngoài màn hình chính, hệ thống sẽ ưu tiên dùng bài chi tiết để đạt độ chính xác cao nhất.")
+st.sidebar.caption("Nếu nhập cả 2 ô dưới đây, hệ thống sẽ tự động kiểm tra tính logic (Tránh mâu thuẫn số lá bài/số ván).")
 
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, step=1)
 manual_games = st.sidebar.number_input("Hoặc Số VÁN đã chạy (nếu biết):", min_value=0, max_value=150, value=0, step=1)
@@ -181,48 +192,56 @@ if st.sidebar.button("🔄 RESET KHAY BÀI MỚI", use_container_width=True):
 
 # --- HIỂN THỊ KẾT QUẢ ĐỐI XỨNG NGANG ---
 if st.session_state.last_results:
-    res, p_pair, b_pair, remaining_deck, current_mode, cards_left = st.session_state.last_results
+    results_data = st.session_state.last_results
     
-    left_result_col, right_pair_col = st.columns(2)
-    with left_result_col:
-        st.markdown("#### 📊 Cửa Chính")
-        st.metric("🔵 PLAYER", f"{res['Player']}%")
-        st.metric("🔴 BANKER", f"{res['Banker']}%")
-        st.metric("🟢 TIE WIN", f"{res['Tie']}%")
-        st.progress(res['Banker'] / 100 if res['Banker'] > 0 else 0)
+    # Kiểm tra xem kết quả trả về là chuỗi báo lỗi (String) hay dữ liệu ma trận (Tuple)
+    if isinstance(results_data[0], str) and results_data[0].startswith("❌"):
+        st.error(results_data[0])
+    elif isinstance(results_data[0], str) and results_data[0].startswith("⚠️"):
+        st.warning(results_data[0])
+    else:
+        res, p_pair, b_pair, remaining_deck, current_mode, cards_left = results_data
         
-    with right_pair_col:
-        st.markdown("#### 💎 Cửa Đôi")
-        st.metric("🔵 CON ĐÔI", f"{p_pair}%", delta="🔥" if p_pair > 7.47 else "⚖️")
-        st.metric("🔴 CÁI ĐÔI", f"{b_pair}%", delta="🔥" if b_pair > 7.47 else "⚖️")
-
-    st.markdown("---")
-    
-    # QUẢN LÝ VỐN KELLY
-    st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
-    k_col1, k_col2 = st.columns(2)
-    max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
-    max_prob = res[max_side] / 100.0
-    kelly_per = max(0.0, (max_prob * (1.95 if max_side=="Banker" else 2.0) - 1) / (0.95 if max_side=="Banker" else 1.0)) * 100
-    
-    with k_col1:
-        if res['Player'] == 100.0 or res['Banker'] == 100.0:
-            st.success(f"🎯 LỆNH: Vào **{max_side.upper()}** (100%)")
-        elif kelly_per > 1.5:
-            st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}** (Vốn: {round(kelly_per, 2)}%)")
-        else:
-            st.warning("⚖️ CÂN BẰNG: Hạ thấp vốn tối đa hoặc BỎ QUA.")
+        left_result_col, right_pair_col = st.columns(2)
+        with left_result_col:
+            st.markdown("#### 📊 Cửa Chính")
+            st.metric("🔵 PLAYER", f"{res['Player']}%")
+            st.metric("🔴 BANKER", f"{res['Banker']}%")
+            st.metric("🟢 TIE WIN", f"{res['Tie']}%")
+            st.progress(res['Banker'] / 100 if res['Banker'] > 0 else 0)
             
-    with k_col2:
-        st.caption(f"Chế độ quét: \n{current_mode}")
+        with right_pair_col:
+            st.markdown("#### 💎 Cửa Đôi")
+            st.metric("🔵 CON ĐÔI", f"{p_pair}%", delta="🔥" if p_pair > 7.47 else "⚖️")
+            st.metric("🔴 CÁI ĐÔI", f"{b_pair}%", delta="🔥" if b_pair > 7.47 else "⚖️")
 
-    with st.expander("📊 Chi tiết cấu trúc ma trận khay bài"):
-        st.write(f"Số lá bài còn lại ước tính trong khay: **{int(cards_left)} / {decks*52}** lá.")
-        cols = st.columns(5)
-        labels_13 = {1: "A", 11: "J", 12: "Q", 13: "K"}
-        for idx, (num, cnt) in enumerate(remaining_deck.items()):
-            card_label = labels_13.get(num, f"[{num}]")
-            cols[idx % 5].text(f"{card_label}: {int(cnt)} lá")
+        st.markdown("---")
+        
+        # QUẢN LÝ VỐN KELLY
+        st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
+        k_col1, k_col2 = st.columns(2)
+        max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
+        max_prob = res[max_side] / 100.0
+        kelly_per = max(0.0, (max_prob * (1.95 if max_side=="Banker" else 2.0) - 1) / (0.95 if max_side=="Banker" else 1.0)) * 100
+        
+        with k_col1:
+            if res['Player'] == 100.0 or res['Banker'] == 100.0:
+                st.success(f"🎯 LỆNH: Vào **{max_side.upper()}** (100%)")
+            elif kelly_per > 1.5:
+                st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}** (Vốn: {round(kelly_per, 2)}%)")
+            else:
+                st.warning("⚖️ CÂN BẰNG: Hạ thấp vốn tối đa hoặc BỎ QUA.")
+                
+        with k_col2:
+            st.caption(f"Chế độ quét: \n{current_mode}")
+
+        with st.expander("📊 Chi tiết cấu trúc ma trận khay bài"):
+            st.write(f"Số lá bài còn lại ước tính trong khay: **{int(cards_left)} / {decks*52}** lá.")
+            cols = st.columns(5)
+            labels_13 = {1: "A", 11: "J", 12: "Q", 13: "K"}
+            for idx, (num, cnt) in enumerate(remaining_deck.items()):
+                card_label = labels_13.get(num, f"[{num}]")
+                cols[idx % 5].text(f"{card_label}: {int(cnt)} lá")
 else:
     st.info("🔮 Vui lòng điền điểm số ván hiện tại vào ô bên dưới để kích hoạt hệ quét toán học.")
 
@@ -255,13 +274,22 @@ if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH", use_container_widt
     p_calc = p_list[:2] if p_list else []
     b_calc = b_list[:2] if b_list else []
     
-    res, remaining_deck, p_pair, b_pair, mode, cards_left = calculate_baccarat_ultimate_core(
+    # Gọi hàm xử lý lõi v3.1 (Hệ thống tự động kiểm tra tính hợp lý tại đây)
+    core_output = calculate_baccarat_ultimate_core(
         p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
         manual_cards_used=manual_cards, manual_games_played=manual_games
     )
     
-    st.session_state.last_results = (res, p_pair, b_pair, remaining_deck, mode, cards_left)
-    if p_list and b_list:
-        st.session_state.shoe_history.extend(p_list + b_list)
-        st.session_state.game_counter = (st.session_state.game_counter if st.session_state.game_counter > 0 else manual_games) + 1
+    if isinstance(core_output, str):
+        # Nếu lõi trả về chuỗi báo lỗi, lưu chuỗi đó vào session_state để in ra màn hình
+        st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0)
+    else:
+        res, remaining_deck, p_pair, b_pair, mode, cards_left = core_output
+        st.session_state.last_results = (res, p_pair, b_pair, remaining_deck, mode, cards_left)
+        
+        # Chỉ cập nhật lịch sử bài và tăng số ván khi dữ liệu đầu vào không bị lỗi logic
+        if p_list and b_list and not mode.startswith("LỖI"):
+            st.session_state.shoe_history.extend(p_list + b_list)
+            st.session_state.game_counter = (st.session_state.game_counter if st.session_state.game_counter > 0 else manual_games) + 1
+            
     st.rerun()
