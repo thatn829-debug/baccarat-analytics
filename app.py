@@ -132,15 +132,12 @@ st.set_page_config(page_title="Oracle Ultimate Edge", page_icon="🔮", layout="
 st.markdown(
     """
     <style>
-    /* Ép tất cả div chứa cột của Streamlit phải nằm ngang trên mọi kích thước màn hình */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         width: 100% !important;
     }
-    
-    /* Cấu hình lại tỷ lệ chia đôi chính xác 50% cho từng cột */
     div[data-testid="stColumn"] {
         width: 50% !important;
         min-width: 50% !important;
@@ -185,7 +182,6 @@ if st.sidebar.button("⏮️ HOÀN TÁC VÁN TRƯỚC (UNDO)", use_container_wid
 if st.session_state.last_results:
     res, p_pair, b_pair, remaining_deck = st.session_state.last_results
     
-    # Khởi tạo vùng chia đôi ngang bắt buộc bằng CSS ở trên
     left_result_col, right_pair_col = st.columns(2)
     
     # BÊN TRÁI: Tỷ lệ thắng 3 cửa chính
@@ -207,10 +203,8 @@ if st.session_state.last_results:
 
     st.markdown("---")
     
-    # PHÂN TÍCH MA TRẬN QUẢN LÝ VỐN (ĐẨY XUỐNG DƯỚI TOÀN BỘ KẾT QUẢ TỶ LỆ)
+    # PHÂN TÍCH MA TRẬN QUẢN LÝ VỐN
     st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
-    
-    # Tạo khối dòng tiền dưới dạng hàng ngang cố định trên mobile
     kelly_col1, kelly_col2 = st.columns(2)
     
     max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
@@ -259,15 +253,29 @@ with status_col:
 
 col_p, col_b = st.columns(2)
 with col_p:
-    p_input = st.text_input("PLAYER (Lá bài):", value="0", placeholder="Ví dụ: 5,1 hoặc 9,0,2")
+    p_input = st.text_input("PLAYER (Lá bài):", value="0", placeholder="Ví dụ: 5,A hoặc 9,K,2")
 with col_b:
-    b_input = st.text_input("BANKER (Lá bài):", value="0", placeholder="Ví dụ: 4,11")
+    b_input = st.text_input("BANKER (Lá bài):", value="0", placeholder="Ví dụ: J,Q")
+
+# HÀM CHUẨN HÓA KÝ TỰ CHỮ (A, J, Q, K) SANG SỐ TOÁN HỌC
+def parse_card_input(input_str):
+    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13}
+    result = []
+    for x in input_str.split(","):
+        clean_val = x.strip().upper()
+        if clean_val == "":
+            continue
+        if clean_val in mapping:
+            result.append(mapping[clean_val])
+        else:
+            result.append(int(clean_val))
+    return result
 
 try:
-    p_list = [int(x.strip()) for x in p_input.split(",") if x.strip() != ""]
-    b_list = [int(x.strip()) for x in b_input.split(",") if x.strip() != ""]
+    p_list = parse_card_input(p_input)
+    b_list = parse_card_input(b_input)
 except ValueError:
-    st.error("Lưu ý: Chỉ nhập số nguyên (0-13) cách nhau bằng dấu phẩy!")
+    st.error("Lưu ý: Chỉ nhập số nguyên (2-10) hoặc các ký tự A, J, Q, K cách nhau bằng dấu phẩy!")
     p_list, b_list = [], []
 
 if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH", use_container_width=True, type="primary"):
