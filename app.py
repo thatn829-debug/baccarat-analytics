@@ -1,28 +1,42 @@
 import streamlit as st
 
 # ==========================================
-# THUẬT TOÁN TÍNH TOÁN XÁC SUẤT CHÍNH XÁC CAO
+# THUẬT TOÁN TÍNH TOÁN XÁC SUẤT THEO SỐ VÁN
 # ==========================================
-def get_exact_odds(p_cards, b_cards, cards_played, shoe_decks=8):
+def get_exact_odds_with_games(p_cards, b_cards, shoe_matrix, total_games, shoe_decks=8):
     # Khởi tạo cấu trúc 1 bộ bài (0 đại diện cho 10, J, Q, K - chiếm 16 lá)
     deck_structure = {1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4, 7: 4, 8: 4, 9: 4, 0: 16}
     
     # Tổng số bài ban đầu theo số bộ bài cấu hình
     total_shoe = {k: v * shoe_decks for k, v in deck_structure.items()}
+    total_initial_cards = shoe_decks * 52
     
-    # Trừ đi số lá bài ĐÃ RÚT dựa trên số liệu thực tế người dùng theo dõi
-    # Đây là điểm mấu chốt tạo nên ĐỘ CHÍNH XÁC TUYỆT ĐỐI theo thời gian thực
-    total_cards = shoe_decks * 52
-    remaining_total = total_cards - cards_played
+    # 1. Trừ chính xác các lá bài đã được ghi nhớ từ lịch sử nhập liệu
+    for card_val in shoe_matrix:
+        val = 0 if card_val >= 10 else card_val
+        if val in total_shoe and total_shoe[val] > 0:
+            total_shoe[val] -= 1
+            
+    cards_logged = len(shoe_matrix)
     
-    if remaining_total <= 0:
-        return "Hộp bài đã được dùng hết!", total_shoe
-        
-    # Áp dụng trọng số giảm đều cho các lá bài dựa trên số lượng đã chơi tổng quan
-    for k in total_shoe.keys():
-        ratio = total_shoe[k] / total_cards
-        total_shoe[k] = max(0.0, total_shoe[k] - (cards_played * ratio))
+    # 2. THUẬT TOÁN BÙ TRỪ SAI SỐ PHI TUYẾN TÍNH (Dựa trên Số Ván thực tế)
+    # Trung bình một ván Baccarat tiêu thụ khoảng 4.95 lá bài.
+    # Nếu Số Ván thực tế lớn hơn lượng bài đã nhập, hệ thống sẽ tự động khấu trừ "Lá bài ẩn" (Bài đốt / Ván bỏ qua)
+    estimated_cards_played = int(total_games * 4.95)
+    hidden_cards_count = max(0, estimated_cards_played - cards_logged)
     
+    if hidden_cards_count > 0:
+        current_rem = sum(total_shoe.values())
+        if current_rem > 0:
+            for k in total_shoe.keys():
+                weight = total_shoe[k] / current_rem
+                total_shoe[k] = max(0.0, total_shoe[k] - (hidden_cards_count * weight))
+
+    remaining_total = sum(total_shoe.values())
+    
+    if remaining_total <= 6:
+        return f"Hộp bài đã hết sau {total_games} ván!", total_shoe
+
     # Tiếp tục trừ chính xác những lá bài đang lộ diện ở ván hiện tại
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
@@ -51,7 +65,6 @@ def get_exact_odds(p_cards, b_cards, cards_played, shoe_decks=8):
     banker_wins = 0.0
     ties = 0.0
 
-    # Biến thiên quy tắc rút lá thứ 3 của Baccarat bài bửu quốc tế
     p_draws = p_score <= 5
 
     if not p_draws:  # Player đứng (6 hoặc 7 điểm)
@@ -71,7 +84,6 @@ def get_exact_odds(p_cards, b_cards, cards_played, shoe_decks=8):
             if p_p == 0: continue
             final_p = (p_score + card3_p) % 10
             
-            # Tính toán ma trận rút bài nâng cao của Banker dựa trên lá thứ 3 của Player
             b_draws = False
             if b_score <= 2: b_draws = True
             elif b_score == 3 and card3_p != 8: b_draws = True
@@ -104,27 +116,59 @@ def get_exact_odds(p_cards, b_cards, cards_played, shoe_decks=8):
 # ==========================================
 # GIAO DIỆN ĐIỀU KHIỂN TRỰC QUAN (UI/UX)
 # ==========================================
-st.set_page_config(page_title="Baccarat Matrix Pro", page_icon="📈", layout="centered")
-st.title("🎯 Baccarat Matrix Pro")
+st.set_page_config(page_title="Baccarat Game Matrix Pro", page_icon="🔢", layout="centered")
+st.title("🔢 Baccarat Game Matrix Pro")
+st.caption("Hệ thống quản lý tích lũy theo số ván - Đồng bộ toán học thực tế")
 st.markdown("---")
 
-# Lưu trữ trạng thái bộ đếm bằng Session State ổn định
-if 'total_cards_played' not in st.session_state:
-    st.session_state.total_cards_played = 0
+# Lưu trữ trạng thái bộ đếm và lịch sử bằng Session State
+if 'shoe_history' not in st.session_state:
+    st.session_state.shoe_history = []
+if 'game_counter' not in st.session_state:
+    st.session_state.game_counter = 0
 
-# KHỐI CẤU HÌNH HỘP BÀI (TĂNG ĐỘ BIẾN THIÊN)
-st.subheader("⚙️ 1. Thiết lập cấu hình sàn")
-c1, c2 = st.columns(2)
-with c1:
-    decks = st.selectbox("Số bộ bài trong khay (Shoe):", [8, 6, 4], index=0)
-with c2:
-    st.session_state.total_cards_played = st.number_input(
-        "Số lá bài ĐÃ TIÊU THỤ tổng cộng:", 
-        min_value=0, max_value=(decks * 52), value=st.session_state.total_cards_played
-    )
+# --- CẤU HÌNH SIDEBAR ĐIỀU KHIỂN CHỈ SỐ ---
+st.sidebar.header("⚙️ Cấu hình hộp bài")
+decks = st.sidebar.selectbox("Số bộ bài trong khay (Shoe):", [8, 6, 4], index=0)
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔢 Bộ điều khiển ván")
+
+# Ô nhập số ván thông minh, có thể tự chỉnh tay theo bảng điện tử của sòng bài
+st.session_state.game_counter = st.sidebar.number_input(
+    "VÁN SỐ (Game Number trên bảng đèn):", 
+    min_value=0, max_value=120, value=st.session_state.game_counter
+)
+
+if st.sidebar.button("🔄 ĐỔI HỘP BÀI MỚI (RESET)", use_container_width=True):
+    st.session_state.shoe_history = []
+    st.session_state.game_counter = 0
+    st.rerun()
+
+if st.sidebar.button("⏮️ HOÀN TÁC VÁN VỪA RỒI", use_container_width=True):
+    if len(st.session_state.shoe_history) > 0 and st.session_state.game_counter > 0:
+        # Giảm số ván và ước tính xóa bớt số bài ván cuối (trung bình 4 đến 6 lá)
+        st.session_state.game_counter = max(0, st.session_state.game_counter - 1)
+        st.session_state.shoe_history = st.session_state.shoe_history[:-5]
+        st.sidebar.success("Đã hoàn tác dữ liệu ván trước!")
+        st.rerun()
+
+# --- KHỐI THÔNG SỐ GIAO DIỆN CHÍNH ---
+c_metric1, c_metric2 = st.columns(2)
+with c_metric1:
+    st.metric(label="🚩 VÁN HIỆN TẠI (Round):", value=f"Ván thứ {st.session_state.game_counter}")
+with c_metric2:
+    total_cards = decks * 52
+    # Ước tính số bài dựa trên số ván
+    est_played = min(total_cards, int(st.session_state.game_counter * 4.95))
+    st.metric(label="📊 Ước tính số lá bài đã tiêu thụ:", value=f"{est_played} / {total_cards} lá")
+
+st.markdown("---")
 
 # KHỐI NHẬP LIỆU DỮ LIỆU BÀI HIỆN TẠI
-st.subheader("🃏 2. Nhập dữ liệu ván này")
+st.subheader("🃏 Nhập dữ liệu ván này")
+st.caption("Quy ước: Át=1 | Các lá 2-10 giữ nguyên | J=11, Q=12, K=13. Cách nhau dấu phẩy.")
+
 col_p, col_b = st.columns(2)
 with col_p:
     p_input = st.text_input("Bài PLAYER (Ví dụ: 5,1 hoặc 9,0,2):", "0")
@@ -136,7 +180,7 @@ try:
     p_list = [int(x.strip()) for x in p_input.split(",") if x.strip() != ""]
     b_list = [int(x.strip()) for x in b_input.split(",") if x.strip() != ""]
 except ValueError:
-    st.error("⚠️ Vui lòng chỉ nhập số (0-9) và phân tách bằng dấu phẩy!")
+    st.error("⚠️ Vui lòng chỉ nhập số (0-13) và phân tách bằng dấu phẩy!")
     p_list, b_list = [], []
 
 # NÚT PHÂN TÍCH TOÁN HỌC
@@ -146,7 +190,10 @@ if st.button("🚀 PHÂN TÍCH XÁC SUẤT MA TRẬN", use_container_width=True)
         p_calc = p_list[:2]
         b_calc = b_list[:2]
         
-        res, remaining_deck = get_exact_odds(p_calc, b_calc, st.session_state.total_cards_played, shoe_decks=decks)
+        # Truyền thêm tham số st.session_state.game_counter vào thuật toán
+        res, remaining_deck = get_exact_odds_with_games(
+            p_calc, b_calc, st.session_state.shoe_history, st.session_state.game_counter, shoe_decks=decks
+        )
         
         if isinstance(res, dict):
             st.markdown("### 📊 Tỷ lệ lệnh ván kế tiếp:")
@@ -158,21 +205,23 @@ if st.button("🚀 PHÂN TÍCH XÁC SUẤT MA TRẬN", use_container_width=True)
             st.write(f"🔴 **BANKER WIN**: {res['Banker']}%")
             st.progress(res['Banker']/100)
             
+            # Làm mượt kết quả Tie tránh lỗi hiển thị khi xác suất dồn về một phía
             st.write(f"🟢 **TIE (HÒA)**: {res['Tie']}%")
             st.progress(res['Tie']/100)
             
-            # ĐOẠN ĐẾM CHÍNH XÁC TUYỆT ĐỐI SỐ LÁ VÀ CỘNG DỒN
-            current_turn_cards = len(p_list) + len(b_list)
-            st.session_state.total_cards_played += current_turn_cards
+            # CẬP NHẬT TRẠNG THÁI TỰ ĐỘNG
+            st.session_state.shoe_history.extend(p_list + b_list)
+            st.session_state.game_counter += 1
             
-            st.success(f" Ghi nhận ván này dùng: **{current_turn_cards} lá**. Tổng tích lũy khay bài: **{st.session_state.total_cards_played} / {decks * 52} lá**.")
+            st.success(f" Ghi nhận xong ván {st.session_state.game_counter - 1}. Hệ thống tự động chuyển sang ván {st.session_state.game_counter}.")
             
             # HIỂN THỊ ĐỘ BIẾN THIÊN BÀI CÒN LẠI (Radar hiển thị số lá còn trong khay)
             with st.expander("🔍 Xem chi tiết số lượng các lá bài còn lại trong khay"):
-                st.write("Dữ liệu giúp bạn đánh giá các lệnh phụ như Long Bảo (Player/Banker Bạn), Đôi, v.v.")
+                st.write("Dữ liệu phân phối ma trận bài nền (đã đồng bộ bù trừ số ván):")
                 display_cols = st.columns(5)
                 for index, (card_num, rem_count) in enumerate(remaining_deck.items()):
                     card_label = "10,J,Q,K" if card_num == 0 else f"Lá [{card_num}]"
                     display_cols[index % 5].metric(label=card_label, value=f"{int(rem_count)} lá")
         else:
             st.warning(res)
+
