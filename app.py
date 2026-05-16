@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v12.0: 2D COMBINATORIAL CONVOLUTION ENGINE (PURE PROBABILITY)
+# SYSTEM CORE v12.1: 2D COMBINATORIAL CONVOLUTION ENGINE (PURE PROBABILITY)
 # =========================================================================
 def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                 manual_cards_used=0, manual_games_played=0,
@@ -26,7 +26,7 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
             if card_val in deck_structure and deck_structure[card_val] > 0:
                 deck_structure[card_val] -= 1
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "MA TRẬN TÍCH CHẬP 2 CHIỀU ĐA BIẾN (MỨC TỐI HẬU V12)"
+        mode = "MA TRẬN TÍCH CHẬP 2 CHIỀU ĐA BIẾN (MỨC TỐI HẬU V12.1)"
     else:
         # NẾU CHƯA CÓ LỊCH SỬ CHI TIẾT, TÍNH TOÁN THEO TRỌNG SỐ PHÂN RÃ LÝ THUYẾT
         cards_removed = 0
@@ -153,9 +153,8 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Pure Probability v12.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Pure Probability v12.1", page_icon="🔮", layout="centered")
 
-# Nhúng Custom CSS để cấu trúc hiển thị khối Neon làm nổi bật xác suất cao áp đảo
 st.markdown(
     """
     <style>
@@ -188,7 +187,6 @@ if 'last_played_cards' not in st.session_state: st.session_state.last_played_car
 if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'last_cards_added' not in st.session_state: st.session_state.last_cards_added = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
-if 'edge_history_df' not in st.session_state: st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Edge", "Banker_Edge"])
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -217,7 +215,6 @@ if st.session_state.live_logs:
             st.session_state.last_cards_added.pop()
         st.session_state.live_logs.pop()
         if len(st.session_state.outcome_history) > 0: st.session_state.outcome_history.pop()
-        if not st.session_state.edge_history_df.empty: st.session_state.edge_history_df = st.session_state.edge_history_df.iloc[:-1]
         st.session_state.game_counter = max(0, st.session_state.game_counter - 1)
         st.session_state.last_results = None
         st.session_state.last_played_cards = ""
@@ -231,7 +228,6 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.live_logs = []
     st.session_state.last_cards_added = []
     st.session_state.outcome_history = []
-    st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Edge", "Banker_Edge"])
     st.rerun()
 
 display_game = manual_games + len(st.session_state.live_logs)
@@ -256,11 +252,9 @@ else:
         else:
             res, p_pair, b_pair, remaining_deck, current_mode, cards_left = results_data
             
-            # Khởi tạo class CSS bình thường cho các khối hiển thị chính
             p_box_css = "hud-box"
             b_box_css = "hud-box"
             
-            # Định vị bên có xác suất cao vượt trội để kích hoạt hiệu ứng Neon Highlight
             if res['Player'] > res['Banker']:
                 p_box_css = "hud-box neon-player-advantage"
             elif res['Banker'] > res['Player']:
@@ -282,10 +276,6 @@ else:
 
             st.markdown("---")
             
-            if not st.session_state.edge_history_df.empty:
-                st.markdown("### 📈 Biểu Đồ Biến Động Lợi Thế Khay Bài")
-                st.line_chart(st.session_state.edge_history_df.set_index("Ván"))
-
             total_shoe_cards = decks * 52
             cards_used_calc = total_shoe_cards - cards_left
             penetration_rate = min(100.0, (cards_used_calc / total_shoe_cards) * 100)
@@ -300,7 +290,7 @@ else:
                     card_label = labels_13.get(num, f"[{num}]")
                     cols[idx % 5].text(f"{card_label}: {round(cnt, 1)} lá")
     else:
-        st.info("🔮 Vui lòng nhập dữ liệu ván bài ở ô bên dưới để kích hoạt hệ thống phân tích xác suất v12.0.")
+        st.info("🔮 Vui lòng nhập dữ liệu ván bài ở ô bên dưới để kích hoạt hệ thống phân tích xác suất v12.1.")
 
 st.markdown("---")
 
@@ -343,7 +333,7 @@ def clean_and_parse_input(raw_str):
     return result_list
 
 # --- ACTION TRIGGER ---
-btn_trigger = st.button("🚀 KÍCH HOẠT HỆ THỐNG V12.0 COSMIC PROBABILITY CORE", use_container_width=True, type="primary", disabled=is_data_discrepancy)
+btn_trigger = st.button("🚀 KÍCH HOẠT HỆ THỐNG V12.1 COSMIC PROBABILITY CORE", use_container_width=True, type="primary", disabled=is_data_discrepancy)
 
 if btn_trigger and not is_data_discrepancy:
     current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
@@ -384,13 +374,6 @@ if btn_trigger and not is_data_discrepancy:
                     st.session_state.outcome_history.append(win_side)
                     
                     actual_index = display_game + 1
-                    new_edge_row = pd.DataFrame([{
-                        "Ván": f"V{actual_index}",
-                        "Player_Edge": res['Player'],
-                        "Banker_Edge": res['Banker']
-                    }])
-                    st.session_state.edge_history_df = pd.concat([st.session_state.edge_history_df, new_edge_row], ignore_index=True)
-                    
                     st.session_state.live_logs.append(f"Ván {actual_index}: Player({p_input.strip()}) -> {final_p_score}đ vs Banker({b_input.strip()}) -> {final_b_score}đ | Thắng: {win_side.upper()}")
                     st.session_state.game_counter = display_game + 1
                     st.rerun()
