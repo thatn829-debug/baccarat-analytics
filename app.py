@@ -170,7 +170,7 @@ if st.button("🚀 PHÂN TÍCH XÁC SUẤT MA TRẬN", use_container_width=True)
             # HIỂN THỊ ĐỘ BIẾN THIÊN BÀI CÒN LẠI (Radar hiển thị số lá còn trong khay)
             with st.expander("🔍 Xem chi tiết số lượng các lá bài còn lại trong khay"):
                 st.write("Dữ liệu giúp bạn đánh giá các lệnh phụ như Long Bảo (Player/Banker Bạn), Đôi, v.v.")
-                display_cols = st.columns(5) we
+                display_cols = st.columns(5)
                 for index, (card_num, rem_count) in enumerate(remaining_deck.items()):
                     card_label = "10,J,Q,K" if card_num == 0 else f"Lá [{card_num}]"
                     display_cols[index % 5].metric(label=card_label, value=f"{int(rem_count)} lá")
