@@ -1,7 +1,7 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v8.5: FINITE SIMULATION ENGINE WITH HISTORICAL TRACKING
+# SYSTEM CORE v8.6: FINITE SIMULATION ENGINE WITH VERTICAL UI CONFIG
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                      manual_cards_used=0, manual_games_played=0,
@@ -150,7 +150,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate Edge v8.5", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate Edge v8.6", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -170,7 +170,7 @@ if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'last_cards_added' not in st.session_state: st.session_state.last_cards_added = []
 
 # --- SIDEBAR CONFIGURATION ---
-st.sidebar.header("⚙️ Cấu Hình Hệ Thống")
+st.sidebar.header("⚙️ Cấu HÌnh Hệ Thống")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
@@ -178,14 +178,13 @@ st.sidebar.markdown("### 📊 Thiết lập nhanh khay bài")
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, step=1)
 manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0, step=1)
 
-st.sidebar.markdown("**Chi tiết số bàn thắng từng cửa:**")
-c1, c2, c3 = st.sidebar.columns(3)
-with c1: p_wins_input = st.number_input("🔵 P", min_value=0, max_value=100, value=0, step=1)
-with c2: b_wins_input = st.number_input("🔴 B", min_value=0, max_value=100, value=0, step=1)
-with c3: tie_wins_input = st.number_input("🟢 T", min_value=0, max_value=100, value=0, step=1)
+# NÂNG CẤP: Xếp dọc các trường nhập bàn thắng chi tiết theo yêu cầu
+st.sidebar.markdown("**Chi tiết số bàn thắng từng cửa (Hàng dọc):**")
+p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0, step=1)
+b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0, step=1)
+tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0, step=1)
 
 st.sidebar.markdown("---")
-# CHỨC NĂNG HOÀN TÁC CẤP THỜI (UNDO) TRONG SIDEBAR
 if st.session_state.live_logs:
     if st.sidebar.button("↩️ HOÀN TÁC VÁN VỪA NHẬP", use_container_width=True):
         if st.session_state.last_cards_added:
@@ -209,7 +208,11 @@ if st.sidebar.button("🔄 RESET KHAY BÀI MỚI", use_container_width=True):
     st.rerun()
 
 calculated_total_games = p_wins_input + b_wins_input + tie_wins_input
-final_games_count = manual_games if manual_games > calculated_total_games else calculated_total_games
+# Đồng bộ biến gốc ban đầu
+base_games_count = manual_games if manual_games > calculated_total_games else calculated_total_games
+
+# NÂNG CẤP LOGIC: Số ván ở ngoài nhảy tăng dần tịnh tiến dựa vào số ván gốc + số ván đã gõ thực tế
+display_game = base_games_count + len(st.session_state.live_logs)
 
 # --- OUTPUT SCREEN MATRIX ---
 if st.session_state.last_results:
@@ -264,7 +267,6 @@ if st.session_state.last_results:
         with k_col2:
             st.caption(f"Chế độ quét ma trận:\n{current_mode}")
 
-        # THANH DỰ BÁO ĐỘ CHÍN KHAY BÀI
         total_shoe_cards = decks * 52
         cards_used_calc = total_shoe_cards - cards_left
         penetration_rate = min(100.0, (cards_used_calc / total_shoe_cards) * 100)
@@ -288,8 +290,8 @@ head_col, status_col = st.columns([2, 1])
 with head_col:
     st.subheader("🃏 Điền điểm ván này")
 with status_col:
-    display_game = st.session_state.game_counter if st.session_state.game_counter > 0 else final_games_count
-    st.markdown(f"<div style='text-align: right; margin-top: 10px; font-weight: bold; color: #ff4b4b;'>#Ván tiếp theo: {display_game + 1}</div>", unsafe_allow_html=True)
+    # NÂNG CẤP: Hiển thị số hiệu ván tiếp theo tăng dần tự động dựa trên cấu trúc đã chơi
+    st.markdown(f"<div style='text-align: right; margin-top: 10px; font-weight: bold; color: #ff4b4b;'>#Ván hiện tại: {display_game}</div>", unsafe_allow_html=True)
 
 col_p, col_b = st.columns(2)
 with col_p: p_input = st.text_input("PLAYER (Lá bài):", value="", placeholder="Ví dụ: 5,K,2")
@@ -342,7 +344,7 @@ if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH TỐI HẬU", use_co
             
             core_output = calculate_baccarat_ultimate_core(
                 p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
-                manual_cards_used=manual_cards, manual_games_played=manual_games,
+                manual_cards_used=manual_cards, manual_games_played=base_games_count,
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
             )
             
@@ -358,10 +360,11 @@ if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH TỐI HẬU", use_co
                     st.session_state.shoe_history.extend(all_added)
                     st.session_state.last_cards_added.append(all_added)
                     
-                    # Lưu lại log lịch sử hiển thị
-                    st.session_state.live_logs.append(f"Ván {len(st.session_state.live_logs) + 1}: Player({p_input.strip()}) vs Banker({b_input.strip()})")
+                    # Cập nhật số ván log thực tế tịnh tiến tăng dần dựa trên tổng số ván tích lũy
+                    actual_index = display_game + 1
+                    st.session_state.live_logs.append(f"Ván {actual_index}: Player({p_input.strip()}) vs Banker({b_input.strip()})")
                     
-                    st.session_state.game_counter = (st.session_state.game_counter if st.session_state.game_counter > 0 else final_games_count) + 1
+                    st.session_state.game_counter = display_game + 1
                     st.rerun()
 
 # --- LIVE HISTORY LOG LOGIC DISPLAY ---
