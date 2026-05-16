@@ -128,18 +128,22 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 # =========================================================================
 st.set_page_config(page_title="Oracle Ultimate Edge", page_icon="🔮", layout="centered")
 
-# Nhúng mã CSS ép các cột (st.columns) luôn giữ nguyên tỷ lệ 50% ngang trên Mobile, không bị vỡ dọc
+# ĐOẠN CSS ĐẶC TRỊ LỖI BÓP DÒNG TRÊN MOBILE (FORCE ROW LAYOUT)
 st.markdown(
     """
     <style>
-    [data-testid="stColumns"] {
+    /* Ép tất cả div chứa cột của Streamlit phải nằm ngang trên mọi kích thước màn hình */
+    div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         width: 100% !important;
     }
-    [data-testid="stColumn"] {
+    
+    /* Cấu hình lại tỷ lệ chia đôi chính xác 50% cho từng cột */
+    div[data-testid="stColumn"] {
         width: 50% !important;
+        min-width: 50% !important;
         flex: 1 1 50% !important;
         padding: 5px !important;
     }
@@ -205,6 +209,8 @@ if st.session_state.last_results:
     
     # PHÂN TÍCH MA TRẬN QUẢN LÝ VỐN (ĐẨY XUỐNG DƯỚI TOÀN BỘ KẾT QUẢ TỶ LỆ)
     st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
+    
+    # Tạo khối dòng tiền dưới dạng hàng ngang cố định trên mobile
     kelly_col1, kelly_col2 = st.columns(2)
     
     max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
@@ -214,18 +220,18 @@ if st.session_state.last_results:
     
     with kelly_col1:
         if res['Player'] == 100.0 or res['Banker'] == 100.0:
-            st.success(f"🎯 LỆNH TUYỆT ĐỐI: Vào mạnh cửa **{max_side.upper()}** (Tỷ lệ 100%)")
+            st.success(f"🎯 LỆNH: Vào **{max_side.upper()}** (100%)")
         elif kelly_percentage > 1.5:
-            st.info(f"✨ GỢI Ý ĐI TIỀN: Ưu tiên cửa **{max_side.upper()}** (Quy mô vốn gợi ý: {round(kelly_percentage, 2)}%)")
+            st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}** (Vốn: {round(kelly_percentage, 2)}%)")
         else:
-            st.warning("⚖️ TRẠNG THÁI CÂN BẰNG: Biên lợi thế quá nhỏ, gợi ý HẠ VỐN tối đa hoặc BỎ QUA tay này.")
+            st.warning("⚖️ CÂN BẰNG: Hạ vốn hoặc BỎ QUA.")
             
     with kelly_col2:
         if p_pair > 11.5 or b_pair > 11.5:
             pair_side = "Con Đôi" if p_pair > b_pair else "Cái Đôi"
-            st.success(f"🔥 BIẾN ĐỘNG: Cửa **{pair_side}** đang có tỷ lệ đột biến!")
+            st.success(f"🔥 BIẾN ĐỘNG: **{pair_side}** đột biến!")
         else:
-            st.text("Cửa Đôi chạy trong biên độ an toàn.")
+            st.text("Cửa Đôi ở biên an toàn.")
             
     with st.expander("📊 Chi tiết cấu trúc ma trận khay bài"):
         total_cards = decks * 52
