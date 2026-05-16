@@ -85,7 +85,6 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
     p_dragon_weight, b_dragon_weight = 0.0, 0.0
     total_weight = 0.0
 
-    # Chạy mô hình phân bổ xác suất phân rã điểm hai lá đầu tiên
     for p1 in range(10):
         w_p1 = score_deck[p1]
         if w_p1 <= 0: continue
@@ -96,7 +95,6 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
             w_comb = w_p1 * w_b1
             total_weight += w_comb
             
-            # Ước lượng phân bổ điểm tổ hợp quy đổi từ cấu trúc bài hiện tại
             p_score_init = (p1 * 2) % 10  
             b_score_init = (b1 * 2) % 10
             
@@ -106,19 +104,18 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
             if is_p_natural or is_b_natural:
                 if p_score_init > b_score_init:
                     player_wins += w_comb
-                    if is_p_natural: p_dragon_weight += w_comb # Thắng Tự Nhiên
+                    if is_p_natural: p_dragon_weight += w_comb
                 elif b_score_init > p_score_init:
                     banker_wins += w_comb
-                    if is_b_natural: b_dragon_weight += w_comb # Thắng Tự Nhiên
+                    if is_b_natural: b_dragon_weight += w_comb
                 else:
                     ties += w_comb
             else:
-                # Trường hợp không tự nhiên: Tính toán xác suất biên độ cách biệt điểm số >= 4 điểm sau lá thứ 3
                 if p_score_init > b_score_init:
                     player_wins += w_comb
                     gap = p_score_init - b_score_init
                     if gap >= 4: 
-                        p_dragon_weight += w_comb * (0.40 + (gap * 0.08)) # Trọng số lũy tiến theo khoảng cách điểm
+                        p_dragon_weight += w_comb * (0.40 + (gap * 0.08))
                 elif b_score_init > p_score_init:
                     banker_wins += w_comb
                     gap = b_score_init - p_score_init
@@ -135,11 +132,9 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
         "Tie": round((ties / total_weight) * 100, 2)
     }
     
-    # Định dạng chuẩn xác suất Long Bảo theo biến động khay bài
     p_dragon_odds = round((p_dragon_weight / total_weight) * 100, 2)
     b_dragon_odds = round((b_dragon_weight / total_weight) * 100, 2)
 
-    # Nếu đang trong ván bốc dở (đã lật bài), đưa tỷ lệ Long Bảo về trạng thái chờ tính toán ván mới
     if len(p_cards) > 0 or len(b_cards) > 0:
         p_dragon_odds, b_dragon_odds = 0.0, 0.0
 
@@ -163,12 +158,19 @@ st.markdown(
     .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
     .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
     
-    .pair-badge-normal { background-color: #262626; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #444; }
+    .pair-badge-normal { background-color: #1e1e1e; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #444; }
     .pair-badge-alert { background-color: #d35400; padding: 10px; border-radius: 6px; text-align: center; border: 2px solid #e67e22; box-shadow: 0 0 15px rgba(230, 126, 34, 0.6); }
-    .dragon-badge-alert { background-color: #6c5ce7; padding: 10px; border-radius: 6px; text-align: center; border: 2px solid #a29bfe; box-shadow: 0 0 15px rgba(108, 92, 231, 0.6); }
     
-    .logic-box { padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 14px; margin-top: 10px; }
-    .logic-true { background-color: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; color: #2ecc71; }
+    /* THIẾT KẾ MỚI CHO CỬA LONG BẢO SIÊU NỔI BẬT */
+    .dragon-p-alert { background: linear-gradient(145deg, #0097a7, #006064) !important; border: 2px solid #00cec9 !important; box-shadow: 0 0 15px rgba(0, 206, 201, 0.8); color: #fff; }
+    .dragon-b-alert { background: linear-gradient(145deg, #d35400, #962d00) !important; border: 2px solid #f1c40f !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); color: #fff; }
+    
+    /* KHUNG THẨM ĐỊNH LOGIC KHAY BÀI */
+    .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 12px; font-family: monospace; }
+    .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+    .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); animation: blinker 1.5s linear infinite; }
+    
+    @keyframes blinker { 50% { opacity: 0.6; } }
     </style>
     """, 
     unsafe_allow_html=True
@@ -177,9 +179,7 @@ st.markdown(
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
-if 'last_cards_added' not in st.session_state: st.session_state.last_cards_added = []
 
-# KHỞI CHẠY KHAY BÀI BAN ĐẦU
 if st.session_state.last_results is None:
     init_res = calculate_baccarat_v12_core([], [], st.session_state.shoe_history)
     if not isinstance(init_res, str):
@@ -204,10 +204,7 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.shoe_history = []
     st.session_state.last_results = None
     st.session_state.live_logs = []
-    st.session_state.last_cards_added = []
     st.rerun()
-
-display_game = manual_games + len(st.session_state.live_logs)
 
 # --- HIỂN THỊ KẾT QUẢ MA TRẬN ---
 if is_data_discrepancy:
@@ -236,13 +233,20 @@ else:
             st.markdown(f'<div class="{b_style}"><span style="font-size:11px;color:#aaa;">🔴 CÁI ĐÔI (B-PAIR)</span><br><b style="font-size:18px;">{b_pair}%</b></div>', unsafe_allow_html=True)
             st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
             
-            # Đánh giá lợi thế Long Bảo dựa trên mức nền toán học chuẩn (Player > 16.5%, Banker > 10.8%)
-            p_drag_style = "dragon-badge-alert" if p_dragon > 16.5 else "pair-badge-normal"
-            b_drag_style = "dragon-badge-alert" if b_dragon > 10.8 else "pair-badge-normal"
+            # Đã thay đổi màu sắc rực rỡ hơn cho cửa Long Bảo
+            p_drag_style = "dragon-p-alert" if p_dragon > 16.5 else "pair-badge-normal"
+            b_drag_style = "dragon-b-alert" if b_dragon > 10.8 else "pair-badge-normal"
             
-            st.markdown(f'<div class="{p_drag_style}"><span style="font-size:11px;color:#9b59b6;">🐉 PLAYER LONG BẢO (DRAGON)</span><br><b style="font-size:18px;color:#a29bfe;">{p_dragon}%</b></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="{p_drag_style}"><span style="font-size:11px;color:#e0ffff;font-weight:bold;">🐉 PLAYER LONG BẢO (CYAN NEON)</span><br><b style="font-size:20px;color:#00ffff;">{p_dragon}%</b></div>', unsafe_allow_html=True)
             st.markdown("<div style='margin-bottom:6px;'></div>", unsafe_allow_html=True)
-            st.markdown(f'<div class="{b_drag_style}"><span style="font-size:11px;color:#9b59b6;">🐉 BANKER LONG BẢO (DRAGON)</span><br><b style="font-size:18px;color:#a29bfe;">{b_dragon}%</b></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="{b_drag_style}"><span style="font-size:11px;color:#fff9db;font-weight:bold;">🐉 BANKER LONG BẢO (GOLD NEON)</span><br><b style="font-size:20px;color:#f1c40f;">{b_dragon}%</b></div>', unsafe_allow_html=True)
+            
+            # --- KHU VỰC THẨM ĐỊNH BÀI LOGIC (MỚI THÊM) ---
+            st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
+            if is_shoe_logical:
+                st.markdown('<div class="validation-hud logic-pass">✔ THẨM ĐỊNH LOGIC: KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="validation-hud logic-fail">⚠️ CẢNH BÁO: PHÁT HIỆN SỐ LÁ LỖI LOGIC KHAY VƯỢT GIỚI HẠN BÀI</div>', unsafe_allow_html=True)
 
         st.markdown("---")
         total_shoe_cards = decks * 52
