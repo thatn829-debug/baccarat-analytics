@@ -168,6 +168,7 @@ st.markdown(
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); animation: blinker 1.5s linear infinite; }
     
     .game-counter-hud { padding: 10px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 15px; border: 1px dashed #f1c40f; color: #f1c40f; background-color: rgba(241, 196, 15, 0.05); margin-bottom: 15px; font-family: monospace; }
+    .waiting-hud { padding: 25px; text-align: center; font-weight: bold; border: 1px dashed #555; background-color: #111; color: #888; border-radius: 8px; margin-bottom: 20px; }
     
     @keyframes blinker { 50% { opacity: 0.6; } }
     </style>
@@ -179,7 +180,6 @@ st.markdown(
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'manual_games_counter' not in st.session_state: st.session_state.manual_games_counter = 0
-# State lưu trữ ván vừa nhập gần nhất nhằm chống trùng dữ liệu
 if 'last_entered_round' not in st.session_state: st.session_state.last_entered_round = {"p": [], "b": []}
 
 # --- SIDEBAR CẤU HÌNH ---
@@ -204,21 +204,13 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.last_entered_round = {"p": [], "b": []}
     st.rerun()
 
-if st.session_state.last_results is None and not is_data_discrepancy:
-    init_res = calculate_baccarat_v12_core(
-        [], [], st.session_state.shoe_history, shoe_decks=decks,
-        manual_cards_used=manual_cards, manual_games_played=manual_games,
-        p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
-    )
-    if not isinstance(init_res, str):
-        st.session_state.last_results = init_res
-
 current_total_games = manual_games + st.session_state.manual_games_counter
 
 # --- HIỂN THỊ KẾT QUẢ MA TRẬN ---
 if is_data_discrepancy:
     st.error("### 🛑 LỖI: Tổng số ván thiết lập ở Sidebar không khớp với tổng số bàn thắng lẻ từng cửa!")
 else:
+    # CHỈ HIỂN THỊ KHUNG KẾT QUẢ NẾU ĐÃ CÓ DỮ LIỆU ĐƯỢC TÍNH TOÁN CHỦ ĐỘNG
     if st.session_state.last_results:
         res, remaining_deck, p_pair, b_pair, p_dragon, b_dragon, current_mode, cards_left, is_shoe_logical = st.session_state.last_results
         
@@ -261,9 +253,12 @@ else:
         penetration_rate = min(100.0, (cards_used_calc / total_shoe_cards) * 100)
         st.markdown(f"**Độ chín khay bài (Shoe Penetration): {round(penetration_rate, 1)}%** (Đã dùng {int(cards_used_calc)} / {total_shoe_cards} lá)")
         st.progress(penetration_rate / 100.0)
+    else:
+        # Trạng thái chờ nạp dữ liệu đầu tiên khi mới bật phần mềm hoặc reset
+        st.markdown('<div class="waiting-hud">🔮 ORACLE ĐANG CHỜ DỮ LIỆU... VUI LÒNG NẠP KẾT QUẢ VÁN ĐẦU TIÊN PHÍA DƯỚI ĐỂ BẮT ĐẦU TÍNH TOÁN</div>', unsafe_allow_html=True)
 
 # =========================================================================
-# KHU VỰC NẠP KẾT QUẢ VÀ BỘ ĐẾM SỐ VÁN TỰ ĐỘNG ĐĂNG TIẾN
+# KHU VỰC NẠP KẾT QUẢ VÀ BỘ ĐẾM SỐ VÁN TỰ ĐỘNG TĂNG DẦN
 # =========================================================================
 st.markdown("---")
 
@@ -284,7 +279,6 @@ def clean_and_parse_input(raw_str):
         elif tok.isdigit() and 2 <= int(tok) <= 10: result_list.append(int(tok))
     return result_list
 
-# Xử lý chuỗi làm sạch dữ liệu đầu vào tạm thời để thẩm định trước khi bấm nút
 p_parsed = clean_and_parse_input(p_input)
 b_parsed = clean_and_parse_input(b_input)
 
@@ -295,7 +289,6 @@ if (p_parsed or b_parsed) and (st.session_state.last_entered_round["p"] == p_par
 
 if is_duplicate:
     st.warning("⚠️ Cảnh báo: Dữ liệu bài vừa nhập trùng khớp hoàn toàn với ván trước đó! Vui lòng nhập ván mới để tiếp tục.")
-    # Khóa nút bấm (disabled) nếu phát hiện nạp trùng kết quả
     st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary", disabled=True)
 else:
     if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
@@ -307,7 +300,7 @@ else:
             st.session_state.last_entered_round["p"] = p_parsed
             st.session_state.last_entered_round["b"] = b_parsed
             
-            # Tăng số ván đếm
+            # Tăng số ván đếm thêm 1
             st.session_state.manual_games_counter += 1
             
             core_output = calculate_baccarat_v12_core(
