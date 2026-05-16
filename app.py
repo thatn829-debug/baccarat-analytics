@@ -78,11 +78,11 @@ def calculate_baccarat_odds(player_cards, banker_cards, cards_played, shoe_decks
         "Tie": round((ties / total_cases) * 100, 2) if total_cases > 0 else 0
     }
 
-# --- GIAO DIỆN STREAMLIT CHO THIẾT BỊ DI ĐỘNG ---
+# --- GIAO DIỆN STREAMLIT CẢI TIẾN ---
 st.set_page_config(page_title="Baccarat Analytics", page_icon="📊", layout="centered")
 st.title("📊 Baccarat Odds Pro")
 
-# Khởi tạo bộ nhớ đếm bài nếu chưa có
+# Khởi tạo bộ đếm bài
 if 'cards' not in st.session_state:
     st.session_state.cards = 0
 
@@ -95,30 +95,34 @@ st.session_state.cards = st.number_input(
 
 # Khối 2: Nhập bài hiện tại
 st.subheader("2. Nhập bài ván này")
-st.caption("Quy ước: Điền số từ 1-9. Các lá 10, J, Q, K thì nhập số 0. Mỗi lá cách nhau bằng dấu phẩy.")
+st.caption("Quy ước: Điền các lá bài đã lật (gồm cả lá thứ 3 nếu có), cách nhau bằng dấu phẩy. Ví dụ: 5,0 hoặc 5,0,2. (10, J, Q, K nhập số 0)")
+
 col1, col2 = st.columns(2)
 with col1:
-    p_in = st.text_input("Bài Player (Ví dụ: 5,0):", "0")
+    p_in = st.text_input("Bài Player hiện tại:", "0")
 with col2:
-    b_in = st.text_input("Bài Banker (Ví dụ: 4,3):", "0")
+    b_in = st.text_input("Bài Banker hiện tại:", "0")
 
-# Chuyển đổi dữ liệu chuỗi thành mảng số
+# Chuyển dữ liệu chuỗi nhập vào thành danh sách số
 try:
     p_list = [int(x.strip()) for x in p_in.split(",") if x.strip() != ""]
     b_list = [int(x.strip()) for x in b_in.split(",") if x.strip() != ""]
 except ValueError:
-    st.error("Lỗi cấu trúc: Vui lòng chỉ nhập số và dấu phẩy!")
+    st.error("Lỗi: Vui lòng chỉ nhập số và dấu phẩy!")
     p_list, b_list = [], []
 
-# Nút xử lý tính toán
+# Nút tính toán
 if st.button("📊 TÍNH XÁC SUẤT", use_container_width=True):
     if p_list and b_list:
-        res = calculate_baccarat_odds(p_list, b_list, st.session_state.cards)
+        # Sử dụng 2 lá bài đầu tiên của mỗi bên để tính toán xác suất cho lá thứ 3 sắp ra
+        p_calc = p_list[:2]
+        b_calc = b_list[:2]
+        
+        res = calculate_baccarat_odds(p_calc, b_calc, st.session_state.cards)
         
         if isinstance(res, dict):
             st.markdown("### 📈 Xác suất chiến thắng:")
             
-            # Hiển thị thanh tiến trình trực quan
             st.write(f"🔵 **PLAYER WIN**: {res['Player']}%")
             st.progress(res['Player']/100)
             
@@ -128,8 +132,14 @@ if st.button("📊 TÍNH XÁC SUẤT", use_container_width=True):
             st.write(f"🟢 **TIE (HÒA)**: {res['Tie']}%")
             st.progress(res['Tie']/100)
             
-            # Tự động cộng dồn số bài lật trên bàn vào bộ đếm hệ thống
-            st.session_state.cards += (len(p_list) + len(b_list))
-            st.info(f"Hệ thống đã tự động cộng dồn bài. Ván sau sẽ tính từ lá thứ: **{st.session_state.cards}**")
+            # --- TỰ ĐỘNG ĐẾM CHÍNH XÁC SỐ LÁ ĐÃ NHẬP ---
+            # Đếm tổng số lượng phần tử thực tế bạn đã gõ vào (bao gồm cả lá thứ 3)
+            actual_cards_played = len(p_list) + len(b_list)
+            
+            # Cộng dồn số lá thực tế này vào bộ đếm của hệ thống
+            st.session_state.cards += actual_cards_played
+            
+            st.success(f" Ghi nhận ván này tiêu thụ: **{actual_cards_played} lá bài**.")
+            st.info(f"Hộp bài ván sau sẽ tự động tính từ lá thứ: **{st.session_state.cards}**")
         else:
             st.warning(res)
