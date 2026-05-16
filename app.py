@@ -3,49 +3,31 @@ import pandas as pd
 import numpy as np
 
 # =========================================================================
-# SYSTEM CORE: v12.5 - PRECISION COMBINATORICS WITH INITIAL DATA SYNC
+# SYSTEM CORE: v12.2 - COMBINATORICS WITH HIGH-PROBABILITY FOCUS
 # =========================================================================
 
-def calculate_ultra_precision_odds(p_cards, b_cards, shoe_history, total_decks, is_super6, burned_cards_estimate=0):
-    # Khởi tạo khay bài ban đầu
+def calculate_ultra_precision_odds(p_cards, b_cards, shoe_history, total_decks, is_super6):
     initial_cards = {i: total_decks * 4 for i in range(1, 14)}
-    
-    # Trừ các lá bài đã ghi nhận trong lịch sử cược của session
     for card in shoe_history:
         if card in initial_cards and initial_cards[card] > 0:
             initial_cards[card] -= 1
-
-    # Ước lượng và trừ bớt bài dựa trên số ván người dùng đã nhập ở cài đặt đầu trận
-    # Trung bình một ván Baccarat tiêu thụ khoảng 4.95 lá bài
-    cards_to_burn = int(burned_cards_estimate * 4.95)
-    
-    # Khấu trừ tỷ lệ đều các lá bài trong khay để mô phỏng khay bài thực tế đã qua x ván
-    base_cards_left = sum(initial_cards.values())
-    if cards_to_burn > 0 and base_cards_left > cards_to_burn + 10:
-        for card_val in initial_cards.keys():
-            fraction = initial_cards[card_val] / base_cards_left
-            deduction = round(cards_to_burn * fraction)
-            if initial_cards[card_val] >= deduction:
-                initial_cards[card_val] -= deduction
-            else:
-                initial_cards[card_val] = 0
 
     base_cards_left = sum(initial_cards.values())
     if base_cards_left <= 6:
         return "CRITICAL_LIMIT", {}, 0.0, 0.0, base_cards_left
 
-    # Tính xác suất Player Pair / Banker Pair
     p_pair_prob = 0.0
+    for card_val, count in initial_cards.items():
+        if count >= 2:
+            p_pair_prob += (count / base_cards_left) * ((count - 1) / (base_cards_left - 1))
+    p_pair_odds = round(p_pair_prob * 100, 2)
+
     b_pair_prob = 0.0
     for card_val, count in initial_cards.items():
         if count >= 2:
-            prob_step = (count / base_cards_left) * ((count - 1) / (base_cards_left - 1))
-            p_pair_prob += prob_step
-            b_pair_prob += prob_step
-    p_pair_odds = round(p_pair_prob * 100, 2)
+            b_pair_prob += (count / base_cards_left) * ((count - 1) / (base_cards_left - 1))
     b_pair_odds = round(b_pair_prob * 100, 2)
 
-    # Sao chép khay bài để tính toán riêng cho ván hiện tại
     active_deck = initial_cards.copy()
     for card in p_cards + b_cards:
         if card in active_deck and active_deck[card] > 0:
@@ -148,142 +130,62 @@ def parse_raw_cards(raw_string):
 # =========================================================================
 # GRAPHICAL INTERFACE
 # =========================================================================
-st.set_page_config(page_title="v12.5 Data Sync", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="v12.2 Probability Focus", page_icon="🎯", layout="centered")
 
 st.markdown(
     """
     <style>
     div[data-testid="stHorizontalBlock"] { display: flex !important; }
     div[data-testid="stColumn"] { width: 50% !important; flex: 1 1 50% !important; padding: 5px !important; }
-    .advice-box { background-color: #1e1e2f; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 16px; text-align: center;}
-    .normal-box { border: 2px solid #3498db; color: #3498db; }
-    .alert-box { border: 2px solid #e74c3c; color: #e74c3c; background-color: #3a1f1f; }
-    .invert-box { border: 2px solid #9b59b6; color: #9b59b6; background-color: #2e1f3a; }
-    .audit-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; text-align: center; }
-    .audit-table th, .audit-table td { border: 1px solid #444; padding: 8px; font-size: 14px; }
-    .audit-table th { background-color: #2c3e50; color: white; }
+    .focus-box { background-color: #262730; padding: 12px; border-radius: 8px; border-left: 6px solid #f39c12; margin-bottom: 15px; }
     </style>
     """, 
     unsafe_allow_html=True
 )
 
-# Khởi tạo các trạng thái lưu trữ dữ liệu
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'edge_history_df' not in st.session_state: st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Xác_Suất", "Thực_Tế_Ra"])
 if 'last_cards_count' not in st.session_state: st.session_state.last_cards_count = []
 if 'reverse_streak' not in st.session_state: st.session_state.reverse_streak = 0
-if 'last_winners' not in st.session_state: st.session_state.last_winners = []
 
-# Ghi nhận biến đếm session độc lập với biến nhập tay ban đầu
-if 'session_games' not in st.session_state: st.session_state.session_games = 0
-if 'session_cards' not in st.session_state: st.session_state.session_cards = 0
-if 'session_p_wins' not in st.session_state: st.session_state.session_p_wins = 0
-if 'session_b_wins' not in st.session_state: st.session_state.session_b_wins = 0
-if 'session_t_wins' not in st.session_state: st.session_state.session_t_wins = 0
-
-# --- SIDEBAR PANEL (NƠI NHẬP CÀI ĐẶT THÔNG SỐ ĐẦU TRẬN) ---
-st.sidebar.header("⚙️ THIẾT LẬP CƠ BẢN")
+# --- SIDEBAR PANEL ---
+st.sidebar.header("⚙️ THIẾT LẬP KHAY BÀI")
 decks = st.sidebar.selectbox("Số lượng bộ bài:", [8, 6, 4], index=0)
 is_super6_rule = st.sidebar.checkbox("Bàn chơi Super 6", value=False)
-edge_min = st.sidebar.slider("Ngưỡng biên độ an toàn (%)", 1, 15, 6)
 
 st.sidebar.markdown("---")
-st.sidebar.header("📊 ĐỒNG BỘ DỮ LIỆU ĐẦU TRẬN")
-st.sidebar.caption("Nhập thông số hiện tại trên bảng thống kê của nhà cái để hệ thống tính toán chính xác hơn:")
-
-# Các ô nhập liệu đồng bộ cài đặt đầu trận
-init_games = st.sidebar.number_input("Số ván đã chơi trước đó:", min_value=0, value=0, step=1)
-init_p_wins = st.sidebar.number_input("Số ván PLAYER đã thắng:", min_value=0, value=0, step=1)
-init_b_wins = st.sidebar.number_input("Số ván BANKER đã thắng:", min_value=0, value=0, step=1)
-init_t_wins = st.sidebar.number_input("Số ván TIE (Hòa) đã thắng:", min_value=0, value=0, step=1)
-
-st.sidebar.markdown("---")
-# Bộ nút chức năng điều khiển khay bài
 if st.sidebar.button("↩️ HOÀN TÁC VÁN TRƯỚC", use_container_width=True):
     if st.session_state.live_logs:
         st.session_state.live_logs.pop()
         if not st.session_state.edge_history_df.empty:
             st.session_state.edge_history_df = st.session_state.edge_history_df.iloc[:-1]
-        
         if st.session_state.last_cards_count:
             count_to_pop = st.session_state.last_cards_count.pop()
             if count_to_pop <= len(st.session_state.shoe_history):
                 st.session_state.shoe_history = st.session_state.shoe_history[:-count_to_pop]
-                st.session_state.session_cards -= count_to_pop
-        
-        if st.session_state.last_winners:
-            last_w = st.session_state.last_winners.pop()
-            if last_w == "PLAYER": st.session_state.session_p_wins -= 1
-            elif last_w == "BANKER": st.session_state.session_b_wins -= 1
-            elif last_w == "TIE": st.session_state.session_t_wins -= 1
-            
-        st.session_state.session_games = max(0, st.session_state.session_games - 1)
         st.session_state.reverse_streak = max(0, st.session_state.reverse_streak - 1)
         st.rerun()
 
-if st.sidebar.button("🔄 LÀM MỚI KHAY BÀI (RESET)", use_container_width=True):
+if st.sidebar.button("🔄 LÀM MỚI KHAY BÀI (XÓA HẾT)", use_container_width=True):
     st.session_state.shoe_history = []
     st.session_state.live_logs = []
     st.session_state.last_cards_count = []
     st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Xác_Suất", "Thực_Tế_Ra"])
     st.session_state.reverse_streak = 0
-    st.session_state.session_games = 0
-    st.session_state.session_cards = 0
-    st.session_state.session_p_wins = 0
-    st.session_state.session_b_wins = 0
-    st.session_state.session_t_wins = 0
-    st.session_state.last_winners = []
     st.rerun()
 
-# --- XỬ LÝ ĐỒNG BỘ DỮ LIỆU TÍNH TOÁN ---
-# Tổng số ván = Số ván nhập tay đầu trận + Số ván phát sinh trong quá trình bấm bot
-display_total_games = init_games + st.session_state.session_games
-display_p_wins = init_p_wins + st.session_state.session_p_wins
-display_b_wins = init_b_wins + st.session_state.session_b_wins
-display_t_wins = init_t_wins + st.session_state.session_t_wins
+# --- MAIN HUD ---
+st.title("🎯 v12.2 HIGH-PROBABILITY FOCUS")
+st.caption("Phiên bản tự động bôi đậm và làm nổi bật cửa có lợi thế toán học cao hơn")
 
-# Tính toán số lượng lá bài vật lý dựa trên ước lượng đồng bộ đầu trận + thực tế bài nhập vào
-estimated_burned_cards = int(init_games * 4.95)
-total_cards_used_calculated = estimated_burned_cards + st.session_state.session_cards
-total_deck_cards = decks * 52
-cards_remaining_display = max(0, total_deck_cards - total_cards_used_calculated)
-
-# --- HIỂN THỊ BẢNG KIỂM TOÁN TỔNG HỢP ---
-st.title("⚡ v12.5 DATA SYNCHRONIZATION")
-st.caption("Thuật toán tự động đồng bộ hóa thông số cấu trúc cài đặt ban đầu")
-
-st.markdown(
-    f"""
-    <table class="audit-table">
-        <tr>
-            <th>Tổng Số Ván (Đã Đồng Bộ)</th>
-            <th>Ước Tính Bài Đã Ra</th>
-            <th>Bài Còn Lại Trong Khay</th>
-            <th style="color:#3498db;">Player Thắng</th>
-            <th style="color:#e74c3c;">Banker Thắng</th>
-            <th style="color:#2ecc71;">Hòa (Tie)</th>
-        </tr>
-        <tr>
-            <td><b>{display_total_games}</b></td>
-            <td>{total_cards_used_calculated} / {total_deck_cards} lá</td>
-            <td><b>{cards_remaining_display} lá</b></td>
-            <td style="color:#3498db;"><b>{display_p_wins}</b></td>
-            <td style="color:#e74c3c;"><b>{display_b_wins}</b></td>
-            <td style="color:#2ecc71;"><b>{display_t_wins}</b></td>
-        </tr>
-    </table>
-    """,
-    unsafe_allow_html=True
-)
-
-# RADAR THỜI TIẾT KHAY BÀI
-is_inversion_active = False
-if st.session_state.reverse_streak >= 5:
-    is_inversion_active = True
-    st.error(f"🔮 **INVERSION MODE**: Phát hiện bão ngược {st.session_state.reverse_streak} ván. Đang đảo chiều ma trận lệnh.")
-elif st.session_state.reverse_streak >= 3:
-    st.warning(f"⚠️ **DIVERGENCE RISK**: Khay bài lệch pha nhẹ ({st.session_state.reverse_streak} ván ngược xu hướng).")
+# RADAR QUÉT SÓNG NGƯỢC GIỮ NGUYÊN TỪ v12.1
+if st.session_state.reverse_streak >= 3:
+    st.error(f"🚨 **DIVERGENCE ALERT: KHAY BÀI ĐANG LOẠN NHỊP ({st.session_state.reverse_streak} VÁN NGƯỢC LIÊN TIẾP)**\n\nToán học cảnh báo cửa có tỷ lệ cao đang bị bẻ liên tục. **HÃY DỪNG ĐẶT CƯỢC ngay lập tức**, chỉ nhập bài để qua đoạn nhiễu.")
+elif st.session_state.reverse_streak > 0:
+    st.warning(f"⚠️ **CẢNH BÁO SÓNG NGƯỢC:** Phát hiện xu hướng lệch nhẹ ({st.session_state.reverse_streak} ván). Hãy cẩn thận.")
+else:
+    st.success("⚖️ **STABLE MARKET:** Khay bài phân phối chuẩn, kết quả đi sát với ma trận xác suất.")
 
 st.markdown("### 🃏 Nhập Bài Ván Hiện Tại")
 col_p, col_b = st.columns(2)
@@ -294,43 +196,33 @@ p_list = parse_raw_cards(p_input)
 b_list = parse_raw_cards(b_input)
 
 if len(p_list) >= 2 or len(b_list) >= 2:
-    # Truyền thêm tham số `init_games` vào lõi xử lý để máy tự động trừ khấu hao bài một cách khoa học
-    calculation_output = calculate_ultra_precision_odds(p_list[:2], b_list[:2], st.session_state.shoe_history, decks, is_super6_rule, init_games)
+    calculation_output = calculate_ultra_precision_odds(p_list[:2], b_list[:2], st.session_state.shoe_history, decks, is_super6_rule)
     
     if calculation_output[0] == "CRITICAL_LIMIT":
-        st.error("🚨 HẾT BÀI: Khay bài đã chạm giới hạn vật lý an toàn.")
+        st.error("🚨 HẾT BÀI: Khay bài đã chạm giới hạn vật lý.")
     else:
         res, remaining_deck, p_pair, b_pair, cards_left = calculation_output
         
-        diff = abs(res['Player'] - res['Banker'])
+        # --- THUẬT TOÁN NHẤN MẠNH CỬA CÓ XÁC SUẤT CAO HƠN ---
         p_label, b_label = "🔵 PLAYER WIN", "🔴 BANKER WIN"
+        diff = abs(res['Player'] - res['Banker'])
         
         if res['Player'] > res['Banker']:
-            theoretical_winner = "PLAYER"
             p_label = "👑 🔵 PLAYER WIN [CỬA TRÊN]"
+            advice_html = f"<div class='focus-box'>🎯 <b>KHUYÊN CƯỢC:</b> Đặt vào <b>PLAYER</b> (Lợi thế cao hơn hẳn <b>+{diff}%</b> so với Banker)</div>"
         elif res['Banker'] > res['Player']:
-            theoretical_winner = "BANKER"
             b_label = "👑 🔴 BANKER WIN [CỬA TRÊN]"
+            advice_html = f"<div class='focus-box'>🎯 <b>KHUYÊN CƯỢC:</b> Đặt vào <b>BANKER</b> (Lợi thế cao hơn hẳn <b>+{diff}%</b> so với Player)</div>"
         else:
-            theoretical_winner = "EQUAL"
+            advice_html = "<div class='focus-box'>⚖️ <b>CÂN BẰNG TUYỆT ĐỐI:</b> Tỷ lệ 50-50, không nên vào lệnh ván này.</div>"
 
-        if theoretical_winner == "EQUAL":
-            advice_html = "<div class='advice-box normal-box'>⚖️ <b>CÂN BẰNG:</b> Tỷ lệ 50-50, KHÔNG đặt cược.</div>"
-        elif diff < edge_min:
-            advice_html = f"<div class='advice-box alert-box'>⚠️ <b>BỎ QUA VÁN NÀY:</b> Lợi thế +{diff}% chưa đạt ngưỡng an toàn đặt cược ({edge_min}%).</div>"
-        else:
-            if is_inversion_active:
-                target_bet = "BANKER" if theoretical_winner == "PLAYER" else "PLAYER"
-                advice_html = f"<div class='advice-box invert-box'>🔄 <b>INVERSION BET: ĐẶT VÀO {target_bet}</b><br>Đang chạy chế độ chống gãy bão ngược dòng!</div>"
-            else:
-                advice_html = f"<div class='advice-box normal-box'>🎯 <b>LỆNH CƯỢC: ĐẶT VÀO {theoretical_winner}</b><br>Đồng bộ dữ liệu chuẩn xác, lợi thế: <b>+{diff}%</b></div>"
-
+        # Hiển thị thanh tiêu điểm khuyên cược lớn
         st.markdown(advice_html, unsafe_allow_html=True)
 
         st.markdown("---")
         hud1, hud2 = st.columns(2)
         with hud1:
-            st.markdown("#### 📊 Ma Trận Xác Suất Thực Tế")
+            st.markdown("#### 📊 Xác Suất Thắng Dự Kiến")
             st.metric(p_label, f"{res['Player']}%")
             st.metric(b_label, f"{res['Banker']}%")
             st.metric("🟢 TIE WIN", f"{res['Tie']}%")
@@ -338,7 +230,7 @@ if len(p_list) >= 2 or len(b_list) >= 2:
             st.markdown("#### 💎 Tỷ Lệ Cửa Đôi (Pair)")
             st.metric("🔵 PLAYER PAIR", f"{p_pair}%")
             st.metric("🔴 BANKER PAIR", f"{b_pair}%")
-            st.caption(f"Lá bài tự do trong thuật toán toán học: {int(cards_left)} lá")
+            st.caption(f"Bài còn trong khay: {int(cards_left)} lá")
 
         st.markdown("---")
         if st.button("💾 CHỐT KẾT QUẢ VÀO KHAY BÀI", use_container_width=True):
@@ -346,24 +238,9 @@ if len(p_list) >= 2 or len(b_list) >= 2:
             st.session_state.shoe_history.extend(all_current_cards)
             st.session_state.last_cards_count.append(len(all_current_cards))
             
-            # Lưu trữ dữ liệu phát sinh trong session
-            st.session_state.session_games += 1
-            st.session_state.session_cards += len(all_current_cards)
-            
             p_score_final = sum([0 if c >= 10 else c for c in p_list]) % 10
             b_score_final = sum([0 if c >= 10 else c for c in b_list]) % 10
-            
-            if p_score_final > b_score_final:
-                winner = "PLAYER"
-                st.session_state.session_p_wins += 1
-            elif b_score_final > p_score_final:
-                winner = "BANKER"
-                st.session_state.session_b_wins += 1
-            else:
-                winner = "TIE"
-                st.session_state.session_t_wins += 1
-                
-            st.session_state.last_winners.append(winner)
+            winner = "PLAYER" if p_score_final > b_score_final else ("BANKER" if b_score_final > p_score_final else "TIE")
             
             is_reversed = False
             if res['Player'] > res['Banker'] and winner == "BANKER": is_reversed = True
@@ -374,27 +251,28 @@ if len(p_list) >= 2 or len(b_list) >= 2:
             else:
                 if winner != "TIE": st.session_state.reverse_streak = 0
             
-            status_tag = "❌ NGƯỢC" if is_reversed else "✅ CHUẨN"
+            game_idx = len(st.session_state.live_logs) + 1
+            status_tag = "❌ NGƯỢC XU HƯỚNG" if is_reversed else "✅ CHUẨN XÁC"
             if winner == "TIE": status_tag = "⚖️ HÒA"
                 
             st.session_state.live_logs.append(
-                f"Ván {display_total_games}: P({p_input}) [{p_score_final}đ] vs B({b_input}) [{b_score_final}đ] ➔ {winner} | {status_tag} (Dự kiến: P {res['Player']}% - B {res['Banker']}%)"
+                f"Ván {game_idx}: P({p_input}) [{p_score_final}đ] vs B({b_input}) [{b_score_final}đ] ➔ {winner} | {status_tag} (Dự kiến: P {res['Player']}% - B {res['Banker']}%)"
             )
             
             actual_numeric = 100 if winner == "PLAYER" else (0 if winner == "BANKER" else 50)
-            new_trend = pd.DataFrame([{"Ván": f"V{display_total_games}", "Player_Xác_Suất": res['Player'], "Thực_Tế_Ra": actual_numeric}])
+            new_trend = pd.DataFrame([{"Ván": f"V{game_idx}", "Player_Xác_Suất": res['Player'], "Thực_Tế_Ra": actual_numeric}])
             st.session_state.edge_history_df = pd.concat([st.session_state.edge_history_df, new_trend], ignore_index=True)
             st.rerun()
 else:
-    st.info("💡 Điền ít nhất 2 lá bài của mỗi bên để cập nhật kết quả ma trận phân tích.")
+    st.info("💡 Điền ít nhất 2 lá bài của mỗi bên để bộ phân tích xuất kết quả.")
 
 # --- ĐỒ THỊ VÀ LOGS ---
 if not st.session_state.edge_history_df.empty:
     st.markdown("---")
-    st.markdown("### 📈 Đồ Thị Đối Chiếu Xu Hướng")
+    st.markdown("### 📈 Đồ Thị Đối Chiếu Biên Độ Lệch Xác Suất")
     st.line_chart(st.session_state.edge_history_df.set_index("Ván"))
 
 if st.session_state.live_logs:
-    with st.expander("📝 Nhật Ký Kiểm Toán Khay Bài Đồng Bộ", expanded=True):
+    with st.expander("📝 Nhật Ký Khay Bài Chi Tiết", expanded=True):
         for log in reversed(st.session_state.live_logs):
             st.text(log)
