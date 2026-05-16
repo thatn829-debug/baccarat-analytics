@@ -30,7 +30,7 @@ except ImportError:
     SELENIUM_AVAILABLE = False
 
 # =========================================================================
-# LÕI TOÁN HỌC TỐI THƯỢNG v24.0: HYPERGEOMETRIC & SECOND-ORDER MARKOV ENGINE
+# LÕI TOÁN HỌC TỐI THƯỢNG: HYPERGEOMETRIC & SECOND-ORDER MARKOV ENGINE
 # =========================================================================
 def calculate_oracle_absolute_matrix_v23(outcome_history, shoe_decks=8):
     total_initial_cards = shoe_decks * 52
@@ -173,9 +173,9 @@ def fetch_live_web_data_ultimate(url, target_xpath):
         return "ERROR_CONN", str(e)
 
 # =========================================================================
-# GIAO DIỆN HIỂN THỊ DUAL-MODE CYBERPUNK HUD
+# GIAO DIỆN HIỂN THỊ CYBERPUNK HUD
 # =========================================================================
-st.set_page_config(page_title="Oracle Absolute v24.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Absolute v25.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -196,105 +196,110 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Khởi tạo bộ nhớ tạm lưu chuỗi ván bài nếu chưa có
+# Khởi tạo trạng thái bộ nhớ
 if 'global_road_history' not in st.session_state: st.session_state.global_road_history = []
+if 'last_calculated_matrix' not in st.session_state: st.session_state.last_calculated_matrix = None
 
 # --- SIDEBAR CONTROL PANEL ---
-st.sidebar.header("🔮 ABX-ORACLE v24.0")
+st.sidebar.header("🔮 ABX-ORACLE v25.0")
 shoe_decks_input = st.sidebar.selectbox("Cấu hình Bộ Bài Khay:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📡 CẤU HÌNH AUTO-BOT LINK")
-target_url = st.sidebar.text_input("Nhập Link bàn chơi chính thức:", value="", placeholder="Dán link sòng bài vào đây để chạy tự động...")
+st.sidebar.markdown("### 📡 CẤU HÌNH ĐƯỜNG LINK CÀO BOT")
+target_url = st.sidebar.text_input("Nhập Link bàn chơi chính thức:", value="", placeholder="Dán link sòng bài vào đây...")
 xpath_selector = st.sidebar.text_input("Mã định vị XPath (Road):", value="//div[contains(@class, 'road-item') or contains(@class, 'bead-cell')]")
-refresh_frequency = st.sidebar.slider("Tần suất quét làm mới (Giây):", min_value=10, max_value=45, value=15)
+refresh_frequency = st.sidebar.slider("Tần suất làm mới (Giây):", min_value=10, max_value=45, value=15)
 
-# Kiểm tra trạng thái Link nhập vào
+# Đánh giá xem link nhập vào có hợp lệ để kích hoạt chạy tự động hay không
 is_link_valid = target_url.strip() != "" and target_url.startswith(("http://", "https://"))
 
-# Kích hoạt vòng lặp làm mới ngầm nếu dùng link hợp lệ
-if is_link_valid and AUTOREFRESH_AVAILABLE and SELENIUM_AVAILABLE:
-    st_autorefresh(interval=refresh_frequency * 1000, key="oracle_absolute_v24_0")
-
-# --- LUỒNG XỬ LÝ 1: CHẠY LINK TỰ ĐỘNG ---
+# --- KÍCH HOẠT CHẠY TỰ ĐỘNG CHỈ KHI CÓ LINK ---
 if is_link_valid:
-    st.sidebar.success("🟢 CHẾ ĐỘ: AUTO-PILOT (TỰ ĐỘNG CÀO)")
+    st.sidebar.success("🟢 CHẾ ĐỘ: TỰ ĐỘNG (AUTO-PILOT)")
+    if AUTOREFRESH_AVAILABLE and SELENIUM_AVAILABLE:
+        st_autorefresh(interval=refresh_frequency * 1000, key="oracle_absolute_v25_0")
+        
     if SELENIUM_AVAILABLE:
         status_code, web_road_data = fetch_live_web_data_ultimate(target_url, xpath_selector)
         if status_code == "SUCCESS" and len(web_road_data) > 0:
-            if web_road_data != st.session_state.global_road_history:
-                st.session_state.global_road_history = web_road_data
-            st.sidebar.success(f"🚀 Bot cập nhật: {len(st.session_state.global_road_history)} ván!")
+            st.session_state.global_road_history = web_road_data
+            st.session_state.last_calculated_matrix = calculate_oracle_absolute_matrix_v23(
+                st.session_state.global_road_history, shoe_decks=shoe_decks_input
+            )
+            st.sidebar.success(f"🚀 Bot tự động cập nhật: {len(st.session_state.global_road_history)} ván!")
         else:
-            st.sidebar.warning("📡 Đang kết nối hoặc chờ ván đấu mới...")
+            st.sidebar.warning("📡 Hệ thống đang kết nối hoặc đợi ván mới công bố...")
 
-# --- LUỒNG XỬ LÝ 2: KHÔI PHỤC HOÀN TOÀN KHỐI NÚT BẤM NHẬP TAY CỦA V18 ---
+# --- KHÔNG CÓ LINK: HIỂN THỊ GIAO DIỆN NHẬP TAY CHUẨN V16 CHÍNH THỨC ---
 else:
-    st.sidebar.info("🔵 CHẾ ĐỘ: MANUAL INPUT v18")
-    st.markdown("### 🎛️ KHỐI ĐIỀU KHIỂN NHẬP TAY (INTERFACE v18)")
+    st.sidebar.info("🔵 CHẾ ĐỘ: NHẬP TAY CHUẨN v16")
+    st.markdown("### 📝 BẢNG DỮ LIỆU NHẬP TAY (INTERFACE v16)")
     
-    # Tạo hàng chứa 3 nút bấm chính
-    col_p, col_b, col_t = st.columns(3)
-    with col_p:
-        if st.button("🔵 PLAYER", use_container_width=True):
-            st.session_state.global_road_history.append("Player")
-    with col_b:
-        if st.button("🔴 BANKER", use_container_width=True):
-            st.session_state.global_road_history.append("Banker")
-    with col_t:
-        if st.button("🟢 TIE (HÒA)", use_container_width=True):
-            st.session_state.global_road_history.append("Tie")
+    col_input1, col_input2 = st.columns(2)
+    with col_input1:
+        manual_p_score = st.number_input("Tổng số ván Player đã thắng:", min_value=0, value=0, step=1)
+        manual_b_score = st.number_input("Tổng số ván Banker đã thắng:", min_value=0, value=0, step=1)
+    with col_input2:
+        manual_t_score = st.number_input("Tổng số ván Hòa (Tie) đã thắng:", min_value=0, value=0, step=1)
+        manual_total_games = st.number_input("Tổng số ván đấu đã chạy của khay:", min_value=0, value=0, step=1)
+
+    manual_road_string = st.text_input(
+        "Nhập chuỗi ký tự viết tắt Road (ví dụ: P P B T B P B B):", 
+        value="", 
+        placeholder="P = Player, B = Banker, T = Tie (Phân tách bằng khoảng trắng)"
+    ).strip()
+
+    # Nút bấm Kích hoạt độc lập tính toán từ cấu trúc v16
+    if st.button("🔮 KÍCH HOẠT TÍNH TOÁN BẰNG TAY", use_container_width=True):
+        reconstructed_history = []
+        if manual_road_string:
+            tokens = manual_road_string.split()
+            for t in tokens:
+                if t.upper() == 'P': reconstructed_history.append('Player')
+                elif t.upper() == 'B': reconstructed_history.append('Banker')
+                elif t.upper() == 'T': reconstructed_history.append('Tie')
+        else:
+            # Nếu chuỗi road trống, tự động dựng cấu trúc nền ngẫu nhiên từ điểm số nhập bên trên
+            reconstructed_history = (['Player'] * manual_p_score) + (['Banker'] * manual_b_score) + (['Tie'] * manual_t_score)
+            random.shuffle(reconstructed_history)
             
-    # Hàng chức năng chỉnh sửa chuỗi dữ liệu nền
-    col_del, col_clear = st.columns(2)
-    with col_del:
-        if st.button("↩️ XOÁ VÁN TRƯỚC", use_container_width=True):
-            if len(st.session_state.global_road_history) > 0:
-                st.session_state.global_road_history.pop()
-    with col_clear:
-        if st.button("🗑️ RESET KHAY BÀI", use_container_width=True):
-            st.session_state.global_road_history = []
+        st.session_state.global_road_history = reconstructed_history
+        st.session_state.last_calculated_matrix = calculate_oracle_absolute_matrix_v23(
+            st.session_state.global_road_history, shoe_decks=shoe_decks_input
+        )
+        st.success("🎯 Đã đồng bộ dữ liệu nhập tay v16 và xử lý lõi toán học!")
 
-# --- TÍNH TOÁN MA TRẬN DỰA TRÊN LỊCH SỬ HIỆN TẠI (DÙNG CHUNG) ---
-odds, p_pair, b_pair, cards_left = calculate_oracle_absolute_matrix_v23(
-    st.session_state.global_road_history, shoe_decks=shoe_decks_input
-)
-
-# --- MÀN HÌNH THEO DÕI REAL-TIME HUD CHUNG ---
+# --- MÀN HÌNH HIỂN THỊ REAL-TIME HUD (CHUNG CHO CẢ 2 PHƯƠNG THỨC) ---
 st.markdown("---")
-st.markdown("### 📊 HỆ THỐNG PHÂN TÍCH TOÁN HỌC CỰC HẠN (ABSOLUTE HUD)")
-
-# Thống kê nhanh số ván hiện tại trên giao diện
-p_count = st.session_state.global_road_history.count("Player")
-b_count = st.session_state.global_road_history.count("Banker")
-t_count = st.session_state.global_road_history.count("Tie")
-total_cnt = len(st.session_state.global_road_history)
-
-st.write(f"**Lịch sử nạp khay:** Tổng số ván: `{total_cnt}` | 🔵 P: `{p_count}` | 🔴 B: `{b_count}` | 🟢 T: `{t_count}`")
-
-p_style = "hud-box neon-p" if odds['Player'] > odds['Banker'] else "hud-box"
-b_style = "hud-box neon-b" if odds['Banker'] > odds['Player'] else "hud-box"
-t_style = "hud-box neon-t" if odds['Tie'] > 12.0 else "hud-box"
-
-left_panel, right_panel = st.columns(2)
-with left_panel:
-    st.markdown("#### 🎯 Xác Suất Cửa Chính (Hypergeometric & Markov 2nd)")
-    st.markdown(f'<div class="{p_style}"><div class="hud-title">🔵 PLAYER ADVANTAGE</div><div class="hud-value">{odds["Player"]}%</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="{b_style}"><div class="hud-title">🔴 BANKER ADVANTAGE</div><div class="hud-value">{odds["Banker"]}%</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="{t_style}"><div class="hud-title">🟢 TIE OPPORTUNITY</div><div class="hud-value">{odds["Tie"]}%</div></div>', unsafe_allow_html=True)
+if st.session_state.last_calculated_matrix:
+    st.markdown("### 📊 HỆ THỐNG PHÂN TÍCH TOÁN HỌC CỰC HẠN (ABSOLUTE HUD)")
+    odds, p_pair, b_pair, cards_left = st.session_state.last_calculated_matrix
     
-with right_panel:
-    st.markdown("#### 💎 Xác Suất Cược Phụ (Định lý Tổ hợp)")
-    st.metric("🔵 PLAYER PAIR REAL-TIME", f"{p_pair}%")
-    st.metric("🔴 BANKER PAIR REAL-TIME", f"{b_pair}%")
-    
+    p_style = "hud-box neon-p" if odds['Player'] > odds['Banker'] else "hud-box"
+    b_style = "hud-box neon-b" if odds['Banker'] > odds['Player'] else "hud-box"
+    t_style = "hud-box neon-t" if odds['Tie'] > 12.0 else "hud-box"
+
+    left_panel, right_panel = st.columns(2)
+    with left_panel:
+        st.markdown("#### 🎯 Xác Suất Cửa Chính (Hypergeometric & Markov 2nd)")
+        st.markdown(f'<div class="{p_style}"><div class="hud-title">🔵 PLAYER ADVANTAGE</div><div class="hud-value">{odds["Player"]}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="{b_style}"><div class="hud-title">🔴 BANKER ADVANTAGE</div><div class="hud-value">{odds["Banker"]}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="{t_style}"><div class="hud-title">🟢 TIE OPPORTUNITY</div><div class="hud-value">{odds["Tie"]}%</div></div>', unsafe_allow_html=True)
+        
+    with right_panel:
+        st.markdown("#### 💎 Xác Suất Cược Phụ (Định lý Tổ hợp)")
+        st.metric("🔵 PLAYER PAIR REAL-TIME", f"{p_pair}%")
+        st.metric("🔴 BANKER PAIR REAL-TIME", f"{b_pair}%")
+        
+        st.markdown("---")
+        if st.session_state.global_road_history:
+            visual_road = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.global_road_history[-18:]]
+            st.markdown(f'<div class="trend-hud"><div class="trend-string">{" ".join(visual_road)}</div></div>', unsafe_allow_html=True)
+
     st.markdown("---")
-    if st.session_state.global_road_history:
-        visual_road = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.global_road_history[-18:]]
-        st.markdown(f'<div class="trend-hud"><div class="trend-string">{" ".join(visual_road)}</div></div>', unsafe_allow_html=True)
-
-st.markdown("---")
-max_cards = shoe_decks_input * 52
-deck_penetration = ((max_cards - cards_left) / max_cards) * 100
-st.markdown(f"**Lõi Thuật Toán:** `HYPERGEOMETRIC + MARKOV 2ND (v24.0)` | **Quân bài đã dùng ước tính:** {max_cards - int(cards_left)}/{max_cards}")
-st.progress(min(1.0, deck_penetration / 100.0))
+    max_cards = shoe_decks_input * 52
+    deck_penetration = ((max_cards - cards_left) / max_cards) * 100
+    st.markdown(f"**Lõi Thuật Toán:** `HYPERGEOMETRIC + MARKOV 2ND (v25.0)` | **Quân bài đã dùng ước tính:** {max_cards - int(cards_left)}/{max_cards}")
+    st.progress(min(1.0, deck_penetration / 100.0))
+else:
+    st.warning("🔮 HỆ THỐNG ĐANG ĐỢI DỮ LIỆU: Điền thông tin vào Bảng nhập tay v16 ở trên rồi nhấn nút 'KÍCH HOẠT TÍNH TOÁN BẰNG TAY' hoặc dán Link vào thanh công cụ bên trái.")
