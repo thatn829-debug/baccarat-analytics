@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v15.0: MAXIMUM COMBINATORIAL & SHOE INTEGRITY ENGINE
+# SYSTEM CORE v15.2: MAXIMUM COMBINATORIAL & SHOE INTEGRITY ENGINE
 # =========================================================================
 def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -25,7 +25,7 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] -= 1
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "TỔ HỢP CHUỖI PHI LẶP BIẾN THIÊN (CORE v15.0)"
+        mode = "TỔ HỢP CHUỖI PHI LẶP BIẾN THIÊN (CORE v15.2)"
     else:
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23)))
         cards_left = max(0, total_initial_cards - cards_removed)
@@ -157,7 +157,7 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate v15.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate v15.2", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -176,6 +176,12 @@ st.markdown(
     .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 12px; font-family: monospace; }
     .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); animation: blinker 1.5s linear infinite; }
+    
+    /* Style mới cho hộp xu hướng đi bài */
+    .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
+    .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;}
+    .trend-string { font-size: 16px; font-family: monospace; letter-spacing: 4px; word-break: break-all; color: #fff; }
+    
     @keyframes blinker { 50% { opacity: 0.6; } }
     </style>
     """, 
@@ -272,11 +278,50 @@ else:
                 st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%", delta="🔥 CAO" if p_pair > 11.0 else None)
                 st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%", delta="🔥 CAO" if b_pair > 11.0 else None)
                 
-                # Khối thẩm định hiển thị trực quan trạng thái bộ bài
+                # [1] KHỐI THẨM ĐỊNH LOGIC KHAY BÀI
                 if is_shoe_logical:
                     st.markdown('<div class="validation-hud logic-pass">✔ KIỂM TRA BỘ BÀI: LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: KHAY BỊ ÂM LÁ QUÁ GIỚI HẠN<br><span style="font-size:11px;">Thiếu lá: {", ".join(invalid_cards)}</span></div>', unsafe_allow_html=True)
+
+                # [2] THÊM MỚI: Ô XU HƯỚNG ĐI BÀI (TREND ANALYSIS HUD) NGAY PHÍA DƯỚI Ô KIỂM LOGIC
+                if st.session_state.outcome_history:
+                    # Chuẩn bị chuỗi icon đại diện cho xu hướng đi bài gần nhất
+                    trend_symbols = []
+                    for outcome in st.session_state.outcome_history:
+                        if outcome == "Player": trend_symbols.append("🔵")
+                        elif outcome == "Banker": trend_symbols.append("🔴")
+                        else: trend_symbols.append("🟢")
+                    
+                    trend_str = " ".join(trend_symbols)
+                    
+                    # Tính toán nhanh tỷ lệ thực tế đã diễn ra từ lúc quét khay live
+                    total_live_games = len(st.session_state.outcome_history)
+                    p_live_pct = round((st.session_state.outcome_history.count("Player") / total_live_games) * 100, 1)
+                    b_live_pct = round((st.session_state.outcome_history.count("Banker") / total_live_games) * 100, 1)
+                    
+                    st.markdown(
+                        f"""
+                        <div class="trend-hud">
+                            <div class="trend-title">📈 XU HƯỚNG ĐƯỜNG ĐI BÀI THỰC TẾ ({total_live_games} ván)</div>
+                            <div class="trend-string">{trend_str}</div>
+                            <div style="font-size: 11px; color: #aaa; margin-top: 6px; font-family: monospace;">
+                                Thực tế xuất hiện: Player {p_live_pct}% | Banker {b_live_pct}%
+                            </div>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        """
+                        <div class="trend-hud">
+                            <div class="trend-title">📈 XU HƯỚNG ĐƯỜNG ĐI BÀI THỰC TẾ</div>
+                            <div style="font-size: 12px; color: #666; font-style: italic;">Chưa có dữ liệu ván. Hãy nhập kết quả ván mới để vẽ đường xu hướng.</div>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
 
             st.markdown("---")
             total_shoe_cards = decks * 52
@@ -353,7 +398,7 @@ if btn_trigger and not is_data_discrepancy:
             p_calc = p_list[:2]
             b_calc = b_list[:2]
             
-            # Kích hoạt Core v15.0 kiểm soát luồng động và quét tính toàn vẹn
+            # Kích hoạt Core v15.2 kiểm soát luồng động và quét tính toàn vẹn
             core_output = calculate_baccarat_v15_ultimate(
                 p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
                 manual_cards_used=manual_cards, manual_games_played=manual_games,
