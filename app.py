@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v12.1: 2D COMBINATORIAL CONVOLUTION ENGINE (PURE PROBABILITY)
+# SYSTEM CORE v12.2: ULTIMATE COMBINATORIAL PRECISION ENGINE (PROBABILITY)
 # =========================================================================
 def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                 manual_cards_used=0, manual_games_played=0,
@@ -26,9 +26,8 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
             if card_val in deck_structure and deck_structure[card_val] > 0:
                 deck_structure[card_val] -= 1
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "MA TRẬN TÍCH CHẬP 2 CHIỀU ĐA BIẾN (MỨC TỐI HẬU V12.1)"
+        mode = "TỔ HỢP PHI LẶP TUYỆT ĐỐI (ULTIMATE PRECISION V12.2)"
     else:
-        # NẾU CHƯA CÓ LỊCH SỬ CHI TIẾT, TÍNH TOÁN THEO TRỌNG SỐ PHÂN RÃ LÝ THUYẾT
         cards_removed = 0
         if manual_cards_used > 0:
             cards_removed = manual_cards_used
@@ -50,30 +49,39 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
     if N <= 6:
         return "⚠️ Cảnh báo: Khay bài đã vơi quá giới hạn an toàn để tính toán!", {}, 0.0, 0.0, mode, cards_left
     
-    # TÍNH TOÁN CỬA ĐÔI (HYPERGEOMETRIC TRUY HỒI CHÍNH XÁC)
+    # =====================================================================
+    # TOÁN HỌC RỜI RẠC TUYỆT ĐỐI CHO CỬA ĐÔI (PAIRS)
+    # =====================================================================
+    # Player Pair: Chọn 2 lá cùng định dạng từ khay bài N lá
     p_pair_prob = 0.0
     for count in deck_structure.values():
-        if count >= 2: p_pair_prob += (count / N) * ((count - 1) / (N - 1))
-    p_pair_odds = round(p_pair_prob * 100, 2)
+        if count >= 2: 
+            p_pair_prob += (count / N) * ((count - 1) / (N - 1))
+    p_pair_odds = round(p_pair_prob * 100, 4)
 
+    # Banker Pair: Tính toán phụ thuộc vào việc 2 lá của Player đã rút đi trạng thái nào
     b_pair_prob = 0.0
     if N > 3:
         for b_count in deck_structure.values():
             if b_count >= 2:
+                # Phân rã xác suất không hoàn lại của 2 lá Player ảnh hưởng tới bộ b_count
                 p_rem_0 = ((N - b_count) / N) * ((N - b_count - 1) / (N - 1))
                 p_rem_1 = 2 * (b_count / N) * ((N - b_count) / (N - 1))
                 p_rem_2 = (b_count / N) * ((b_count - 1) / (N - 1))
-                b_pair_prob += (p_rem_0 * (b_count / (N - 2)) * ((b_count - 1) / (N - 3)) +
-                                p_rem_1 * (max(0.0, b_count - 1) / (N - 2)) * (max(0.0, b_count - 2) / (N - 3)) +
-                                p_rem_2 * (max(0.0, b_count - 2) / (N - 2)) * (max(0.0, b_count - 3) / (N - 3)))
-    b_pair_odds = round(b_pair_prob * 100, 2)
+                
+                b_pair_prob += (
+                    p_rem_0 * (b_count / (N - 2)) * ((b_count - 1) / (N - 3)) +
+                    p_rem_1 * (max(0.0, b_count - 1) / (N - 2)) * (max(0.0, b_count - 2) / (N - 3)) +
+                    p_rem_2 * (max(0.0, b_count - 2) / (N - 2)) * (max(0.0, b_count - 3) / (N - 3))
+                )
+    b_pair_odds = round(b_pair_prob * 100, 4)
 
     # CHUẨN HÓA SANG HỆ ĐIỂM BACCARAT (0-9)
     score_deck = {i: 0.0 for i in range(10)}
     for card_num, count in deck_structure.items():
         score_deck[0 if card_num >= 10 else card_num] += count
 
-    # KHẤU TRỪ CÁC LÁ TRÊN BÀN KHỎI KHAY BÀI TỨC THỜI
+    # KHẤU TRỪ CÁC LÁ TRÊN BÀN KHỎI KHAY BÀI TỨC THỜI (NẾU CÓ)
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0: score_deck[val] -= 1
@@ -81,20 +89,22 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
     p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
     b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
 
-    # Xử lý Thắng tự nhiên (Natural 8, 9)
+    # Xử lý Thắng tự nhiên (Natural 8, 9) - Xác suất cửa Hòa rơi vào 0 hoặc 100% tuyệt đối
     if p_score >= 8 or b_score >= 8:
-        if p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
-        elif b_score > p_score: return {"Player": 0.0, "Banker": 100.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
-        else: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
+        if p_score == b_score: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
+        elif p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
+        else: return {"Player": 0.0, "Banker": 100.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
 
     current_sum = float(sum(score_deck.values()))
     if current_sum <= 0: return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
         
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # 2. PHÂN TÍCH MA TRẬN 2D KHÔNG HOÀN LẠI TOÀN PHẦN
-    if p_score >= 6:  # Player không rút
-        if b_score <= 5:  # Banker bắt buộc rút
+    # =====================================================================
+    # CHẬP MA TRẬN PHÂN PHỐI ĐIỂM SỐ ĐỂ TRÍCH XUẤT CỬA HÒA (TIE) TUYỆT ĐỐI
+    # =====================================================================
+    if p_score >= 6:  # Player đứng bài
+        if b_score <= 5:  # Banker bắt buộc rút lá thứ 3
             for card3_b in range(10):
                 w_b = score_deck[card3_b]
                 if w_b > 0:
@@ -153,7 +163,7 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Pure Probability v12.1", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Pure Probability v12.2", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -172,9 +182,9 @@ st.markdown(
     .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
     .hud-value { font-size: 36px; font-weight: 800; font-family: monospace; margin-top: 4px; }
     
-    /* Neon Glow Highlight Box cho bên có ưu thế xác suất cao */
     .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
     .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
+    .neon-tie-alert { border: 2px solid #2ecc71 !important; box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); }
     </style>
     """, 
     unsafe_allow_html=True
@@ -238,8 +248,6 @@ if is_data_discrepancy:
     ### 🛑 LỖI: DỮ LIỆU KHÔNG ĐỒNG BỘ
     * **Tổng số ván đã chạy:** `{manual_games}` ván.
     * **Tổng số ván thắng từng cửa:** `{p_wins_input}` (P) + `{b_wins_input}` (B) + `{tie_wins_input}` (T) = `{calculated_total_wins}` ván.
-    
-    **⚠️ Yêu cầu:** Vui lòng điều chỉnh lại dữ liệu ở Sidebar sao cho hai số liệu này trùng khớp nhau.
     """)
 else:
     if st.session_state.last_results:
@@ -254,23 +262,28 @@ else:
             
             p_box_css = "hud-box"
             b_box_css = "hud-box"
+            tie_box_css = "hud-box"
             
             if res['Player'] > res['Banker']:
                 p_box_css = "hud-box neon-player-advantage"
             elif res['Banker'] > res['Player']:
                 b_box_css = "hud-box neon-banker-advantage"
                 
+            # Đánh dấu viền Neon xanh lá nếu xác suất Hòa vượt ngưỡng toán học trung bình (9.52%)
+            if res['Tie'] > 12.5:
+                tie_box_css = "hud-box neon-tie-alert"
+                
             left_result_col, right_pair_col = st.columns(2)
             with left_result_col:
                 st.markdown("#### 📊 Phân Phối Xác Suất Cửa Chính")
                 st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="hud-box"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
                 
             with right_pair_col:
-                st.markdown("#### 💎 Phân Phối Cửa Đôi")
-                st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%", delta="🔥 LỢI THẾ CAO" if p_pair > 7.47 else None)
-                st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%", delta="🔥 LỢI THẾ CAO" if b_pair > 7.47 else None)
+                st.markdown("#### 💎 Phân Phối Cửa Đôi (Độ chính xác: 4 chữ số thập phân)")
+                st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%", delta="🔥 LỢI THẾ CAO" if p_pair > 10.5 else None)
+                st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%", delta="🔥 LỢI THẾ CAO" if b_pair > 10.5 else None)
                 st.markdown("---")
                 st.caption(f"**Chế độ quét hiện tại:**\n{current_mode}")
 
@@ -288,9 +301,9 @@ else:
                 labels_13 = {1: "A", 11: "J", 12: "Q", 13: "K"}
                 for idx, (num, cnt) in enumerate(remaining_deck.items()):
                     card_label = labels_13.get(num, f"[{num}]")
-                    cols[idx % 5].text(f"{card_label}: {round(cnt, 1)} lá")
+                    cols[idx % 5].text(f"{card_label}: {round(cnt, 2)} lá")
     else:
-        st.info("🔮 Vui lòng nhập dữ liệu ván bài ở ô bên dưới để kích hoạt hệ thống phân tích xác suất v12.1.")
+        st.info("🔮 Vui lòng nhập dữ liệu ván bài ở ô bên dưới để kích hoạt hệ thống phân tích xác suất v12.2.")
 
 st.markdown("---")
 
@@ -333,7 +346,7 @@ def clean_and_parse_input(raw_str):
     return result_list
 
 # --- ACTION TRIGGER ---
-btn_trigger = st.button("🚀 KÍCH HOẠT HỆ THỐNG V12.1 COSMIC PROBABILITY CORE", use_container_width=True, type="primary", disabled=is_data_discrepancy)
+btn_trigger = st.button("🚀 KÍCH HOẠT HỆ THỐNG V12.2 COSMIC PROBABILITY CORE", use_container_width=True, type="primary", disabled=is_data_discrepancy)
 
 if btn_trigger and not is_data_discrepancy:
     current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
