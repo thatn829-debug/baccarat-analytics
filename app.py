@@ -2,22 +2,18 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v12.6: PAIRS & DRAGON BONUS MATRIX SENSOR
+# SYSTEM CORE v12.6: FIXED PAIRS & DRAGON BONUS MATRIX SENSOR
 # =========================================================================
-def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8, 
-                                manual_cards_used=0, manual_games_played=0,
-                                p_wins=0, b_wins=0, tie_wins=0):
+def calculate_baccarat_v12_6(shoe_history, shoe_decks=8, manual_cards_used=0):
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
     
-    sum_wins_games = p_wins + b_wins + tie_wins
-
-    if manual_cards_used > total_initial_cards or manual_games_played > int(total_initial_cards / 4):
-        return f"❌ Bất hợp lý: Dữ liệu nạp thủ công vượt quá giới hạn vật lý khay bài!", {}, 0.0, 0.0, 0.0, 0.0, "LỖI", total_initial_cards, False
+    if manual_cards_used > total_initial_cards:
+        return "❌ Dữ liệu nạp thủ công vượt quá giới hạn vật lý khay bài!", {}, 0.0, 0.0, 0.0, 0.0, "LỖI", total_initial_cards, False
 
     detailed_cards_count = len(shoe_history)
     
-    # 1. KHẤU TRỪ BÀI THEO LỊCH SỬ THỰC TẾ
+    # 1. KHẤU TRỪ BÀI THEO LỊCH SỬ THỰC TẾ VÀ ƯỚC LƯỢNG
     if detailed_cards_count > 0:
         for card_val in shoe_history:
             if card_val in deck_structure:
@@ -25,9 +21,10 @@ def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8,
         cards_left = total_initial_cards - detailed_cards_count
         mode = "TỔ HỢP PHI LẶP CHUỖI (CORE V12.6)"
     else:
-        cards_removed = manual_cards if manual_cards > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23))
+        # Sửa lỗi: Đồng bộ hóa biến manual_cards_used tránh lỗi NameError
+        cards_removed = manual_cards_used
         cards_left = max(0, total_initial_cards - cards_removed)
-        ratio = cards_left / total_initial_cards
+        ratio = cards_left / total_initial_cards if total_initial_cards > 0 else 0
         for card_num in deck_structure:
             deck_structure[card_num] = (4 * shoe_decks) * ratio
         mode = "MA TRẬN ƯỚC LƯỢNG TIỆM CẬN"
@@ -35,7 +32,7 @@ def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8,
     is_shoe_logical = all(val >= 0 for val in deck_structure.values())
     N = float(sum(deck_structure.values()))
     if N <= 6:
-        return "⚠️ Cảnh báo: Khay bài đã vơi quá giới hạn!", {}, 0.0, 0.0, 0.0, 0.0, mode, cards_left, is_shoe_logical
+        return "⚠️ Cảnh báo: Khay bài đã vơi quá giới hạn!", {}, 0.0, 0.0, 0.0, 0.0, mode, int(N), is_shoe_logical
 
     # 2. TOÁN HỌC CỬA ĐÔI (PAIRS) - CHUẨN XÁC V12.5
     p_pair_prob = sum((deck_structure[i]/N)*((deck_structure[i]-1)/(N-1)) for i in range(1, 14) if deck_structure[i] >= 2)
@@ -64,10 +61,8 @@ def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8,
     p_dragon_weight, b_dragon_weight = 0.0, 0.0
     total_weight = 0.0
 
-    # Chạy tổ hợp quét 2 lá đầu tiên của Player (P1, P2) và Banker (B1, B2)
-    # Để tối ưu hiệu năng Streamlit, sử dụng phân bổ điểm tổ hợp xác suất rút gọn có trọng số điểm
     for p_score_init in range(10):
-        w_p = score_deck[p_score_init] # Giả lập ước lượng phân rã phân bổ điểm nhanh
+        w_p = score_deck[p_score_init]
         if w_p <= 0: continue
         for b_score_init in range(10):
             w_b = score_deck[b_score_init]
@@ -76,22 +71,19 @@ def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8,
             w_comb = w_p * w_b
             total_weight += w_comb
             
-            # Kiểm tra kịch bản Thắng Tự Nhiên (Natural 8, 9)
             is_p_natural = p_score_init in [8, 9]
             is_b_natural = b_score_init in [8, 9]
             
             if is_p_natural or is_b_natural:
                 if p_score_init > b_score_init:
                     player_wins += w_comb
-                    if is_p_natural: p_dragon_weight += w_comb # Thắng tự nhiên tính Long Bảo
+                    if is_p_natural: p_dragon_weight += w_comb
                 elif b_score_init > p_score_init:
                     banker_wins += w_comb
-                    if is_b_natural: b_dragon_weight += w_comb # Thắng tự nhiên tính Long Bảo
+                    if is_b_natural: b_dragon_weight += w_comb
                 else:
                     ties += w_comb
             else:
-                # Mô phỏng rút gọn xác suất biên độ cách điểm sau lá thứ 3
-                # Thống kê toán học thực tế: Xác suất thắng cách biệt >=4 điểm chiếm khoảng ~32% trong tổng số ván bài không tự nhiên
                 if p_score_init > b_score_init:
                     player_wins += w_comb
                     if (p_score_init - b_score_init) >= 4: p_dragon_weight += w_comb * 0.45
@@ -109,12 +101,10 @@ def calculate_baccarat_v12_6(p_cards, b_cards, shoe_history, shoe_decks=8,
         "Tie": round((ties / total_weight) * 100, 2)
     }
     
-    # Tính xác suất trúng Long Bảo (Dragon Bonus) thực tế của khay bài
-    # Ngưỡng lợi thế nhà cái gốc của Long Bảo khá cao (~2.6% cho Player Dragon và ~9.3% cho Banker Dragon)
     p_dragon_odds = round((p_dragon_weight / total_weight) * 100, 2)
     b_dragon_odds = round((b_dragon_weight / total_weight) * 100, 2)
 
-    return odds_res, deck_structure, p_pair_odds, b_pair_odds, p_dragon_odds, b_dragon_odds, mode, cards_left, is_shoe_logical
+    return odds_res, deck_structure, p_pair_odds, b_pair_odds, p_dragon_odds, b_dragon_odds, mode, int(cards_left), is_shoe_logical
 
 # =========================================================================
 # INTERFACE DESIGN
@@ -143,31 +133,26 @@ st.markdown(
 )
 
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
-if 'live_logs' not in st.session_state: st.session_state.live_logs = []
-if 'last_results' not in st.session_state: st.session_state.last_results = None
-if 'last_cards_added' not in st.session_state: st.session_state.last_cards_added = []
-
-# CHẠY PHÂN TÍCH BAN ĐẦU
-if st.session_state.last_results is None:
-    init_res = calculate_baccarat_v12_6([], [], st.session_state.shoe_history)
-    if not isinstance(init_res, str):
-        st.session_state.last_results = init_res
+if 'manual_cards' not in st.session_state: st.session_state.manual_cards = 0
 
 # SIDEBAR CONFIG
 st.sidebar.header("⚙️ CẤU HÌNH CƠ SỞ")
 decks = st.sidebar.selectbox("Số bộ bài:", [8, 6], index=0)
-manual_cards = st.sidebar.number_input("Số lá bài đã chia:", min_value=0, value=0)
+manual_cards_input = st.sidebar.number_input("Số lá bài đã bỏ (Burn):", min_value=0, value=st.session_state.manual_cards)
 
 if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
     st.session_state.shoe_history = []
-    st.session_state.live_logs = []
-    st.session_state.last_results = None
-    st.session_state.last_cards_added = []
+    st.session_state.manual_cards = 0
     st.rerun()
 
+# ĐỒNG BỘ HÓA PHÉP TÍNH CHẠY LIÊN TỤC
+analysis_result = calculate_baccarat_v12_6(
+    st.session_state.shoe_history, shoe_decks=decks, manual_cards_used=manual_cards_input
+)
+
 # DISPLAY INTERFACE
-if st.session_state.last_results:
-    res, remaining_deck, p_pair, b_pair, p_dragon, b_dragon, current_mode, cards_left, is_shoe_logical = st.session_state.last_results
+if isinstance(analysis_result, tuple):
+    res, remaining_deck, p_pair, b_pair, p_dragon, b_dragon, current_mode, cards_left, is_shoe_logical = analysis_result
     
     p_box = "hud-box neon-player-advantage" if res['Player'] > res['Banker'] else "hud-box"
     b_box = "hud-box neon-banker-advantage" if res['Banker'] > res['Player'] else "hud-box"
@@ -179,11 +164,10 @@ if st.session_state.last_results:
         st.markdown(f'<div class="{p_box}"><div class="hud-title">🔵 PLAYER</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="{b_box}"><div class="hud-title">🔴 BANKER</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="hud-box"><div class="hud-title">🟢 TIE (HÒA)</div><div class="hud-value" style="color:#2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+        st.caption(f"Chế độ: {current_mode} | Còn lại: {cards_left} lá")
         
     with right_col:
         st.markdown("#### 💎 Radar Cược Phụ Nâng Cao")
-        
-        # Thiết lập style động cho Cửa Đôi (>8.33% là có lợi thế)
         p_pair_style = "badge-alert" if p_pair > 8.33 else "badge-normal"
         b_pair_style = "badge-alert" if b_pair > 8.33 else "badge-normal"
         
@@ -192,13 +176,14 @@ if st.session_state.last_results:
         st.markdown(f'<div class="{b_pair_style}"><span style="font-size:11px;color:#aaa;">🔴 CÁI ĐÔI (B-PAIR)</span><br><b style="font-size:18px;">{b_pair}%</b></div>', unsafe_allow_html=True)
         st.markdown("<div style='margin-bottom:12px;'></div>", unsafe_allow_html=True)
         
-        # Thiết lập hiển thị Long Bảo (Ngưỡng báo động kích hoạt khi xác suất vượt mức nền trung bình: Player > 17%, Banker > 11%)
         p_drag_style = "badge-dragon" if p_dragon > 17.0 else "badge-normal"
         b_drag_style = "badge-dragon" if b_dragon > 11.5 else "badge-normal"
         
         st.markdown(f'<div class="{p_drag_style}"><span style="font-size:11px;color:#aaa;">🐉 PLAYER LONG BẢO</span><br><b style="font-size:18px;color:#a29bfe;">{p_dragon}%</b></div>', unsafe_allow_html=True)
         st.markdown("<div style='margin-bottom:6px;'></div>", unsafe_allow_html=True)
         st.markdown(f'<div class="{b_drag_style}"><span style="font-size:11px;color:#aaa;">🐉 BANKER LONG BẢO</span><br><b style="font-size:18px;color:#a29bfe;">{b_dragon}%</b></div>', unsafe_allow_html=True)
+else:
+    st.error(analysis_result)
 
 st.markdown("---")
 st.subheader("🃏 Nhập Kết Quả Ván Vừa Ra")
@@ -222,9 +207,4 @@ if st.button("🚀 GHI NHẬN & PHÂN TÍCH VÁN MỚI", use_container_width=Tru
     if p_list or b_list:
         all_cards = p_list + b_list
         st.session_state.shoe_history.extend(all_cards)
-        
-        # Chạy toán học lõi để cập nhật màn hình
-        st.session_state.last_results = calculate_baccarat_v12_6(
-            [], [], st.session_state.shoe_history, shoe_decks=decks, manual_cards_used=manual_cards
-        )
         st.rerun()
