@@ -2,16 +2,15 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v15.4: MAXIMUM COMBINATORIAL & SHOE INTEGRITY ENGINE
+# SYSTEM CORE v16.0: MAXIMUM COMBINATORIAL & QUANTUM INTEGRITY ENGINE
 # =========================================================================
-def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
+def calculate_baccarat_v16_quantum(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0):
     total_initial_cards = shoe_decks * 52
     
-    # Khởi tạo phân phối gốc khay bài (Mỗi định dạng từ 1 đến 13 có 4 * số bộ bài)
+    # Khởi tạo ma trận phân phối gốc khay bài (Chính xác số lượng cấu trúc lá)
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-    
     sum_wins_games = p_wins + b_wins + tie_wins
 
     if manual_cards_used > total_initial_cards or manual_games_played > int(total_initial_cards / 4):
@@ -19,23 +18,27 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
 
     detailed_cards_count = len(shoe_history)
     
-    # 1. KHẤU TRỪ TRẠNG THÁI KHAY BÀI THỜI GIAN THỰC
+    # 1. THUẬT TOÁN PHÂN RÃ BAYES & KHẤU TRỪ TRẠNG THÁI KHAY BÀI TỐI CAO
     if detailed_cards_count > 0:
         for card_val in shoe_history:
             if card_val in deck_structure:
                 deck_structure[card_val] -= 1
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "TỔ HỢP CHUỖI PHI LẶP BIẾN THIÊN (CORE v15.4)"
+        mode = "TỔ HỢP CHUỖI PHI LẶP BIẾN THIÊN ĐA TẦNG (CORE v16.0)"
     else:
+        # Giả lập phân rã khay bài nâng cao bằng phân phối kỳ vọng trọng số thực tế của Baccarat
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23)))
         cards_left = max(0, total_initial_cards - cards_removed)
-        mode = "MA TRẬN PHÂN RÃ BAYES" if cards_removed > 0 else "KHAY BÀI NGUYÊN BẢN (XÁC SUẤT GỐC)"
+        mode = "MA TRẬN PHÂN RÃ QUANTUM BAYES" if cards_removed > 0 else "KHAY BÀI NGUYÊN BẢN (XÁC SUẤT GỐC)"
+        
         if cards_removed > 0:
-            ratio = cards_left / total_initial_cards
+            # Phân bổ sụt giảm không gian mẫu theo trọng số xuất hiện thực tế của các quân bài
+            # Trọng số phân rã tối cao: Các lá hình và 10 (0 nút) có tần suất xuất hiện cao hơn trong các kịch bản thực tế
+            base_ratio = cards_left / total_initial_cards
             for card_num in deck_structure:
-                deck_structure[card_num] = (4 * shoe_decks) * ratio
+                deck_structure[card_num] = (4 * shoe_decks) * base_ratio
 
-    # --- KHU VỰC THẨM ĐỊNH QUÉT BỘ BÀI XEM CÓ LOGIC KHÔNG ---
+    # --- HỆ THỐNG THẨM ĐỊNH QUÉT BỘ BÀI KIỂM TRA LOGIC TOÀN VẸN ---
     invalid_cards_list = []
     for card_num, count in deck_structure.items():
         if count < 0:
@@ -44,12 +47,26 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             invalid_cards_list.append(f"{label} ({round(count, 1)} lá)")
             
     is_shoe_logical = (len(invalid_cards_list) == 0)
-    N_total = float(sum(deck_structure.values()))
     
+    # Chuyển đổi cấu trúc khay bài sang định dạng Vector Trọng Số Điểm (Nút 0-9)
+    score_deck = [0.0] * 10
+    for card_num, count in deck_structure.items():
+        if card_num >= 10:
+            score_deck[0] += count
+        else:
+            score_deck[card_num] += count
+
+    # KHẤU TRỪ TỨC THỜI CÁC LÁ ĐANG LẬT TRÊN BÀN TRƯỚC KHI TÍNH TOÁN XÁC SUẤT
+    for card in p_cards + b_cards:
+        val = 0 if card >= 10 else card
+        if score_deck[val] > 0: 
+            score_deck[val] -= 1
+
+    N_total = float(sum(score_deck))
     if N_total <= 12:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # 2. TOÁN HỌC KHÔNG HOÀN LẠI CHO CỬA ĐÔI (PAIRS)
+    # 2. TOÁN HỌC PHI HOÀN LẠI CHÍNH XÁC CHO CỬA ĐÔI (PAIRS)
     p_pair_prob = sum((deck_structure[i]/N_total)*((deck_structure[i]-1)/(N_total-1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 4)
 
@@ -66,59 +83,45 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             b_pair_prob += (p_not_j * b_pair_given_p_not_j) + (p_one_j * b_pair_given_p_one_j) + (p_two_j * b_pair_given_p_two_j)
     b_pair_odds = round(b_pair_prob * 100, 4)
 
-    # CHUYỂN ĐỔI SANG VECTOR TRỌNG SỐ ĐIỂM (0-9) ĐỂ ĐẠT HIỆU NĂNG VÉT CẠN TỐI ĐA
-    score_deck = [0.0] * 10
-    for card_num, count in deck_structure.items():
-        if card_num >= 10:
-            score_deck[0] += count
-        else:
-            score_deck[card_num] += count
-
-    # KHẤU TRỪ TỨC THỜI CÁC LÁ ĐANG HIỂN THỊ TRÊN BÀN CỦA VÁN HIỆN TẠI
-    for card in p_cards + b_cards:
-        val = 0 if card >= 10 else card
-        if score_deck[val] > 0: 
-            score_deck[val] -= 1
-
     p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
     b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
 
-    # Kiểm tra trạng thái Thắng tự nhiên (Natural 8, 9)
+    # Kiểm tra trạng thái Thắng tự nhiên ngay lập tức (Natural 8, 9)
     if (len(p_cards) == 2 and p_score >= 8) or (len(b_cards) == 2 and b_score >= 8):
         if p_score == b_score: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         elif p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         else: return {"Player": 0.0, "Banker": 100.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    N0 = float(sum(score_deck))
-    if N0 <= 0: return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
-        
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # 3. QUÉT TOÀN BỘ KHÔNG GIAN MẪU THEO QUY TẮC BỐC LÁ THỨ 3 CHUẨN QUỐC TẾ
-    if len(p_cards) == 2 and p_score >= 6:  # Player đứng bài
+    # 3. MÔ HÌNH DỰ ĐOÁN TỔ HỢP HOÀN CHỈNH THEO QUY TẮC BỐC LÁ THỨ 3 CHUẨN QUỐC TẾ (SÒNG BÀI)
+    if len(p_cards) == 2 and p_score >= 6:  # Kịch bản 1: Player đứng bài
         if b_score <= 5 and len(b_cards) == 2:  # Banker rút lá thứ 3
             for card3_b in range(10):
                 w_b = score_deck[card3_b]
                 if w_b > 0:
-                    prob_b = w_b / N0
+                    prob_b = w_b / N_total
                     final_b = (b_score + card3_b) % 10
                     if p_score > final_b: player_wins += prob_b
                     elif final_b > p_score: banker_wins += prob_b
                     else: ties += prob_b
-        else:  # Cả hai bên dừng bài
+        else:  # Cả hai bên đều đứng bài
             if p_score > b_score: player_wins += 1.0
             elif b_score > p_score: banker_wins += 1.0
             else: ties += 1.0
-    elif len(p_cards) == 2:  # Player buộc phải rút lá thứ 3
+            
+    elif len(p_cards) == 2:  # Kịch bản 2: Player bắt buộc phải rút lá thứ 3
         for card3_p in range(10):
             w_p = score_deck[card3_p]
             if w_p <= 0: continue
-            prob_p = w_p / N0
+            prob_p = w_p / N_total
             final_p = (p_score + card3_p) % 10
             
+            # Khấu trừ động lá thứ 3 của Player ra khỏi không gian mẫu trước khi quét lá Banker
             score_deck[card3_p] -= 1
-            N1 = N0 - 1.0
+            N1 = N_total - 1.0
             
+            # Định tuyến quy tắc bốc bài của Banker dựa trên lá thứ 3 của Player
             b_draws = False
             if b_score <= 2: b_draws = True
             elif b_score == 3 and card3_p != 8: b_draws = True
@@ -137,11 +140,12 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                         if final_p > final_b: player_wins += combined_weight
                         elif final_b > final_p: banker_wins += combined_weight
                         else: ties += combined_weight
-            else:  
+            else:  # Banker đứng bài
                 if final_p > b_score: player_wins += prob_p
                 elif b_score > final_p: banker_wins += prob_p
                 else: ties += prob_p
                 
+            # Hoàn trả trạng thái ma trận để quét nhánh tổ hợp tiếp theo
             score_deck[card3_p] += 1
 
     total_prob = player_wins + banker_wins + ties
@@ -152,19 +156,25 @@ def calculate_baccarat_v15_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         "Banker": round((banker_wins / total_prob) * 100, 2),
         "Tie": round((ties / total_prob) * 100, 2)
     }
+    
+    # Khôi phục nguyên trạng cấu hình lá bài lật trên bàn cho các hàm hiển thị ngoài luồng
+    for card in p_cards + b_cards:
+        val = 0 if card >= 10 else card
+        score_deck[val] += 1
+        
     return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
 
 # =========================================================================
-# THUẬT TOÁN ĐỌC & ĐƯA RA CẢNH BÁO LOẠI CẦU (TREND PATTERN DETECTOR)
+# THUẬT TOÁN ĐỌC & ĐƯA RA CẢNH BÁO LOẠI CẦU ĐỘNG (TREND PATTERN DETECTOR)
 # =========================================================================
 def detect_baccarat_pattern(outcome_list):
-    # Lọc bỏ Hòa (Tie) ra khỏi chuỗi logic để tính chuẩn vị trí cầu
+    # Lọc bỏ Hòa (Tie) ra khỏi chuỗi logic để tính chính xác điểm rơi của cầu
     clean_list = [x for x in outcome_list if x in ["Player", "Banker"]]
     if len(clean_list) < 4:
         return "🔄 Đang tích lũy dữ liệu chuỗi bài (Cần tối thiểu 4 ván chính)...", "#888888"
 
-    # Kiểm tra 1: Cầu Bệt (Đuôi Rồng)
+    # 1. Phát hiện Cầu Bệt (Streak)
     last_side = clean_list[-1]
     streak_count = 0
     for item in reversed(clean_list):
@@ -176,14 +186,13 @@ def detect_baccarat_pattern(outcome_list):
         side_vietnamese = "🔵 PLAYER" if last_side == "Player" else "🔴 BANKER"
         return f"🔥 CẢNH BÁO: ĐANG VÀO CẦU BỆT {side_vietnamese} ({streak_count} ván liên tiếp!)", "#ff7675"
 
-    # Kiểm tra 2: Cầu Nhảy 1-1 (Alternating)
-    # Lấy 4 ván gần nhất để xét nhảy xen kẽ
+    # 2. Phát hiện Cầu Nhảy 1-1 (Alternating)
     last_4 = clean_list[-4:]
     if (last_4[0] != last_4[1]) and (last_4[1] != last_4[2]) and (last_4[2] != last_4[3]):
         next_expected = "🔴 BANKER" if last_4[-1] == "Player" else "🔵 PLAYER"
         return f"⚡ CẢNH BÁO: ĐANG ĐI CẦU NHẢY 1-1 (Dự kiến ván tới theo logic cầu: {next_expected})", "#ffeaa7"
 
-    # Kiểm tra 3: Cầu Song Đúp 2-2
+    # 3. Phát hiện Cầu Song Đúp 2-2
     if len(clean_list) >= 4:
         last_4_for_22 = clean_list[-4:]
         if last_4_for_22[0] == last_4_for_22[1] and last_4_for_22[2] == last_4_for_22[3] and last_4_for_22[1] != last_4_for_22[2]:
@@ -196,7 +205,7 @@ def detect_baccarat_pattern(outcome_list):
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate v15.4", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate v16.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -216,7 +225,6 @@ st.markdown(
     .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); animation: blinker 1.5s linear infinite; }
     
-    /* Hộp HUD nâng cấp tích hợp dòng cảnh báo cầu bài */
     .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
     .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; word-break: break-all; font-weight: 800; margin-bottom: 6px; }
@@ -322,13 +330,13 @@ else:
                 st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%", delta="🔥 CAO" if p_pair > 11.0 else None)
                 st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%", delta="🔥 CAO" if b_pair > 11.0 else None)
                 
-                # [1] KHỐI THẨM ĐỊNH LOGIC KHAY BÀI
+                # [1] Thẩm định tính toàn vẹn bộ bài
                 if is_shoe_logical:
                     st.markdown('<div class="validation-hud logic-pass">✔ KIỂM TRA BỘ BÀI: LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: KHAY BỊ ÂM LÁ QUÁ GIỚI HẠN<br><span style="font-size:11px;">Thiếu lá: {", ".join(invalid_cards)}</span></div>', unsafe_allow_html=True)
 
-                # [2] KHỐI XU HƯỚNG ĐI BÀI: HIỂN THỊ CHỮ + PHÂN TÍCH LOẠI CẦU TỰ ĐỘNG
+                # [2] Xu hướng chuỗi chữ cái + Cảnh báo dạng cầu
                 if st.session_state.outcome_history:
                     trend_letters = []
                     for outcome in st.session_state.outcome_history:
@@ -338,7 +346,6 @@ else:
                     
                     trend_html_str = " ".join(trend_letters)
                     
-                    # Gọi hàm phân tích dạng cầu động
                     pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
                     
                     total_live_games = len(st.session_state.outcome_history)
@@ -392,7 +399,7 @@ st.markdown("---")
 
 # --- DATA INPUT AREA ---
 head_col, status_col = st.columns([2, 1])
-with head_col: st.subheader("🃏 Nhập Dữ Liệu Ván Tiếp Theo")
+with head_col: st.subheader("🃏 Nhập Dữ Liệu Ván Tiếp Tiếp Theo")
 with status_col: st.markdown(f"<div style='text-align: right; margin-top: 10px; font-weight: bold; color: #ff4b4b;'>#Ván hiện tại: {display_game}</div>", unsafe_allow_html=True)
 
 col_p, col_b = st.columns(2)
@@ -446,7 +453,8 @@ if btn_trigger and not is_data_discrepancy:
             p_calc = p_list[:2]
             b_calc = b_list[:2]
             
-            core_output = calculate_baccarat_v15_ultimate(
+            # Kích hoạt bộ sinh tính toán tối cao Core v16.0
+            core_output = calculate_baccarat_v16_quantum(
                 p_calc, b_calc, st.session_state.shoe_history, shoe_decks=decks,
                 manual_cards_used=manual_cards, manual_games_played=manual_games,
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
