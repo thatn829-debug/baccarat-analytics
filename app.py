@@ -75,7 +75,6 @@ def calculate_baccarat_v12_core(p_cards, b_cards, shoe_history, shoe_decks=8,
     for card_num, count in deck_structure.items():
         score_deck[0 if card_num >= 10 else card_num] += count
 
-    # KHẤU TRỪ CÁC LÁ TRÊN BÀN KHỎI KHAY BÀI TỨC THỜI (NẾU CÓ)
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0: score_deck[val] -= 1
@@ -161,14 +160,14 @@ st.markdown(
     .pair-badge-normal { background-color: #1e1e1e; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #444; }
     .pair-badge-alert { background-color: #d35400; padding: 10px; border-radius: 6px; text-align: center; border: 2px solid #e67e22; box-shadow: 0 0 15px rgba(230, 126, 34, 0.6); }
     
-    /* THIẾT KẾ MỚI CHO CỬA LONG BẢO SIÊU NỔI BẬT */
     .dragon-p-alert { background: linear-gradient(145deg, #0097a7, #006064) !important; border: 2px solid #00cec9 !important; box-shadow: 0 0 15px rgba(0, 206, 201, 0.8); color: #fff; }
     .dragon-b-alert { background: linear-gradient(145deg, #d35400, #962d00) !important; border: 2px solid #f1c40f !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); color: #fff; }
     
-    /* KHUNG THẨM ĐỊNH LOGIC KHAY BÀI */
     .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 12px; font-family: monospace; }
     .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); animation: blinker 1.5s linear infinite; }
+    
+    .game-counter-hud { padding: 10px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 15px; border: 1px dashed #f1c40f; color: #f1c40f; background-color: rgba(241, 196, 15, 0.05); margin-bottom: 15px; font-family: monospace; }
     
     @keyframes blinker { 50% { opacity: 0.6; } }
     </style>
@@ -176,14 +175,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# KHỞI TẠO STATE AN TOÀN
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
-if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
-
-if st.session_state.last_results is None:
-    init_res = calculate_baccarat_v12_core([], [], st.session_state.shoe_history)
-    if not isinstance(init_res, str):
-        st.session_state.last_results = init_res
+if 'manual_games_counter' not in st.session_state: st.session_state.manual_games_counter = 0
+# State lưu trữ ván vừa nhập gần nhất nhằm chống trùng dữ liệu
+if 'last_entered_round' not in st.session_state: st.session_state.last_entered_round = {"p": [], "b": []}
 
 # --- SIDEBAR CẤU HÌNH ---
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -192,7 +189,7 @@ decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 Thiết lập nhanh khay bài")
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0)
-manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0)
+manual_games = st.sidebar.number_input("Tổng số ván nền đã chạy:", min_value=0, max_value=150, value=0)
 
 p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0)
 b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0)
@@ -203,8 +200,20 @@ is_data_discrepancy = (manual_games != (p_wins_input + b_wins_input + tie_wins_i
 if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
     st.session_state.shoe_history = []
     st.session_state.last_results = None
-    st.session_state.live_logs = []
+    st.session_state.manual_games_counter = 0
+    st.session_state.last_entered_round = {"p": [], "b": []}
     st.rerun()
+
+if st.session_state.last_results is None and not is_data_discrepancy:
+    init_res = calculate_baccarat_v12_core(
+        [], [], st.session_state.shoe_history, shoe_decks=decks,
+        manual_cards_used=manual_cards, manual_games_played=manual_games,
+        p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
+    )
+    if not isinstance(init_res, str):
+        st.session_state.last_results = init_res
+
+current_total_games = manual_games + st.session_state.manual_games_counter
 
 # --- HIỂN THỊ KẾT QUẢ MA TRẬN ---
 if is_data_discrepancy:
@@ -233,15 +242,13 @@ else:
             st.markdown(f'<div class="{b_style}"><span style="font-size:11px;color:#aaa;">🔴 CÁI ĐÔI (B-PAIR)</span><br><b style="font-size:18px;">{b_pair}%</b></div>', unsafe_allow_html=True)
             st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
             
-            # Đã thay đổi màu sắc rực rỡ hơn cho cửa Long Bảo
             p_drag_style = "dragon-p-alert" if p_dragon > 16.5 else "pair-badge-normal"
             b_drag_style = "dragon-b-alert" if b_dragon > 10.8 else "pair-badge-normal"
             
-            st.markdown(f'<div class="{p_drag_style}"><span style="font-size:11px;color:#e0ffff;font-weight:bold;">🐉 PLAYER LONG BẢO (CYAN NEON)</span><br><b style="font-size:20px;color:#00ffff;">{p_dragon}%</b></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="{p_drag_style}"><span style="font-size:11px;color:#e0ffff;font-weight:bold;">🐉 PLAYER LONG BẢO</span><br><b style="font-size:20px;color:#00ffff;">{p_dragon}%</b></div>', unsafe_allow_html=True)
             st.markdown("<div style='margin-bottom:6px;'></div>", unsafe_allow_html=True)
-            st.markdown(f'<div class="{b_drag_style}"><span style="font-size:11px;color:#fff9db;font-weight:bold;">🐉 BANKER LONG BẢO (GOLD NEON)</span><br><b style="font-size:20px;color:#f1c40f;">{b_dragon}%</b></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="{b_drag_style}"><span style="font-size:11px;color:#fff9db;font-weight:bold;">🐉 BANKER LONG BẢO</span><br><b style="font-size:20px;color:#f1c40f;">{b_dragon}%</b></div>', unsafe_allow_html=True)
             
-            # --- KHU VỰC THẨM ĐỊNH BÀI LOGIC (MỚI THÊM) ---
             st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
             if is_shoe_logical:
                 st.markdown('<div class="validation-hud logic-pass">✔ THẨM ĐỊNH LOGIC: KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
@@ -255,8 +262,13 @@ else:
         st.markdown(f"**Độ chín khay bài (Shoe Penetration): {round(penetration_rate, 1)}%** (Đã dùng {int(cards_used_calc)} / {total_shoe_cards} lá)")
         st.progress(penetration_rate / 100.0)
 
+# =========================================================================
+# KHU VỰC NẠP KẾT QUẢ VÀ BỘ ĐẾM SỐ VÁN TỰ ĐỘNG ĐĂNG TIẾN
+# =========================================================================
 st.markdown("---")
-st.subheader("🃏 Nạp Kết Quả Ván Vừa Ra")
+
+st.markdown(f'<div class="game-counter-hud">📈 ĐÃ CHẠY TỔNG CỘNG: {current_total_games} VÁN</div>', unsafe_allow_html=True)
+
 col_p, col_b = st.columns(2)
 with col_p: p_input = st.text_input("PLAYER (Các lá vừa ra):", placeholder="Ví dụ: 5,K,2")
 with col_b: b_input = st.text_input("BANKER (Các lá vừa ra):", placeholder="Ví dụ: J,7")
@@ -272,20 +284,38 @@ def clean_and_parse_input(raw_str):
         elif tok.isdigit() and 2 <= int(tok) <= 10: result_list.append(int(tok))
     return result_list
 
-if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
-    p_list = clean_and_parse_input(p_input)
-    b_list = clean_and_parse_input(b_input)
-    
-    if p_list or b_list:
-        all_added = p_list + b_list
-        st.session_state.shoe_history.extend(all_added)
-        
-        core_output = calculate_baccarat_v12_core(
-            [], [], st.session_state.shoe_history, shoe_decks=decks,
-            manual_cards_used=manual_cards, manual_games_played=manual_games,
-            p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
-        )
-        
-        if not isinstance(core_output, str):
-            st.session_state.last_results = core_output
-            st.rerun()
+# Xử lý chuỗi làm sạch dữ liệu đầu vào tạm thời để thẩm định trước khi bấm nút
+p_parsed = clean_and_parse_input(p_input)
+b_parsed = clean_and_parse_input(b_input)
+
+# KIỂM TRA TRÙNG LẶP DỮ LIỆU VỚI VÁN GẦN NHẤT
+is_duplicate = False
+if (p_parsed or b_parsed) and (st.session_state.last_entered_round["p"] == p_parsed and st.session_state.last_entered_round["b"] == b_parsed):
+    is_duplicate = True
+
+if is_duplicate:
+    st.warning("⚠️ Cảnh báo: Dữ liệu bài vừa nhập trùng khớp hoàn toàn với ván trước đó! Vui lòng nhập ván mới để tiếp tục.")
+    # Khóa nút bấm (disabled) nếu phát hiện nạp trùng kết quả
+    st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary", disabled=True)
+else:
+    if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
+        if p_parsed or b_parsed:
+            all_added = p_parsed + b_parsed
+            st.session_state.shoe_history.extend(all_added)
+            
+            # Cập nhật bộ nhớ tạm ván vừa chạy để đối chiếu chống trùng cho lần sau
+            st.session_state.last_entered_round["p"] = p_parsed
+            st.session_state.last_entered_round["b"] = b_parsed
+            
+            # Tăng số ván đếm
+            st.session_state.manual_games_counter += 1
+            
+            core_output = calculate_baccarat_v12_core(
+                [], [], st.session_state.shoe_history, shoe_decks=decks,
+                manual_cards_used=manual_cards, manual_games_played=manual_games,
+                p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
+            )
+            
+            if not isinstance(core_output, str):
+                st.session_state.last_results = core_output
+                st.rerun()
