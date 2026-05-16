@@ -1,7 +1,8 @@
 import streamlit as st
+import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v9.0: THE ULTIMATE QUANTUM COMBINATORIAL ENGINE (FINAL SPELL)
+# SYSTEM CORE v10.0: THE ULTIMATE QUANTUM COMBINATORIAL ENGINE
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                      manual_cards_used=0, manual_games_played=0,
@@ -19,7 +20,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 
     detailed_cards_count = len(shoe_history)
     
-    # TRỪ BÀI THEO NHẬT KÝ LỊCH SỬ THỰC TẾ TRƯỚC
+    # TRỪ BÀI THEO NHẬT KÝ LỊCH SỬ THỰC TẾ
     if detailed_cards_count > 0:
         for card_val in shoe_history:
             if card_val in deck_structure and deck_structure[card_val] > 0:
@@ -49,7 +50,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
     if N <= 6:
         return "⚠️ Cảnh báo: Khay bài đã vơi quá giới hạn an toàn để tính toán!", {}, 0.0, 0.0, mode, cards_left
     
-    # 1. TÍNH TOÁN CỬA ĐÔI (HYPERGEOMETRIC TRUY HỒI CHÍNH XÁC ĐẾN % LỚN)
+    # TÍNH TOÁN CỬA ĐÔI (HYPERGEOMETRIC TRUY HỒI CHÍNH XÁC ĐẾN % LỚN)
     p_pair_prob = 0.0
     for count in deck_structure.values():
         if count >= 2: p_pair_prob += (count / N) * ((count - 1) / (N - 1))
@@ -91,7 +92,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
         
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # 2. MA TRẬN PHÂN NHÁNH RÚT BÀI THỨ 3 TOÀN PHẦN KHÔNG HOÀN LẠI (SÂU 6 LÁ)
+    # MA TRẬN PHÂN NHÁNH RÚT BÀI THỨ 3 TOÀN PHẦN KHÔNG HOÀN LẠI (SÂU 6 LÁ)
     if p_score >= 6:  # Player Dừng bài
         if b_score <= 5:  # Banker bắt buộc rút lá thứ 3
             for card3_b in range(10):
@@ -154,9 +155,51 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
     return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left
 
 # =========================================================================
+# LÕI PHÂN TÍCH XU HƯỚNG VÀ CHUỖI (PATTERN & STREAK DETECTOR)
+# =========================================================================
+def analyze_shoe_patterns(outcome_history):
+    if len(outcome_history) < 2:
+        return "Ổn định", "Chưa đủ dữ liệu chuỗi để phân tích xu hướng.", "Normal"
+        
+    # Tính toán độ dài chuỗi cuối cùng
+    last_outcome = outcome_history[-1]
+    streak_len = 0
+    for out in reversed(outcome_history):
+        if out == last_outcome:
+            streak_len += 1
+        else:
+            break
+            
+    # Phân tích xu hướng nhảy Ping-pong
+    is_pingpong = True
+    if len(outcome_history) >= 4:
+        for i in range(-1, -5, -1):
+            if outcome_history[i] == outcome_history[i-1] and outcome_history[i] != "Tie" and outcome_history[i-1] != "Tie":
+                is_pingpong = False
+                break
+    else:
+        is_pingpong = False
+
+    # Đưa ra cảnh báo thực chiến
+    if streak_len >= 4 and last_outcome != "Tie":
+        status = "⚠️ CẢNH BÁO BỆT BÀI"
+        desc = f"Cửa **{last_outcome.upper()}** đang bệt liên tiếp **{streak_len} ván**. Không nên cố bẻ cầu trừ khi lợi thế toán học vượt trội (>55%)."
+        level = "High_Streak"
+    elif is_pingpong:
+        status = "🔄 XU HƯỚNG NHẢY (PING-PONG)"
+        desc = "Bàn đang có dấu hiệu đi dây đơn xen kẽ (P-B-P-B). Ưu tiên đánh theo nhịp nhảy thay vì đánh lập lại."
+        level = "PingPong"
+    else:
+        status = "⚖️ THẾ BÀI ĐAN XEN"
+        desc = "Khay bài luân chuyển bình thường, cấu trúc bài phân bổ đều ổn định."
+        level = "Normal"
+        
+    return status, desc, level
+
+# =========================================================================
 # INTERFACE DESIGN & STYLES (STREAMLIT OPERATIONAL)
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate Edge v9.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate Edge v10.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -168,16 +211,29 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Khởi tạo các session_state nếu chưa có
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'game_counter' not in st.session_state: st.session_state.game_counter = 0
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
 if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'last_cards_added' not in st.session_state: st.session_state.last_cards_added = []
+if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
+if 'edge_history_df' not in st.session_state: st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Edge", "Banker_Edge"])
+if 'fibo_index' not in st.session_state: st.session_state.fibo_index = 0
+if 'martingale_step' not in st.session_state: st.session_state.martingale_step = 1
 
 # --- SIDEBAR CONFIGURATION ---
-st.sidebar.header("⚙️ Cấu Hình Hệ Thống")
+st.sidebar.header("⚙️ CẤU HÌNH HỆ THỐNG V10.0")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 💰 CHIẾN THUẬT QUẢN LÝ VỐN")
+capital_strategy = st.sidebar.selectbox(
+    "Chọn công thức đi tiền:",
+    ["Kelly Criterion (Toán Học)", "Fibonacci (An Toàn)", "Martingale Sửa Đổi (Tấn Công)"]
+)
+base_bet = st.sidebar.number_input("Số tiền cược cơ sở (1 Đơn vị - VNĐ):", min_value=10000, value=50000, step=10000)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 Thiết lập nhanh khay bài")
@@ -189,7 +245,6 @@ p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_val
 b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0, step=1)
 tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0, step=1)
 
-# KIỂM TRA ĐỘ LỆCH TUYỆT ĐỐI GIỮA SỐ VÁN VÀ TỔNG CỬA THẮNG
 calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
 is_data_discrepancy = (manual_games != calculated_total_wins)
 
@@ -202,21 +257,28 @@ if st.session_state.live_logs:
                 st.session_state.shoe_history = st.session_state.shoe_history[:-num_to_remove]
             st.session_state.last_cards_added.pop()
         st.session_state.live_logs.pop()
+        if len(st.session_state.outcome_history) > 0:
+            st.session_state.outcome_history.pop()
+        if not st.session_state.edge_history_df.empty:
+            st.session_state.edge_history_df = st.session_state.edge_history_df.iloc[:-1]
         st.session_state.game_counter = max(0, st.session_state.game_counter - 1)
         st.session_state.last_results = None
         st.session_state.last_played_cards = ""
         st.rerun()
 
-if st.sidebar.button("🔄 RESET KHAY BÀI MỚI", use_container_width=True):
+if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
     st.session_state.shoe_history = []
     st.session_state.game_counter = 0
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
     st.session_state.live_logs = []
     st.session_state.last_cards_added = []
+    st.session_state.outcome_history = []
+    st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Edge", "Banker_Edge"])
+    st.session_state.fibo_index = 0
+    st.session_state.martingale_step = 1
     st.rerun()
 
-# Bộ đếm số ván ngoài màn hình chính tịnh tiến tăng dần dựa trên dữ liệu chuẩn
 display_game = manual_games + len(st.session_state.live_logs)
 
 # --- OUTPUT SCREEN MATRIX ---
@@ -224,9 +286,9 @@ if is_data_discrepancy:
     st.error(f"""
     ### 🛑 LỖI: DỮ LIỆU KHÔNG ĐỒNG BỘ
     * **Tổng số ván đã chạy:** `{manual_games}` ván.
-    * **Tổng số ván thắng từng cửa cộng lại:** `{p_wins_input}` (P) + `{b_wins_input}` (B) + `{tie_wins_input}` (T) = `{calculated_total_wins}` ván.
+    * **Tổng số ván thắng từng cửa:** `{p_wins_input}` (P) + `{b_wins_input}` (B) + `{tie_wins_input}` (T) = `{calculated_total_wins}` ván.
     
-    **⚠️ Yêu cầu:** Vui lòng điều chỉnh lại **'Tổng số ván đã chạy'** hoặc **'Chi tiết số bàn thắng từng cửa'** ở Sidebar bên trái sao cho hai con số này khớp hoàn toàn với nhau để hệ thống kích hoạt trở lại.
+    **⚠️ Yêu cầu:** Vui lòng điều chỉnh lại dữ liệu ở Sidebar sao cho hai số liệu này trùng khớp nhau.
     """)
 else:
     if st.session_state.last_results:
@@ -239,13 +301,12 @@ else:
         else:
             res, p_pair, b_pair, remaining_deck, current_mode, cards_left = results_data
             
+            # HIỂN THỊ KẾT QUẢ CỬA CHÍNH VÀ CỬA ĐÔI
             left_result_col, right_pair_col = st.columns(2)
             with left_result_col:
                 st.markdown("#### 📊 Cửa Chính")
                 st.metric("🔵 PLAYER", f"{res['Player']}%")
-                st.markdown(f"<p style='color:gray; font-size:11px; margin-top:-12px;'>Payout: 1 ăn 1.00</p>", unsafe_allow_html=True)
                 st.metric("🔴 BANKER", f"{res['Banker']}%")
-                st.markdown(f"<p style='color:gray; font-size:11px; margin-top:-12px;'>Payout: 1 ăn 0.95</p>", unsafe_allow_html=True)
                 st.metric("🟢 TIE WIN", f"{res['Tie']}%")
                 st.progress(res['Banker'] / 100 if res['Banker'] > 0 else 0)
                 
@@ -256,31 +317,80 @@ else:
 
             st.markdown("---")
             
-            st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
+            # LÕI 1: BÁO CÁO XU HƯỚNG & CẢNH BÁO BỆT
+            st.markdown("### 🧬 Nhận Diện Xu Hướng Thuật Toán")
+            trend_title, trend_desc, trend_level = analyze_shoe_patterns(st.session_state.outcome_history)
+            if trend_level == "High_Streak":
+                st.error(f"**{trend_title}** \n\n {trend_desc}")
+            elif trend_level == "PingPong":
+                st.info(f"**{trend_title}** \n\n {trend_desc}")
+            else:
+                st.success(f"**{trend_title}** \n\n {trend_desc}")
+
+            st.markdown("---")
+            
+            # LÕI 2: PHÂN TÍCH MA TRẬN QUẢN LÝ VỐN ĐA CHIẾN THUẬT
+            st.markdown(f"### 💰 Kế Hoạch Vào Tiền Thực Chiến ({capital_strategy})")
             k_col1, k_col2 = st.columns(2)
             max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
             max_prob = res[max_side] / 100.0
             
-            b = 0.95 if max_side == "Banker" else 1.00
-            q = 1.0 - max_prob
-            kelly_per = ((b * max_prob) - q) / b * 100
+            # Tính toán Kelly
+            b_factor = 0.95 if max_side == "Banker" else 1.00
+            q_factor = 1.0 - max_prob
+            kelly_per = ((b_factor * max_prob) - q_factor) / b_factor * 100
             kelly_per = max(0.0, kelly_per)
             
+            # Dãy Fibonacci
+            fibo_sequence = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+            idx_fibo = min(st.session_state.fibo_index, len(fibo_sequence)-1)
+            fibo_unit = fibo_sequence[idx_fibo]
+            
+            # Martingale
+            martingale_unit = 2 ** (st.session_state.martingale_step - 1)
+
             with k_col1:
                 if res['Player'] == 100.0 or res['Banker'] == 100.0:
-                    st.success(f"🎯 LỆNH TỐI CAO: Vào **{max_side.upper()}** (Tỷ lệ: 100%)")
-                elif kelly_per > 0.1:
-                    safe_investment = round(kelly_per / 4, 2)
-                    if safe_investment >= 0.25:
-                        st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}** (Vốn khuyên dùng: {safe_investment}%)")
+                    st.success(f"🎯 LỆNH TỐI CAO: Vào **{max_side.upper()}** (Đã Chốt Kết Quả)")
+                elif "Kelly" in capital_strategy:
+                    if kelly_per > 0.1:
+                        safe_investment = round(kelly_per / 4, 2)
+                        if safe_investment >= 0.25:
+                            st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}**\n\n💵 Vốn: **{safe_investment}%** tổng quỹ.")
+                        else:
+                            st.warning("⚖️ BIÊN ĐỘ MỎNG: Lợi thế quá thấp -> BỎ QUA.")
                     else:
-                        st.warning("⚖️ BIÊN ĐỘ MỎNG: Lợi thế quá thấp. Khuyên dùng: BỎ QUA.")
-                else:
-                    st.warning("⚖️ CÂN BẰNG: Không tìm thấy lợi thế toán học tốt. BỎ QUA.")
+                        st.warning("⚖️ CÂN BẰNG LỢI THẾ: Toán học không tìm thấy cửa sáng -> BỎ QUA.")
+                elif "Fibonacci" in capital_strategy:
+                    st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}**\n\n💵 Cược: **{fibo_unit} Đơn vị** ({fibo_unit * base_bet:,} VNĐ)\n\n*(Bậc chuỗi: số {fibo_unit})*")
+                elif "Martingale" in capital_strategy:
+                    if st.session_state.martingale_step > 4:
+                        st.warning(f"⚠️ CẤP ĐỘ CAO (Tay thứ {st.session_state.martingale_step}): Vào **{max_side.upper()}**\n\n💵 Cược: **{martingale_unit} Đơn vị** ({martingale_unit * base_bet:,} VNĐ). Thận trọng!")
+                    else:
+                        st.info(f"✨ GỢI Ý: Vào **{max_side.upper()}**\n\n💵 Cược: **{martingale_unit} Đơn vị** ({martingale_unit * base_bet:,} VNĐ)")
                     
             with k_col2:
-                st.caption(f"Chế độ quét ma trận:\n{current_mode}")
+                st.caption(f"Trạng thái quét ma trận:\n{current_mode}")
+                if "Fibonacci" in capital_strategy or "Martingale" in capital_strategy:
+                    st.markdown("**Kết quả ván vừa rồi để tính tiền ván sau:**")
+                    f_win, f_lose = st.columns(2)
+                    if f_win.button("👍 THẮNG VÁN VỪA RỒI", use_container_width=True):
+                        st.session_state.fibo_index = max(0, st.session_state.fibo_index - 2)
+                        st.session_state.martingale_step = 1
+                        st.rerun()
+                    if f_lose.button("👎 THUA VÁN VỪA RỒI", use_container_width=True):
+                        st.session_state.fibo_index += 1
+                        st.session_state.martingale_step += 1
+                        st.rerun()
 
+            st.markdown("---")
+            
+            # LÕI 3: BIỂU ĐỒ TRỰC QUAN HÓA BIÊN ĐỘ LỢI THẾ LÀM MỚI THEO THỜI GIAN THỰC
+            if not st.session_state.edge_history_df.empty:
+                st.markdown("### 📈 Biểu Đồ Biến Động Lợi Thế Khay Bài")
+                st.line_chart(st.session_state.edge_history_df.set_index("Ván"))
+
+            # Thống kê độ chín khay bài
             total_shoe_cards = decks * 52
             cards_used_calc = total_shoe_cards - cards_left
             penetration_rate = min(100.0, (cards_used_calc / total_shoe_cards) * 100)
@@ -288,21 +398,21 @@ else:
             st.progress(penetration_rate / 100.0)
 
             with st.expander("📊 Chi tiết cấu trúc ma trận khay bài còn lại"):
-                st.write(f"Số lá bài còn lại ước tính trong khay: **{int(cards_left)} / {total_shoe_cards}** lá.")
+                st.write(f"Số lá bài còn lại ước tính: **{int(cards_left)} / {total_shoe_cards}** lá.")
                 cols = st.columns(5)
                 labels_13 = {1: "A", 11: "J", 12: "Q", 13: "K"}
                 for idx, (num, cnt) in enumerate(remaining_deck.items()):
                     card_label = labels_13.get(num, f"[{num}]")
                     cols[idx % 5].text(f"{card_label}: {round(cnt, 1)} lá")
     else:
-        st.info("🔮 Vui lòng điền điểm số ván hiện tại vào ô bên dưới để kích hoạt hệ quét toán học.")
+        st.info("🔮 Vui lòng nhập dữ liệu ván bài ở ô bên dưới để kích hoạt hệ thống phân tích tối hậu v10.0.")
 
 st.markdown("---")
 
 # --- DATA INPUT ROW ---
 head_col, status_col = st.columns([2, 1])
 with head_col:
-    st.subheader("🃏 Điền điểm ván này")
+    st.subheader("🃏 Nhập Điểm Phân Tích Ván Mới")
 with status_col:
     st.markdown(f"<div style='text-align: right; margin-top: 10px; font-weight: bold; color: #ff4b4b;'>#Ván hiện tại: {display_game}</div>", unsafe_allow_html=True)
 
@@ -340,15 +450,15 @@ def clean_and_parse_input(raw_str):
     return result_list
 
 # --- ACTION TRIGGER ---
-btn_trigger = st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH TỐI HẬU", use_container_width=True, type="primary", disabled=is_data_discrepancy)
+btn_trigger = st.button("🚀 KÍCH HOẠT HỆ THỐNG PHÂN TÍCH TỐI HẬU v10.0", use_container_width=True, type="primary", disabled=is_data_discrepancy)
 
 if btn_trigger and not is_data_discrepancy:
     current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
     
     if not p_input.strip() and not b_input.strip():
-        st.warning("⚠️ Bạn chưa nhập điểm cho ván này. Hãy điền bài vào ô Player và Banker!")
+        st.warning("⚠️ Bạn chưa nhập thông tin lá bài.")
     elif current_game_signature == st.session_state.last_played_cards:
-        st.error("⛔ CHẶN TRÙNG LẶP: Bạn vừa chạy ván này rồi! Vui lòng nhập điểm số của ván mới tiếp theo.")
+        st.error("⛔ HỆ THỐNG PHÁT HIỆN TRÙNG LẶP DỮ LIỆU VỪA NHẬP!")
     else:
         p_list = clean_and_parse_input(p_input)
         b_list = clean_and_parse_input(b_input)
@@ -375,9 +485,28 @@ if btn_trigger and not is_data_discrepancy:
                     st.session_state.shoe_history.extend(all_added)
                     st.session_state.last_cards_added.append(all_added)
                     
-                    actual_index = display_game + 1
-                    st.session_state.live_logs.append(f"Ván {actual_index}: Player({p_input.strip()}) vs Banker({b_input.strip()})")
+                    # Xác định bên chiến thắng của ván vừa rồi dựa trên tổng điểm thực tế
+                    final_p_score = sum([0 if c >= 10 else c for c in p_list]) % 10
+                    final_b_score = sum([0 if c >= 10 else c for c in b_list]) % 10
+                    if final_p_score > final_b_score:
+                        win_side = "Player"
+                    elif final_b_score > final_p_score:
+                        win_side = "Banker"
+                    else:
+                        win_side = "Tie"
+                    st.session_state.outcome_history.append(win_side)
                     
+                    # Ghi nhận dữ liệu để vẽ biểu đồ
+                    actual_index = display_game + 1
+                    new_edge_row = pd.DataFrame([{
+                        "Ván": f"V{actual_index}",
+                        "Player_Edge": res['Player'],
+                        "Banker_Edge": res['Banker']
+                    }])
+                    st.session_state.edge_history_df = pd.concat([st.session_state.edge_history_df, new_edge_row], ignore_index=True)
+                    
+                    # Ghi nhật ký text log
+                    st.session_state.live_logs.append(f"Ván {actual_index}: Player({p_input.strip()}) -> {final_p_score}đ vs Banker({b_input.strip()}) -> {final_b_score}đ | Thắng: {win_side.upper()}")
                     st.session_state.game_counter = display_game + 1
                     st.rerun()
 
