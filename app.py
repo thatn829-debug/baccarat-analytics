@@ -1,8 +1,7 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
 # =========================================================================
-# SYSTEM CORE v7.1: COMBINATORIAL EXHAUSTION ENGINE (STABLE RENDER)
+# SYSTEM CORE v7.2: COMBINATORIAL EXHAUSTION ENGINE (STABLE INPUT EDITION)
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8, manual_cards_used=0, manual_games_played=0):
     total_initial_cards = shoe_decks * 52
@@ -156,7 +155,7 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Ultimate Edge v7.1", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Ultimate Edge v7.2", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -262,60 +261,65 @@ with status_col:
     st.markdown(f"<div style='text-align: right; margin-top: 10px; font-weight: bold; color: #ff4b4b;'>#Ván: {display_game}</div>", unsafe_allow_html=True)
 
 col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input("PLAYER (Lá bài):", value="", placeholder="Gõ liền: 5k2 hoặc a10j")
-with col_b: b_input = st.text_input("BANKER (Lá bài):", value="", placeholder="Gõ liền: j7 hoặc 98q")
+with col_p: p_input = st.text_input("PLAYER (Lá bài):", value="", placeholder="Ví dụ: 5,K,2 hoặc A,10,J")
+with col_b: b_input = st.text_input("BANKER (Lá bài):", value="", placeholder="Ví dụ: J,7 hoặc 9,8,Q")
 
-# LÕI JAVASCRIPT: TỰ ĐỘNG PHẨY VÀ CHUYỂN IN HOA
-components.html(
+
+# =========================================================================
+# BỘ XỬ LÝ PYTHON NỘI NỘI (THAY THẾ JAVASCRIPT XUNG ĐỘT)
+# =========================================================================
+def clean_and_parse_input(raw_str):
     """
-    <script>
-    function applyAutoComma() {
-        const inputs = parent.document.querySelectorAll('div[data-testid="stTextInput"] input');
-        inputs.forEach(input => {
-            if (input.getAttribute('data-macro-active') === 'true') return;
-            input.setAttribute('data-macro-active', 'true');
-            
-            input.addEventListener('input', function(e) {
-                let val = e.target.value.toUpperCase();
-                val = val.replace(/[^2-910AJQK,]/g, '');
+    Xử lý thông minh chuỗi nhập vào trực tiếp bằng Python để không làm mất ký tự khi đổi ô chuột.
+    Chấp nhận mọi kiểu gõ: gõ liền (5k2), gõ cách (5 k 2) hoặc có dấu phẩy (5,k,2).
+    """
+    if not raw_str:
+        return []
+    
+    # Chuẩn hóa: Biến thành chữ hoa, thay thế khoảng trắng và các ký tự lạ
+    normalized = raw_str.upper().replace(" ", "")
+    
+    # Tách chuỗi xử lý quân bài 10 biệt lập
+    tokens = []
+    i = 0
+    # Nếu người dùng nhập có dấu phẩy sẵn, ta ưu tiên tách theo dấu phẩy
+    if "," in normalized:
+        parts = normalized.split(",")
+        for p in parts:
+            p_clean = "".join([c for c in p if c in "2345678910AJQK"])
+            if p_clean:
+                tokens.append(p_clean)
+    else:
+        # Nếu gõ liền (ví dụ: A10J), bóc tách ký tự thông minh
+        while i < len(normalized):
+            if normalized[i:i+2] == "10":
+                tokens.append("10")
+                i += 2
+            elif normalized[i] in "23456789AJQK":
+                tokens.append(normalized[i])
+                i += 1
+            else:
+                i += 1
                 
-                let tempTokens = [];
-                let i = 0;
-                let cleanStr = val.replace(/,/g, ''); 
-                
-                while (i < cleanStr.length) {
-                    if (cleanStr[i] === '1' && cleanStr[i+1] === '0') {
-                        tempTokens.push('10');
-                        i += 2;
-                    } else {
-                        tempTokens.push(cleanStr[i]);
-                        i += 1;
-                    }
-                }
-                
-                let finalVal = tempTokens.join(',');
-                e.target.value = finalVal;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            });
-        });
-    }
-    setInterval(applyAutoComma, 500);
-    </script>
-    """,
-    height=0,
-)
-
-def parse_card_input(input_str):
+    # Chuyển đổi mảng ký tự sang định dạng số nguyên của Khay bài gốc
     mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13}
-    return [mapping[x.strip().upper()] if x.strip().upper() in mapping else int(x.strip()) for x in input_str.split(",") if x.strip() != ""]
+    result_list = []
+    for tok in tokens:
+        if tok in mapping:
+            result_list.append(mapping[tok])
+        elif tok.isdigit():
+            val = int(tok)
+            if 2 <= val <= 10:
+                result_list.append(val)
+                
+    return result_list
 
-try:
-    p_list = parse_card_input(p_input)
-    b_list = parse_card_input(b_input)
-except ValueError:
-    p_list, b_list = [], []
 
 if st.button("🚀 KÍCH HOẠT QUÉT MA TRẬN PHÂN TÍCH", use_container_width=True, type="primary"):
+    # Phân tách dữ liệu an toàn bằng hàm Python nội bộ
+    p_list = clean_and_parse_input(p_input)
+    b_list = clean_and_parse_input(b_input)
+    
     if p_list or b_list:
         p_calc = p_list[:2]
         b_calc = b_list[:2]
