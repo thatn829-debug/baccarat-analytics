@@ -1,7 +1,7 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE: ULTIMATE COMBINATORIAL ENGINE & RISK MATRIX (FINAL VERSION)
+# SYSTEM CORE: ULTIMATE COMBINATORIAL ENGINE & RISK MATRIX (FINAL PRODUCTION)
 # =========================================================================
 def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=8):
     """
@@ -157,10 +157,11 @@ if st.sidebar.button("⏮️ HOÀN TÁC VÁN TRƯỚC (UNDO)", use_container_wid
         st.session_state.last_results = None
         st.rerun()
 
-# --- MÀN HÌNH CHÍNH ƯU TIÊN 1: BẢNG KẾT QUẢ ĐỐI XỨNG CHIA ĐÔI MÀN HÌNH ---
+# --- MÀN HÌNH CHÍNH ƯU TIÊN 1: BẢNG KẾT QUẢ ĐỐI XỨNG THEO YÊU CẦU ---
 if st.session_state.last_results:
     res, p_pair, b_pair, remaining_deck = st.session_state.last_results
     
+    # CHIA ĐÔI MÀN HÌNH CHÍNH XÁC: Cửa chính bên trái, Cửa đôi bên phải
     left_result_col, right_pair_col = st.columns(2)
     
     # BÊN TRÁI: Tỷ lệ thắng 3 cửa chính
@@ -182,15 +183,13 @@ if st.session_state.last_results:
 
     st.markdown("---")
     
-    # KHU VỰC QUẢN LÝ VỐN CHUYÊN NGHIỆP (KELLY CRITERION MATRIX)
+    # PHÂN TÍCH MA TRẬN QUẢN LÝ VỐN (ĐẨY XUỐNG DƯỚI TOÀN BỘ KẾT QUẢ TỶ LỆ)
     st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
     kelly_col1, kelly_col2 = st.columns(2)
     
-    # Tính toán chỉ số lợi thế để gợi ý lệnh đi tiền
+    # Tính toán chỉ số lợi thế để gợi ý lệnh đi tiền theo Kelly Criterion
     max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
     max_prob = res[max_side] / 100.0
-    
-    # Công thức tính Kelly tối giản cho Baccarat (Tỷ lệ ăn thường là 1:1, Banker 1:0.95)
     b_payout = 1.0 if max_side == "Player" else 0.95
     kelly_percentage = max(0.0, (max_prob * (b_payout + 1) - 1) / b_payout) * 100
     
