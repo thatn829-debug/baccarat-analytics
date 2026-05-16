@@ -128,6 +128,26 @@ def calculate_baccarat_ultimate_core(p_cards, b_cards, shoe_history, shoe_decks=
 # =========================================================================
 st.set_page_config(page_title="Oracle Ultimate Edge", page_icon="🔮", layout="centered")
 
+# Nhúng mã CSS ép các cột (st.columns) luôn giữ nguyên tỷ lệ 50% ngang trên Mobile, không bị vỡ dọc
+st.markdown(
+    """
+    <style>
+    [data-testid="stColumns"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+    }
+    [data-testid="stColumn"] {
+        width: 50% !important;
+        flex: 1 1 50% !important;
+        padding: 5px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'game_counter' not in st.session_state: st.session_state.game_counter = 0
 if 'last_results' not in st.session_state: st.session_state.last_results = None
@@ -157,29 +177,29 @@ if st.sidebar.button("⏮️ HOÀN TÁC VÁN TRƯỚC (UNDO)", use_container_wid
         st.session_state.last_results = None
         st.rerun()
 
-# --- MÀN HÌNH CHÍNH ƯU TIÊN 1: BẢNG KẾT QUẢ ĐỐI XỨNG THEO YÊU CẦU ---
+# --- MÀN HÌNH CHÍNH ƯU TIÊN 1: BẢNG KẾT QUẢ ĐỐI XỨNG CỐ ĐỊNH HÀNG NGANG ---
 if st.session_state.last_results:
     res, p_pair, b_pair, remaining_deck = st.session_state.last_results
     
-    # CHIA ĐÔI MÀN HÌNH CHÍNH XÁC: Cửa chính bên trái, Cửa đôi bên phải
+    # Khởi tạo vùng chia đôi ngang bắt buộc bằng CSS ở trên
     left_result_col, right_pair_col = st.columns(2)
     
     # BÊN TRÁI: Tỷ lệ thắng 3 cửa chính
     with left_result_col:
-        st.markdown("#### 📊 Tỷ Lệ Cửa Chính")
-        st.metric("🔵 PLAYER WIN", f"{res['Player']}%")
-        st.metric("🔴 BANKER WIN", f"{res['Banker']}%")
+        st.markdown("#### 📊 Cửa Chính")
+        st.metric("🔵 PLAYER", f"{res['Player']}%")
+        st.metric("🔴 BANKER", f"{res['Banker']}%")
         st.metric("🟢 TIE WIN", f"{res['Tie']}%")
         st.progress(res['Banker'] / 100 if res['Banker'] > 0 else 0)
         
     # BÊN PHẢI: Tỷ lệ xuất hiện cửa đôi
     with right_pair_col:
-        st.markdown("#### 💎 Tỷ Lệ Cửa Đôi")
-        p_delta = "🔥 Lợi thế cao" if p_pair > 7.47 else "⚖️ Thường"
-        st.metric("🔵 CON ĐÔI (P.Pair)", f"{p_pair}%", delta=p_delta, delta_color="normal")
+        st.markdown("#### 💎 Cửa Đôi")
+        p_delta = "🔥 Cao" if p_pair > 7.47 else "⚖️ Thường"
+        st.metric("🔵 CON ĐÔI", f"{p_pair}%", delta=p_delta, delta_color="normal")
         
-        b_delta = "🔥 Lợi thế cao" if b_pair > 7.47 else "⚖️ Thường"
-        st.metric("🔴 CÁI ĐÔI (B.Pair)", f"{b_pair}%", delta=b_delta, delta_color="normal")
+        b_delta = "🔥 Cao" if b_pair > 7.47 else "⚖️ Thường"
+        st.metric("🔴 CÁI ĐÔI", f"{b_pair}%", delta=b_delta, delta_color="normal")
 
     st.markdown("---")
     
@@ -187,7 +207,6 @@ if st.session_state.last_results:
     st.markdown("### 💰 Phân Tích Ma Trận Quản Lý Vốn")
     kelly_col1, kelly_col2 = st.columns(2)
     
-    # Tính toán chỉ số lợi thế để gợi ý lệnh đi tiền theo Kelly Criterion
     max_side = "Player" if res['Player'] > res['Banker'] else "Banker"
     max_prob = res[max_side] / 100.0
     b_payout = 1.0 if max_side == "Player" else 0.95
@@ -204,9 +223,9 @@ if st.session_state.last_results:
     with kelly_col2:
         if p_pair > 11.5 or b_pair > 11.5:
             pair_side = "Con Đôi" if p_pair > b_pair else "Cái Đôi"
-            st.success(f"🔥 CẢNH BÁO BIẾN ĐỘNG: Cửa **{pair_side}** đang có tỷ lệ xuất hiện đột biến đột ngột!")
+            st.success(f"🔥 BIẾN ĐỘNG: Cửa **{pair_side}** đang có tỷ lệ đột biến!")
         else:
-            st.text("Cửa Đôi đang chạy trong biên độ dao động an toàn.")
+            st.text("Cửa Đôi chạy trong biên độ an toàn.")
             
     with st.expander("📊 Chi tiết cấu trúc ma trận khay bài"):
         total_cards = decks * 52
@@ -228,9 +247,7 @@ with head_col:
     st.subheader("🃏 Điền điểm ván này")
 with status_col:
     st.markdown(
-        f"<div style='text-align: right; margin-top: 10px; font-weight: bold; font-size: 16px; color: #ff4b4b;'>"
-        f"Ván hiện tại: #{st.session_state.game_counter}"
-        f"</div>", 
+        f"<div style='text-align: right; margin-top: 10px; font-weight: bold; font-size: 16px; color: #ff4b4b;'>#Ván hiện tại: {st.session_state.game_counter}</div>", 
         unsafe_allow_html=True
     )
 
