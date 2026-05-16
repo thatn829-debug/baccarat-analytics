@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # =========================================================================
-# SYSTEM CORE: v12.1 - PRECISION COMBINATORICS WITH VARIANCE TRACKER
+# SYSTEM CORE: v12.1 - ULTRA PRECISION ENGINE WITH PHYSICAL AUDIT
 # =========================================================================
 
 def calculate_ultra_precision_odds(p_cards, b_cards, shoe_history, total_decks, is_super6):
@@ -130,24 +130,42 @@ def parse_raw_cards(raw_string):
 # =========================================================================
 # GRAPHICAL INTERFACE
 # =========================================================================
-st.set_page_config(page_title="v12.1 Variance Shield", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="v12.1 Physical Audit", page_icon="⚡", layout="centered")
 
+# Nhúng CSS tùy chỉnh để định dạng bảng và highlight tỷ lệ cao cực mạnh
 st.markdown(
     """
     <style>
     div[data-testid="stHorizontalBlock"] { display: flex !important; }
     div[data-testid="stColumn"] { width: 50% !important; flex: 1 1 50% !important; padding: 5px !important; }
+    
+    /* Cấu trúc bảng kiểm toán */
+    .audit-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center; border: 1px solid #444; }
+    .audit-table th, .audit-table td { padding: 12px; font-size: 15px; border: 1px solid #444; }
+    .audit-table th { background-color: #1e272e; color: #f5f6fa; font-weight: bold; }
+    
+    /* Các class highlight tỉ lệ cao áp đảo */
+    .highlight-player { background-color: #2980b9 !important; color: white !important; font-weight: bold; text-shadow: 1px 1px 2px black; }
+    .highlight-banker { background-color: #c0392b !important; color: white !important; font-weight: bold; text-shadow: 1px 1px 2px black; }
+    .normal-stat { background-color: #2f3640; color: #dcdde1; }
     </style>
     """, 
     unsafe_allow_html=True
 )
 
+# Khởi tạo các biến lưu trữ trong Session State
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'live_logs' not in st.session_state: st.session_state.live_logs = []
-if 'edge_history_df' not in st.session_state: st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Xác_Suất", "Thực_Tế_Ra"])
+if 'edge_history_df' not in st.session_state: st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player", "Banker"])
 if 'last_cards_count' not in st.session_state: st.session_state.last_cards_count = []
-# Khởi tạo bộ đếm số ván ngược dòng liên tiếp
-if 'reverse_streak' not in st.session_state: st.session_state.reverse_streak = 0
+
+# Khởi tạo các biến thống kê đếm số trận vật lý
+if 'stat_games' not in st.session_state: st.session_state.stat_games = 0
+if 'stat_cards_used' not in st.session_state: st.session_state.stat_cards_used = 0
+if 'stat_p_wins' not in st.session_state: st.session_state.stat_p_wins = 0
+if 'stat_b_wins' not in st.session_state: st.session_state.stat_b_wins = 0
+if 'stat_t_wins' not in st.session_state: st.session_state.stat_t_wins = 0
+if 'last_winners' not in st.session_state: st.session_state.last_winners = []
 
 # --- SIDEBAR PANEL ---
 st.sidebar.header("⚙️ THIẾT LẬP KHAY BÀI")
@@ -160,32 +178,78 @@ if st.sidebar.button("↩️ HOÀN TÁC VÁN TRƯỚC", use_container_width=True
         st.session_state.live_logs.pop()
         if not st.session_state.edge_history_df.empty:
             st.session_state.edge_history_df = st.session_state.edge_history_df.iloc[:-1]
+            
+        # Hoàn tác số lượng lá bài
         if st.session_state.last_cards_count:
             count_to_pop = st.session_state.last_cards_count.pop()
             if count_to_pop <= len(st.session_state.shoe_history):
                 st.session_state.shoe_history = st.session_state.shoe_history[:-count_to_pop]
-        st.session_state.reverse_streak = max(0, st.session_state.reverse_streak - 1)
+                st.session_state.stat_cards_used -= count_to_pop
+                
+        # Hoàn tác bộ đếm thắng/thua bàn đấu
+        if st.session_state.last_winners:
+            last_w = st.session_state.last_winners.pop()
+            if last_w == "PLAYER": st.session_state.stat_p_wins -= 1
+            elif last_w == "BANKER": st.session_state.stat_b_wins -= 1
+            elif last_w == "TIE": st.session_state.stat_t_wins -= 1
+            
+        st.session_state.stat_games = max(0, st.session_state.stat_games - 1)
         st.rerun()
 
 if st.sidebar.button("🔄 LÀM MỚI KHAY BÀI (XÓA HẾT)", use_container_width=True):
     st.session_state.shoe_history = []
     st.session_state.live_logs = []
     st.session_state.last_cards_count = []
-    st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player_Xác_Suất", "Thực_Tế_Ra"])
-    st.session_state.reverse_streak = 0
+    st.session_state.edge_history_df = pd.DataFrame(columns=["Ván", "Player", "Banker"])
+    st.session_state.stat_games = 0
+    st.session_state.stat_cards_used = 0
+    st.session_state.stat_p_wins = 0
+    st.session_state.stat_b_wins = 0
+    st.session_state.stat_t_wins = 0
+    st.session_state.last_winners = []
     st.rerun()
 
 # --- MAIN HUD ---
-st.title("🛡️ v12.1 VARIANCE SHIELD ENGINE")
-st.caption("Bản thiết kế tối cao tự động nhận diện và đóng băng trạng thái khi khay bài ra ngược tỷ lệ")
+st.title("⚡ v12.1 HYBRID QUANT AUDIT")
+st.caption("Phiên bản tích hợp giám sát số ván, lá bài và highlight tỉ lệ thắng áp đảo")
 
-# HIỂN THỊ RADAR SÓNG NGƯỢC
-if st.session_state.reverse_streak >= 3:
-    st.error(f"🚨 **DIVERGENCE ALERT: KHAY BÀI ĐANG LOẠN NHỊP ({st.session_state.reverse_streak} VÁN NGƯỢC LIÊN TIẾP)**\n\nToán học cảnh báo thực tại đang bị lệch pha ngẫu nhiên cực đại (High Variance). **KHUYÊN BẠN NÊN DỪNG ĐẶT CƯỢC**, chỉ nhập bài để hệ thống hấp thụ hết chuỗi nhiễu này!")
-elif st.session_state.reverse_streak > 0:
-    st.warning(f"⚠️ **CẢNH BÁO SÓNG NGƯỢC:** Phát hiện xu hướng lệch xác suất nhẹ ({st.session_state.reverse_streak} ván). Hãy hạ mức kiểm soát xuống an toàn.")
-else:
-    st.success("⚖️ **STABLE MARKET:** Khay bài đang phân phối chuẩn, kết quả đi sát với ma trận xác suất lý thuyết.")
+# Thuật toán động xác định bên nào có tỉ lệ thắng cao hơn để đổi màu nền (Highlight)
+p_style = "class='normal-stat'"
+b_style = "class='normal-stat'"
+
+if st.session_state.stat_games > 0:
+    if st.session_state.stat_p_wins > st.session_state.stat_b_wins:
+        p_style = "class='highlight-player'"
+    elif st.session_state.stat_b_wins > st.session_state.stat_p_wins:
+        b_style = "class='highlight-banker'"
+
+total_deck_cards = decks * 52
+cards_remaining = total_deck_cards - st.session_state.stat_cards_used
+
+# Hiển thị bảng dữ liệu cơ sở vật lý nâng cao
+st.markdown(
+    f"""
+    <table class="audit-table">
+        <tr>
+            <th>Tổng Số Ván</th>
+            <th>Số Lá Đã Rút</th>
+            <th>Số Lá Còn Lại</th>
+            <th>🔵 Player Thắng</th>
+            <th>🔴 Banker Thắng</th>
+            <th>🟢 Hòa (Tie)</th>
+        </tr>
+        <tr>
+            <td><b>{st.session_state.stat_games}</b></td>
+            <td>{st.session_state.stat_cards_used} / {total_deck_cards}</td>
+            <td><b>{cards_remaining}</b></td>
+            <td {p_style}>{st.session_state.stat_p_wins}</td>
+            <td {b_style}>{st.session_state.stat_b_wins}</td>
+            <td>{st.session_state.stat_t_wins}</td>
+        </tr>
+    </table>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("### 🃏 Nhập Bài Ván Hiện Tại")
 col_p, col_b = st.columns(2)
@@ -206,7 +270,7 @@ if len(p_list) >= 2 or len(b_list) >= 2:
         st.markdown("---")
         hud1, hud2 = st.columns(2)
         with hud1:
-            st.markdown("#### 📊 Xác Suất Thắng Dự Kiến")
+            st.markdown("#### 📊 Xác Suất Thắng Thực Tế")
             st.metric("🔵 PLAYER WIN", f"{res['Player']}%")
             st.metric("🔴 BANKER WIN", f"{res['Banker']}%")
             st.metric("🟢 TIE WIN", f"{res['Tie']}%")
@@ -214,7 +278,7 @@ if len(p_list) >= 2 or len(b_list) >= 2:
             st.markdown("#### 💎 Tỷ Lệ Cửa Đôi (Pair)")
             st.metric("🔵 PLAYER PAIR", f"{p_pair}%")
             st.metric("🔴 BANKER PAIR", f"{b_pair}%")
-            st.caption(f"Bài còn trong khay: {int(cards_left)} lá")
+            st.caption(f"Bài còn trong lõi máy: {int(cards_left)} lá")
 
         st.markdown("---")
         if st.button("💾 CHỐT KẾT QUẢ VÀO KHAY BÀI", use_container_width=True):
@@ -222,46 +286,42 @@ if len(p_list) >= 2 or len(b_list) >= 2:
             st.session_state.shoe_history.extend(all_current_cards)
             st.session_state.last_cards_count.append(len(all_current_cards))
             
+            # Cập nhật số liệu đếm vật lý
+            st.session_state.stat_games += 1
+            st.session_state.stat_cards_used += len(all_current_cards)
+            
             p_score_final = sum([0 if c >= 10 else c for c in p_list]) % 10
             b_score_final = sum([0 if c >= 10 else c for c in b_list]) % 10
-            winner = "PLAYER" if p_score_final > b_score_final else ("BANKER" if b_score_final > p_score_final else "TIE")
             
-            # Đánh giá xem ván vừa rồi có phải là "Ván ngược tỷ lệ" hay không
-            is_reversed = False
-            if res['Player'] > res['Banker'] and winner == "BANKER": is_reversed = True
-            elif res['Banker'] > res['Player'] and winner == "PLAYER": is_reversed = True
-            
-            # Cập nhật chuỗi ván ngược dòng liên tiếp
-            if is_reversed:
-                st.session_state.reverse_streak += 1
+            if p_score_final > b_score_final:
+                winner = "PLAYER"
+                st.session_state.stat_p_wins += 1
+            elif b_score_final > p_score_final:
+                winner = "BANKER"
+                st.session_state.stat_b_wins += 1
             else:
-                if winner != "TIE": # Trận Hòa giữ nguyên mạch theo dõi
-                    st.session_state.reverse_streak = 0
-            
-            game_idx = len(st.session_state.live_logs) + 1
-            status_tag = "❌ NGƯỢC XU HƯỚNG" if is_reversed else "✅ CHUẨN XÁC"
-            if winner == "TIE": status_tag = "⚖️ HÒA"
+                winner = "TIE"
+                st.session_state.stat_t_wins += 1
                 
+            st.session_state.last_winners.append(winner)
+            
             st.session_state.live_logs.append(
-                f"Ván {game_idx}: P({p_input}) [{p_score_final}đ] vs B({b_input}) [{b_score_final}đ] ➔ {winner} | {status_tag} (Dự kiến: P {res['Player']}% - B {res['Banker']}%)"
+                f"Ván {st.session_state.stat_games}: P({p_input}) [{p_score_final}đ] vs B({b_input}) [{b_score_final}đ] ➔ {winner}"
             )
             
-            # Số hóa kết quả thực tế để vẽ biểu đồ so sánh (Player thắng = 100, Banker thắng = 0, Hòa = 50)
-            actual_numeric = 100 if winner == "PLAYER" else (0 if winner == "BANKER" else 50)
-            new_trend = pd.DataFrame([{"Ván": f"V{game_idx}", "Player_Xác_Suất": res['Player'], "Thực_Tế_Ra": actual_numeric}])
+            new_trend = pd.DataFrame([{"Ván": f"V{st.session_state.stat_games}", "Player": res['Player'], "Banker": res['Banker']}])
             st.session_state.edge_history_df = pd.concat([st.session_state.edge_history_df, new_trend], ignore_index=True)
             st.rerun()
 else:
     st.info("💡 Điền ít nhất 2 lá bài của mỗi bên để bộ phân tích xuất kết quả.")
 
-# --- ĐỒ THỊ VÀ LOGS QUÉT NHIỄU SÓNG ---
+# --- ĐỒ THỊ XU HƯỚNG & NHẬT KÝ VÁN ĐẤU ---
 if not st.session_state.edge_history_df.empty:
     st.markdown("---")
-    st.markdown("### 📈 Đồ Thị Đối Chiếu Biên Độ Lệch Xác Suất")
-    st.caption("Đường nét liền: Tỷ lệ Player lý thuyết | Đường nét đứt (hoặc cột): Điểm thực tế lật ngửa")
+    st.markdown("### 📈 Biểu Đồ Biến Động Lợi Thế Khay Bài")
     st.line_chart(st.session_state.edge_history_df.set_index("Ván"))
 
 if st.session_state.live_logs:
-    with st.expander("📝 Nhật Ký Khay Bài & Đánh Giá Độ Lệch Thống Kê", expanded=True):
+    with st.expander("📝 Nhật Ký Khay Bài Chi Tiết", expanded=True):
         for log in reversed(st.session_state.live_logs):
             st.text(log)
