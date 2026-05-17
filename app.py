@@ -1,4 +1,4 @@
-Import streamlit as st
+import streamlit as st
 import pandas as pd
 import time
 import random
@@ -21,7 +21,6 @@ try:
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
     
-    # Tích hợp thư viện tàng hình chuyên dụng (Cần chạy: pip install selenium-stealth)
     try:
         from selenium_stealth import stealth
         STEALTH_LIB_AVAILABLE = True
@@ -31,14 +30,11 @@ except ImportError:
     SELENIUM_AVAILABLE = False
 
 # =========================================================================
-# SYSTEM CORE v20.0: QUANTUM-BAYESIAN ULTIMATE ENGINE
+# SYSTEM CORE v20.0: QUANTUM-BAYESIAN ULTIMATE ENGINE (SỬA LỖI ĐỒNG BỘ RETURN)
 # =========================================================================
 def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0):
-    """
-    LÕI TOÁN HỌC V20.0: TÍNH TOÁN DỰA TRÊN SỰ PHÂN RÃ KHÔNG ĐỒNG ĐỀU CỦA KHAY BÀI
-    """
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
 
@@ -47,7 +43,6 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
 
     detailed_cards_count = len(shoe_history)
     
-    # 1. THUẬT TOÁN PHÂN RÃ MA TRẬN BAYES TỐI HẬU
     if detailed_cards_count > 0:
         for card_val in shoe_history:
             if card_val in deck_structure:
@@ -126,6 +121,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
     b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
 
+    # SỬA LỖI: Đồng bộ bổ sung 2 phần tử cuối (is_shoe_logical, invalid_cards_list) cho các return khẩn cấp
     if (len(p_cards) == 2 and p_score >= 8) or (len(b_cards) == 2 and b_score >= 8):
         if p_score == b_score: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         elif p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
@@ -190,6 +186,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         "Banker": round((banker_wins / total_prob) * 100, 2),
         "Tie": round((ties / total_prob) * 100, 2)
     }
+    # SỬA LỖI: Bổ sung đủ 8 tham số đầu ra tương thích hoàn toàn với bộ Unpack bên dưới
     return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
 def detect_baccarat_pattern(outcome_list):
@@ -213,33 +210,23 @@ def fetch_live_web_data_stealth(url, target_xpath):
         return "ERROR_LIB", "Chưa cài đặt bộ thư viện Selenium lõi."
     
     options = Options()
-    # 1. Thiết lập Headless thế hệ mới (Không để lộ cờ trỏ của chrome headless cũ)
     options.add_argument("--headless=new") 
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    
-    # 2. Loại bỏ hoàn toàn các biến tự động hóa hệ thống (Automation Flags)
     options.add_argument("--disable-blink-features=AutomationControlled") 
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
     
-    # 3. Xoay vòng mượt mà các User-Agent cao cấp nhất hiện tại
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     ]
     options.add_argument(f"user-agent={random.choice(user_agents)}")
-    
-    # 4. Tránh bẫy kích thước màn hình mặc định của bot (Khởi tạo phân giải chuẩn PC)
-    viewports = ["1920,1080", "1440,900", "1536,864"]
-    options.add_argument(f"--window-size={random.choice(viewports)}")
+    options.add_argument("--window-size=1440,900")
 
     try:
         driver = webdriver.Chrome(options=options)
-        
-        # 5. KÍCH HOẠT LỚP TÀNG HÌNH CHUYÊN SÂU (STEALTH ENGINE)
         if STEALTH_LIB_AVAILABLE:
             stealth(driver,
                 languages=["en-US", "en"],
@@ -250,37 +237,19 @@ def fetch_live_web_data_stealth(url, target_xpath):
                 fix_hairline=True,
             )
         else:
-            # Shield dự phòng bằng mã hóa trực tiếp CDP nếu không có thư viện stealth
             driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-                "source": """
-                    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                    window.chrome = { runtime: {} };
-                    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-                    Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
-                """
+                "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
             })
 
-        # 6. Truy cập & Trì hoãn ngẫu nhiên (Giả lập con người suy nghĩ)
         driver.get(url)
-        time.sleep(random.uniform(5.0, 8.0)) 
-        
-        # 7. GIẢ LẬP HÀNH VI CUỘN CHUỘT VÀ DI CHUYỂN KHÔNG ĐỊNH HƯỚNG
-        try:
-            actions = ActionChains(driver)
-            for _ in range(random.randint(2, 4)):
-                actions.scroll_by_amount(0, random.randint(100, 300)).perform()
-                time.sleep(random.uniform(0.5, 1.5))
-        except:
-            pass
+        time.sleep(random.uniform(4.0, 6.0)) 
 
-        # 8. CHIẾN LƯỢC ĐỢI CHỜ ĐỘNG (Explicit Wait) - Tránh lỗi nghẽn DOM bài chưa kịp tải
-        wait = WebDriverWait(driver, 10)
-        elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, target_xpath)))
+        wait = WebDriverWait(driver, 8)
+        elements = wait.until(EC.presence_of_all_elements_located((By.開X, target_xpath) if 'By' in globals() else (By.XPATH, target_xpath)))
         
         scraped_outcomes = []
         for elem in elements:
             text = elem.text.strip().upper()
-            # Bẫy phân tích text thông minh đa nền tảng (Chấp nhận cả ký tự viết tắt)
             if any(p in text for p in ['PLAYER', 'CON', 'P', '🔵']): scraped_outcomes.append('Player')
             elif any(b in text for b in ['BANKER', 'CÁI', 'B', '🔴']): scraped_outcomes.append('Banker')
             elif any(t in text for t in ['TIE', 'HÒA', 'T', 'H', '🟢']): scraped_outcomes.append('Tie')
@@ -300,10 +269,8 @@ st.set_page_config(page_title="Oracle Hybrid Matrix v20.0", page_icon="🔮", la
 st.markdown(
     """
     <style>
-    div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; }
-    div[data-testid="stColumn"] { width: 50% !important; min-width: 50% !important; flex: 1 1 50% !important; padding: 5px !important; }
     .hud-box { padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 12px; border: 1px solid #4f4f4f; background-color: #1a1a1a; }
-    .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
+    .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; }
     .hud-value { font-size: 36px; font-weight: 800; font-family: monospace; margin-top: 4px; }
     .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
     .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
@@ -312,8 +279,7 @@ st.markdown(
     .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; }
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; }
     .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
-    .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
-    .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; }
+    .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; }
     .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
     </style>
     """, 
@@ -321,7 +287,6 @@ st.markdown(
 )
 
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
-if 'live_logs' not in st.session_state: st.session_state.live_logs = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
@@ -333,13 +298,9 @@ decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🌐 CẤU HÌNH QUÉT LINK TỰ ĐỘNG (STEALTH)")
 
-if not AUTOREFRESH_AVAILABLE or not SELENIUM_AVAILABLE:
-    st.sidebar.warning("⚠️ Chế độ tự động quét khóa do thiếu thư viện Selenium.")
-    auto_scrape_enabled = False
-else:
+auto_scrape_enabled = False
+if AUTOREFRESH_AVAILABLE and SELENIUM_AVAILABLE:
     auto_scrape_enabled = st.sidebar.checkbox("Kích hoạt Quét Tàng Hình Trực Tiếp", value=False)
-    if auto_scrape_enabled and not STEALTH_LIB_AVAILABLE:
-        st.sidebar.info("💡 Mẹo: Chạy 'pip install selenium-stealth' tại terminal để tăng 200% tỷ lệ ẩn danh phần cứng.")
 
 target_url = st.sidebar.text_input("Nhập Link Web bàn bài:", value="https://example-baccarat-live.com", disabled=not auto_scrape_enabled)
 xpath_selector = st.sidebar.text_input("Xpath định vị chuỗi kết quả (Road):", value="//div[contains(@class, 'road-item')]", disabled=not auto_scrape_enabled)
@@ -351,45 +312,55 @@ if auto_scrape_enabled and AUTOREFRESH_AVAILABLE:
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 THIẾT LẬP CƠ SỞ TÍNH TOÁN NỀN")
 
-disable_manual_inputs = auto_scrape_enabled
+# SỬA LỖI ĐỒNG BỘ: Tạo biến lưu trữ thông tin độc lập thông qua Session State
+if 'p_wins' not in st.session_state: st.session_state.p_wins = 0
+if 'b_wins' not in st.session_state: st.session_state.b_wins = 0
+if 'tie_wins' not in st.session_state: st.session_state.tie_wins = 0
+if 'manual_games' not in st.session_state: st.session_state.manual_games = 0
 
-manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, disabled=disable_manual_inputs)
-manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0, disabled=disable_manual_inputs)
-
-p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0, disabled=disable_manual_inputs)
-b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0, disabled=disable_manual_inputs)
-tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0, disabled=disable_manual_inputs)
-
-# THỰC THI QUÉT WEB VỚI LỚP BẢO VỆ TỐI HẬU
 if auto_scrape_enabled and SELENIUM_AVAILABLE:
-    with st.spinner("🕵️‍♂️ Lõi Tàng Hình Đang Qua Mặt Tường Lửa Casino..."):
+    with st.spinner("🕵️‍♂️ Lõi Tàng Hình Đang Quét Dữ Liệu Casino..."):
         status, web_data = fetch_live_web_data_stealth(target_url, xpath_selector)
         if status == "SUCCESS" and len(web_data) > 0:
-            st.sidebar.success(f"✅ Vượt rào thành công! Đã đồng bộ {len(web_data)} ván.")
+            st.sidebar.success(f"✅ Đã đồng bộ {len(web_data)} ván.")
             st.session_state.outcome_history = web_data
-            p_wins_input = web_data.count("Player")
-            b_wins_input = web_data.count("Banker")
-            tie_wins_input = web_data.count("Tie")
-            manual_games = len(web_data)
-        elif status.startswith("ERROR"):
-            st.sidebar.error("❌ Link lỗi hoặc tường lửa Cloudflare chặn sâu. Hãy chuyển sang nhập tay thủ công!")
+            st.session_state.p_wins = web_data.count("Player")
+            st.session_state.b_wins = web_data.count("Banker")
+            st.session_state.tie_wins = web_data.count("Tie")
+            st.session_state.manual_games = len(web_data)
+else:
+    st.session_state.manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=st.session_state.manual_games)
+    st.session_state.p_wins = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=st.session_state.p_wins)
+    st.session_state.b_wins = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=st.session_state.b_wins)
+    st.session_state.tie_wins = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=st.session_state.tie_wins)
 
-calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
-is_strict_lock = (calculated_total_wins > 0 and manual_games != calculated_total_wins)
+manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, disabled=auto_scrape_enabled)
+
+calculated_total_wins = st.session_state.p_wins + st.session_state.b_wins + st.session_state.tie_wins
+is_strict_lock = (calculated_total_wins > 0 and st.session_state.manual_games != calculated_total_wins)
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
     st.session_state.shoe_history = []
-    st.session_state.live_logs = []
     st.session_state.outcome_history = []
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
+    st.session_state.p_wins = 0
+    st.session_state.b_wins = 0
+    st.session_state.tie_wins = 0
+    st.session_state.manual_games = 0
     st.rerun()
 
-display_game = manual_games + len(st.session_state.live_logs)
+# --- XỬ LÝ OFF-LINE TỰ ĐỘNG CẬP NHẬT KHI KHÔNG QUÉT LINK ---
+if not auto_scrape_enabled and not is_strict_lock and not st.session_state.shoe_history:
+    st.session_state.last_results = calculate_baccarat_v20_ultimate(
+        [], [], [], shoe_decks=decks,
+        manual_cards_used=manual_cards, manual_games_played=st.session_state.manual_games,
+        p_wins=st.session_state.p_wins, b_wins=st.session_state.b_wins, tie_wins=st.session_state.tie_wins
+    )
 
 if is_strict_lock:
-    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng cài đặt ({manual_games}) lệch với chi tiết tổng ván thắng lẻ ({calculated_total_wins}). Vui lòng cân bằng lại dữ liệu nền.")
+    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng cài đặt ({st.session_state.manual_games}) lệch với tổng ván thắng lẻ ({calculated_total_wins}).")
 else:
     if st.session_state.last_results:
         results_data = st.session_state.last_results
@@ -407,13 +378,13 @@ else:
                 
             left_result_col, right_pair_col = st.columns(2)
             with left_result_col:
-                st.markdown("#### 📊 Dự Đoán Xác Suất Cửa Chính (Lõi Tối Hậu)")
+                st.markdown("#### 📊 Dự Đoán Xác Suất Cửa Chính")
                 st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
                 
             with right_pair_col:
-                st.markdown("#### 💎 Tỷ Lệ Cược Phụ Tối Hậu")
+                st.markdown("#### 💎 Tỷ Lệ Cược Phụ")
                 st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
                 st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
                 
@@ -423,22 +394,22 @@ else:
                 if st.session_state.outcome_history:
                     trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
                     pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
-                    st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN ĐÃ GHI NHẬN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color};">{pattern_msg}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="trend-hud"><div class="trend-string">{" ".join(trend_letters)}</div><div style="color: {pattern_color}; font-size:12px; font-weight:bold; margin-top:5px;">{pattern_msg}</div></div>', unsafe_allow_html=True)
 
             st.markdown("---")
             total_shoe_cards = decks * 52
             penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-            st.markdown(f"**Chế độ lõi toán tối hậu:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}%")
+            st.markdown(f"**Chế độ lõi:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}%")
             st.progress(penetration_rate / 100.0)
     else:
-        st.info("🔮 ENGINE QUANTUM HYBRID READY. Hãy nạp quân bài ván hiện tại để kích hoạt siêu máy tính tính toán.")
+        st.info("🔮 ENGINE QUANTUM HYBRID READY. Điền quân bài ván vừa rồi bên dưới để bắt đầu tính.")
 
 st.markdown("---")
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
 col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input("PLAYER (Lá bài vừa ra):", value="")
-with col_b: b_input = st.text_input("BANKER (Lá bài vừa ra):", value="")
+with col_p: p_input = st.text_input("PLAYER (Ví dụ: 9,A hoặc K,2):", value="", key="input_p_cards")
+with col_b: b_input = st.text_input("BANKER (Ví dụ: 5,J hoặc 10,4):", value="", key="input_b_cards")
 
 def clean_and_parse_input(raw_str):
     if not raw_str: return []
@@ -474,10 +445,11 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
         p_list = clean_and_parse_input(p_input)
         b_list = clean_and_parse_input(b_input)
         if p_list or b_list:
+            # Gửi dữ liệu tính toán ván kế tiếp dựa trên trạng thái khay bài hiện tại
             core_output = calculate_baccarat_v20_ultimate(
                 p_list[:2], b_list[:2], st.session_state.shoe_history, shoe_decks=decks,
-                manual_cards_used=manual_cards, manual_games_played=manual_games,
-                p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
+                manual_cards_used=manual_cards, manual_games_played=st.session_state.manual_games,
+                p_wins=st.session_state.p_wins, b_wins=st.session_state.b_wins, tie_wins=st.session_state.tie_wins
             )
             if isinstance(core_output, str):
                 st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0, False, [])
@@ -487,4 +459,12 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 if not mode.startswith("LỖI"):
                     st.session_state.last_played_cards = current_game_signature
                     st.session_state.shoe_history.extend(p_list + b_list)
+                    
+                    # Cập nhật bảng kết quả nhanh chuỗi bài dựa trên điểm số thực tế vừa nhập
+                    p_real = sum([0 if c >= 10 else c for c in p_list]) % 10
+                    b_real = sum([0 if c >= 10 else c for c in b_list]) % 10
+                    if p_real > b_real: st.session_state.outcome_history.append("Player")
+                    elif b_real > p_real: st.session_state.outcome_history.append("Banker")
+                    else: st.session_state.outcome_history.append("Tie")
+                    
                     st.rerun()
