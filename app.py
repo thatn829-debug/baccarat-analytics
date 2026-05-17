@@ -1,4 +1,4 @@
-Import streamlit as st
+import streamlit as st
 import pandas as pd
 
 # =========================================================================
@@ -169,8 +169,6 @@ st.set_page_config(page_title="Oracle Engine v18.2 Manual Patched", page_icon="�
 st.markdown(
     """
     <style>
-    div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; }
-    div[data-testid="stColumn"] { width: 50% !important; min-width: 50% !important; flex: 1 1 50% !important; padding: 5px !important; }
     .hud-box { padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 12px; border: 1px solid #4f4f4f; background-color: #1a1a1a; }
     .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
     .hud-value { font-size: 36px; font-weight: 800; font-family: monospace; margin-top: 4px; }
@@ -228,11 +226,7 @@ else:
         results_data = st.session_state.last_results
         
         if isinstance(results_data, str):
-            if results_data.startswith("❌"): st.error(results_data)
-            else: st.warning(results_data)
-        elif isinstance(results_data, tuple) and isinstance(results_data[0], str):
-            if results_data[0].startswith("❌"): st.error(results_data[0])
-            else: st.warning(results_data[0])
+            st.error(results_data)
         else:
             res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
             
@@ -325,7 +319,7 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 st.session_state.last_results = core_output
                 st.session_state.last_played_cards = current_game_signature
                 
-                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
+                # Tự động tính điểm từ bài vừa nhập tay
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
                 if p_score_eval > b_score_eval:
@@ -336,5 +330,5 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                     st.session_state.outcome_history.append("Tie")
 
                 st.session_state.shoe_history.extend(p_list + b_list)
-                    
-            st.rerun()
+            
+            # Thay vì gọi st.rerun(), ta để Streamlit tự render lại mượt mà dựa trên state mới cập nhật
