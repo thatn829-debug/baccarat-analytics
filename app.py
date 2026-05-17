@@ -49,7 +49,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         if card_num >= 10: score_deck[0] += count
         else: score_deck[card_num] += count
 
-    # Khấu trừ các lá bài đang có trên bàn ván hiện tại để tính toán chính xác lá tiếp theo
+    # Khấu trừ các lá bài đang có trên bàn ván hiện tại
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0: score_deck[val] -= 1
@@ -58,7 +58,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 12:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Tính toán Player Pair / Banker Pair dựa trên lượng bài còn lại trong khay
+    # Tính toán Player Pair / Banker Pair
     p_pair_prob = sum((deck_structure[i]/N_total)*((deck_structure[i]-1)/(N_total-1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 4)
 
@@ -78,13 +78,11 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
     b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
 
-    # Trường hợp kết thúc ngay sau 2 lá (Thắng tự nhiên - Natural 8, 9)
     if (len(p_cards) == 2 and p_score >= 8) or (len(b_cards) == 2 and b_score >= 8):
         if p_score == b_score: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         elif p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         else: return {"Player": 0.0, "Banker": 100.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Giả lập toán học Bayes / Markov cho quy tắc bốc lá thứ 3
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
     if len(p_cards) >= 2 and p_score >= 6:
@@ -162,7 +160,7 @@ def detect_baccarat_pattern(outcome_list):
     return "📊 Khay bài đi sóng phẳng", "#2ecc71"
 
 # =========================================================================
-# INTERFACE DESIGN & STYLES
+# INTERFACE DESIGN & STYLES (FIXED CSS)
 # =========================================================================
 st.set_page_config(page_title="Oracle Engine v18.2 Manual Patched", page_icon="🔮", layout="centered")
 
@@ -181,7 +179,8 @@ st.markdown(
     .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; }
     .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
-    .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
+    .trend-alert { border-left: 4px solid; padding-left: 8px; margin-top: 8px; font-size: 13px; }
+    .char-p { color: #54a0ff; font-weight: bold; } .char-b { color: #ff7675; font-weight: bold; } .char-t { color: #2ecc71; font-weight: bold; }
     </style>
     """, 
     unsafe_allow_html=True
@@ -219,7 +218,7 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.rerun()
 
 # =========================================================================
-# CHỈNH SỬA VỊ TRÍ: ĐƯA KHU VỰC NHẬP ĐIỂM (DỮ LIỆU) LÊN TRÊN CÙNG
+# KHU VỰC NHẬP ĐIỂM
 # =========================================================================
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
@@ -275,7 +274,7 @@ if calc_triggered:
                 st.session_state.last_results = core_output
                 st.session_state.last_played_cards = current_game_signature
                 
-                # Tự động tính điểm từ bài vừa nhập tay
+                # Tính toán kết quả ván hiện tại để lưu vào trend sàn
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
                 if p_score_eval > b_score_eval:
@@ -290,7 +289,7 @@ if calc_triggered:
 # --- PHÂN TÁCH GIAO DIỆN ---
 st.markdown("---")
 
-# --- PANEL OUTPUT CONTROL (HIỂN THỊ KẾT QUẢ PHÍA DƯỚI) ---
+# --- PANEL OUTPUT CONTROL ---
 if is_strict_lock:
     st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}). Vui lòng điều chỉnh lại thông số ở cột bên trái.")
 else:
@@ -311,9 +310,6 @@ else:
             
             st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH KHAY BÀI")
             
-            # =========================================================================
-            # ĐÃ CẬP NHẬT: CHIA THÀNH 2 CỘT PHÍA DƯỚI (CỬA CHÍNH VS CỬA ĐÔI + XÉT LOGIC)
-            # =========================================================================
             left_col, right_col = st.columns(2)
             
             # --- CỘT BÊN TRÁI: TOÀN BỘ CỬA CHÍNH ---
@@ -334,6 +330,8 @@ else:
                     st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
                 else: 
                     st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
+                    if invalid_cards:
+                        st.caption(f"Quân bài lỗi: {', '.join(invalid_cards)}")
                 
                 # Xu hướng sàn
                 if st.session_state.outcome_history:
@@ -346,7 +344,7 @@ else:
             st.markdown("---")
             total_shoe_cards = decks * 52
             penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-            st.markdown(f"**Chế độ quét:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}%")
+            st.markdown(f"**Chế độ quét:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}% ({int(cards_left)}/{total_shoe_cards} lá còn lại)")
             st.progress(penetration_rate / 100.0)
     else:
         st.info("🔮 ENGINE READY. Vui lòng nạp quân bài ván trực tiếp ở phía trên để lấy dữ liệu phân tích.")
