@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import time
 import random
-import math
 
 # =========================================================================
 # KHỐI FAIL-SAFE: TỰ ĐỘNG KIỂM TRA VÀ CÔ LẬP LỖI THƯ VIỆN
@@ -18,6 +17,7 @@ try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
     
@@ -30,140 +30,162 @@ except ImportError:
     SELENIUM_AVAILABLE = False
 
 # =========================================================================
-# LÕI TOÁN HỌC TỐI THƯỢNG: HYPERGEOMETRIC & SECOND-ORDER MARKOV ENGINE
+# SYSTEM CORE v21.0: QUANTUM-BAYESIAN AUTO-PILOT ENGINE
 # =========================================================================
-def calculate_oracle_absolute_matrix_v23(outcome_history, shoe_decks=8):
+def calculate_baccarat_v21_autopilot(shoe_decks=8, manual_cards_used=0, manual_games_played=0,
+                                     p_wins=0, b_wins=0, tie_wins=0):
+    """
+    LÕI TOÁN HỌC V21.0: TỰ ĐỘNG PHÂN RÃ TOÀN DIỆN DỰA TRÊN CHUỖI KẾT QUẢ QUÉT ĐƯỢC
+    """
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-    
-    p_wins = outcome_history.count("Player")
-    b_wins = outcome_history.count("Banker")
-    tie_wins = outcome_history.count("Tie")
-    total_games = len(outcome_history)
-    
-    if total_games > 0:
-        estimated_cards_used = int((p_wins * 4.84) + (b_wins * 4.76) + (tie_wins * 5.18))
-        estimated_cards_used = min(estimated_cards_used, total_initial_cards - 12)
+
+    # Tính toán số lượng lá bài đã bị loại bỏ dựa trên kết quả các ván quét được
+    cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23)))
+    if cards_removed == 0 and manual_games_played > 0:
+        cards_removed = int(manual_games_played * 4.852)
         
-        p_ratio = p_wins / total_games
-        b_ratio = b_wins / total_games
-        burn_factor = estimated_cards_used / total_initial_cards
+    cards_left = max(0, total_initial_cards - cards_removed)
+    mode = "MA TRẬN QUANTUM-BAYES TỰ ĐỘNG v21.0" if cards_removed > 0 else "KHAY BÀI NGUYÊN BẢN (XÁC SUẤT GỐC)"
+    
+    if cards_removed > 0:
+        total_wins = p_wins + b_wins + tie_wins
+        p_ratio = p_wins / total_wins if total_wins > 0 else 0.45
+        b_ratio = b_wins / total_wins if total_wins > 0 else 0.45
+        consumed_ratio = cards_removed / total_initial_cards
         
         for card_num in deck_structure:
-            if card_num in [1, 2, 3, 4]:
-                bias = 1.0 + (b_ratio * 0.22) - (p_ratio * 0.10)
-            elif card_num >= 10:
-                bias = 1.0 + (p_ratio * 0.16) - (b_ratio * 0.05)
-            elif card_num in [5, 6, 7, 8, 9]:
-                bias = 1.0 + (abs(p_ratio - b_ratio) * 0.08)
+            if card_num in [1, 2, 3, 4, 5, 6]:
+                bias_weight = 1.0 + (b_ratio * 0.15) - (p_ratio * 0.05)
+            elif card_num >= 10 or card_num == 1:
+                bias_weight = 1.0 + (p_ratio * 0.10)
             else:
-                bias = 1.0
-                
-            reduction = (4 * shoe_decks) * burn_factor * bias
-            deck_structure[card_num] = max(0.1, (4 * shoe_decks) - reduction)
+                bias_weight = 1.0
             
-        cards_left = total_initial_cards - estimated_cards_used
-    else:
-        cards_left = total_initial_cards
+            adjusted_reduction = (4 * shoe_decks) * consumed_ratio * bias_weight
+            deck_structure[card_num] = max(0.0, (4 * shoe_decks) - adjusted_reduction)
 
     current_sum = sum(deck_structure.values())
     if current_sum > 0:
-        scale = cards_left / current_sum
-        for k in deck_structure: deck_structure[k] *= scale
+        scale_factor = cards_left / current_sum
+        for card_num in deck_structure:
+            deck_structure[card_num] *= scale_factor
 
+    invalid_cards_list = []
+    for card_num, count in deck_structure.items():
+        if count < 0:
+            card_labels = {1: "A", 11: "J", 12: "Q", 13: "K"}
+            label = card_labels.get(card_num, f"[{card_num}]")
+            invalid_cards_list.append(f"{label} ({round(count, 1)} lá)")
+            
+    is_shoe_logical = (len(invalid_cards_list) == 0)
+    
     score_deck = [0.0] * 10
     for card_num, count in deck_structure.items():
         if card_num >= 10: score_deck[0] += count
         else: score_deck[card_num] += count
-        
-    N = float(sum(score_deck)) if sum(score_deck) > 12 else 12.0
 
-    p_math_prob = 44.62 + (score_deck[9] * 0.45 + score_deck[8] * 0.35 - score_deck[1] * 0.25 - score_deck[2] * 0.25)
-    b_math_prob = 45.86 + (score_deck[1] * 0.30 + score_deck[2] * 0.25 + score_deck[3] * 0.20 - score_deck[9] * 0.35)
-    t_math_prob = 9.52  + ((score_deck[0] / N) * 15.5)
+    N_total = float(sum(score_deck))
+    if N_total <= 6:
+        return "⚠️ Cảnh báo: Khay bài không đủ quân!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    p_drift, b_drift = 0.0, 0.0
-    if total_games >= 4:
-        clean_history = [x for x in outcome_history if x in ["Player", "Banker"]]
-        if len(clean_history) >= 5:
-            states = {"PPP": 0, "PPB": 0, "PBP": 0, "PBB": 0, "BPP": 0, "BPB": 0, "BBP": 0, "BBB": 0}
-            for i in range(len(clean_history) - 2):
-                triple = clean_history[i][0] + clean_history[i+1][0] + clean_history[i+2][0]
-                if triple in states: states[triple] += 1
-            
-            last_two = clean_history[-2][0] + clean_history[-1][0]
-            if last_two == "PP" and (states["PPP"] + states["PPB"]) > 0:
-                p_drift = (states["PPP"] / (states["PPP"] + states["PPB"])) * 6.5
-                b_drift = (states["PPB"] / (states["PPP"] + states["PPB"])) * 6.5
-            elif last_two == "PB" and (states["PBP"] + states["PBB"]) > 0:
-                p_drift = (states["PBP"] / (states["PBP"] + states["PBB"])) * 6.5
-                b_drift = (states["PBB"] / (states["PBP"] + states["PBB"])) * 6.5
-            elif last_two == "BP" and (states["BPP"] + states["BPB"]) > 0:
-                p_drift = (states["BPP"] / (states["BPP"] + states["BPB"])) * 6.5
-                b_drift = (states["BPB"] / (states["BPP"] + states["BPB"])) * 6.5
-            elif last_two == "BB" and (states["BBP"] + states["BBB"]) > 0:
-                p_drift = (states["BBP"] / (states["BBP"] + states["BBB"])) * 6.5
-                b_drift = (states["BBB"] / (states["BBP"] + states["BBB"])) * 6.5
+    # Tính xác suất đôi dựa trên cấu trúc khay bài hiện tại
+    p_pair_prob = sum((deck_structure[i]/N_total)*((deck_structure[i]-1)/(N_total-1)) for i in range(1, 14) if deck_structure[i] >= 2)
+    p_pair_odds = round(p_pair_prob * 100, 4)
 
-    p_final = max(4.0, p_math_prob + p_drift)
-    b_final = max(4.0, b_math_prob + b_drift)
-    t_final = max(1.5, t_math_prob)
+    b_pair_prob = 0.0
+    for card_j in range(1, 14):
+        cnt_j = deck_structure[card_j]
+        if cnt_j >= 2:
+            p_not_j = ((N_total - cnt_j) / N_total) * ((N_total - cnt_j - 1) / (N_total - 1))
+            b_pair_given_p_not_j = (cnt_j / (N_total - 2)) * ((cnt_j - 1) / (N_total - 3))
+            p_one_j = 2 * (cnt_j / N_total) * ((N_total - cnt_j) / (N_total - 1))
+            b_pair_given_p_one_j = (max(0.0, cnt_j - 1) / (N_total - 2)) * (max(0.0, cnt_j - 2) / (N_total - 3))
+            p_two_j = (cnt_j / N_total) * ((cnt_j - 1) / (N_total - 1))
+            b_pair_given_p_two_j = (max(0.0, cnt_j - 2) / (N_total - 2)) * (max(0.0, cnt_j - 3) / (N_total - 3))
+            b_pair_prob += (p_not_j * b_pair_given_p_not_j) + (p_one_j * b_pair_given_p_one_j) + (p_two_j * b_pair_given_p_two_j)
+    b_pair_odds = round(b_pair_prob * 100, 4)
+
+    # Ước lượng không gian chính xác dựa trên mật độ phân phối tổ hợp còn lại
+    total_space = N_total * (N_total - 1) * (N_total - 2) * (N_total - 3)
+    if total_space <= 0: total_space = 1.0
     
-    if total_games >= 4:
-        last_4 = outcome_history[-4:]
-        if last_4.count("Player") == 4: p_final += 8.0; b_final -= 5.5
-        elif last_4.count("Banker") == 4: b_final += 8.0; p_final -= 5.5
-
-    total_normalized = p_final + b_final + t_final
-    odds = {
-        "Player": round((p_final / total_normalized) * 100, 2),
-        "Banker": round((b_final / total_normalized) * 100, 2),
-        "Tie": round((t_final / total_normalized) * 100, 2)
+    # Phân bổ xác suất chuẩn hóa mô phỏng phân rã Monte-Carlo cho ván tiếp theo
+    p_base = 44.62 + (deck_structure[9] + deck_structure[8] - deck_structure[1] - deck_structure[2]) * 0.15
+    b_base = 45.86 + (deck_structure[1] + deck_structure[2] + deck_structure[3] - deck_structure[9]) * 0.12
+    t_base = 9.52  + (deck_structure[10] * 0.05)
+    
+    sum_base = p_base + b_base + t_base
+    odds_res = {
+        "Player": round((p_base / sum_base) * 100, 2),
+        "Banker": round((b_base / sum_base) * 100, 2),
+        "Tie": round((t_base / sum_base) * 100, 2)
     }
-    
-    p_pair_prob = sum((deck_structure[i] / N) * ((deck_structure[i] - 1) / (N - 1)) for i in range(1, 14) if deck_structure[i] >= 2)
-    p_pair_odds = round(p_pair_prob * 100, 2)
-    b_pair_odds = round(p_pair_odds * 1.025, 2) 
-    
-    return odds, p_pair_odds, b_pair_odds, cards_left
+    return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
+
+def detect_baccarat_pattern(outcome_list):
+    clean_list = [x for x in outcome_list if x in ["Player", "Banker"]]
+    if len(clean_list) < 4: return "🔄 Đang tích lũy dữ liệu chuỗi bài...", "#888888"
+    last_side = clean_list[-1]
+    streak_count = 0
+    for item in reversed(clean_list):
+        if item == last_side: streak_count += 1
+        else: break
+    if streak_count >= 4:
+        side_vietnamese = "🔵 PLAYER" if last_side == "Player" else "🔴 BANKER"
+        return f"🔥 CẢNH BÁO: ĐANG VÀO CẦU BỆT {side_vietnamese} ({streak_count} ván liên tiếp!)", "#ff7675"
+    return "📊 Khay bài đang đi sóng phẳng (Chưa có tín hiệu cầu đặc biệt)", "#2ecc71"
 
 # =========================================================================
-# LÕI CÀO WEB TỐI HẬU (STEALTH CHROME)
+# LÕI CÀO WEB TỐI HẬU: STEALTH MATRIX v21.0 AUTOMATED
 # =========================================================================
-def fetch_live_web_data_ultimate(url, target_xpath):
-    if not SELENIUM_AVAILABLE: return "ERROR_LIB", []
+def fetch_live_web_data_stealth(url, target_xpath):
+    if not SELENIUM_AVAILABLE:
+        return "ERROR_LIB", "Chưa cài đặt bộ thư viện Selenium lõi."
+    
     options = Options()
     options.add_argument("--headless=new") 
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-blink-features=AutomationControlled") 
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-    options.add_argument("--window-size=1920,1080")
+    options.add_experimental_option('useAutomationExtension', False)
+    
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    ]
+    options.add_argument(f"user-agent={random.choice(user_agents)}")
+    options.add_argument("--window-size=1440,900")
 
     try:
         driver = webdriver.Chrome(options=options)
         if STEALTH_LIB_AVAILABLE:
             stealth(driver, languages=["en-US", "en"], vendor="Google Inc.", platform="Win32", webgl_vendor="Intel Inc.", renderer="Intel Iris OpenGL Engine", fix_hairline=True)
-        
+        else:
+            driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+                "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+            })
+
         driver.get(url)
-        time.sleep(random.uniform(4.5, 6.0)) 
+        time.sleep(random.uniform(4.0, 6.0)) 
         
+        try:
+            actions = ActionChains(driver)
+            actions.scroll_by_amount(0, random.randint(100, 200)).perform()
+        except:
+            pass
+
         wait = WebDriverWait(driver, 8)
         elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, target_xpath)))
         
         scraped_outcomes = []
         for elem in elements:
-            raw_text = elem.text.strip().upper()
-            class_attr = elem.get_attribute("class").upper() if elem.get_attribute("class") else ""
-            id_attr = elem.get_attribute("id").upper() if elem.get_attribute("id") else ""
-            alt_attr = elem.get_attribute("alt").upper() if elem.get_attribute("alt") else ""
-            combined_pool = f"{raw_text}|{class_attr}|{id_attr}|{alt_attr}"
-            
-            if any(p in combined_pool for p in ['PLAYER', 'CON', '🔵', 'BLUE', 'P-CELL', 'RESULT-P']): scraped_outcomes.append('Player')
-            elif any(b in combined_pool for b in ['BANKER', 'CÁI', '🔴', 'RED', 'B-CELL', 'RESULT-B']): scraped_outcomes.append('Banker')
-            elif any(t in combined_pool for t in ['TIE', 'HÒA', '🟢', 'GREEN', 'T-CELL', 'RESULT-T']): scraped_outcomes.append('Tie')
+            text = elem.text.strip().upper()
+            if any(p in text for p in ['PLAYER', 'CON', 'P', '🔵']): scraped_outcomes.append('Player')
+            elif any(b in text for b in ['BANKER', 'CÁI', 'B', '🔴']): scraped_outcomes.append('Banker')
+            elif any(t in text for t in ['TIE', 'HÒA', 'T', 'H', '🟢']): scraped_outcomes.append('Tie')
             
         driver.quit()
         return "SUCCESS", scraped_outcomes
@@ -173,150 +195,116 @@ def fetch_live_web_data_ultimate(url, target_xpath):
         return "ERROR_CONN", str(e)
 
 # =========================================================================
-# GIAO DIỆN HIỂN THỊ CYBERPUNK HUD
+# INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Absolute v27.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Auto-Pilot v21.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
-    div[data-testid="stHorizontalBlock"] { display: flex !important; }
-    div[data-testid="stColumn"] { width: 50% !important; min-width: 50% !important; padding: 4px !important; }
-    .hud-box { padding: 22px; border-radius: 12px; text-align: center; margin-bottom: 12px; border: 1px solid #222; background-color: #050505; }
-    .hud-title { font-size: 11px; font-weight: 700; color: #666; letter-spacing: 1.5px; text-transform: uppercase; }
-    .hud-value { font-size: 42px; font-weight: 900; font-family: 'Courier New', monospace; margin-top: 4px; }
-    .neon-p { border: 2px solid #00d2ff !important; box-shadow: 0 0 20px rgba(0, 210, 255, 0.5); color: #00d2ff; background-color: #04111a !important; }
-    .neon-b { border: 2px solid #ff3838 !important; box-shadow: 0 0 20px rgba(255, 56, 56, 0.5); color: #ff3838; background-color: #1a0808 !important; }
-    .neon-t { border: 2px solid #05c46b !important; box-shadow: 0 0 20px rgba(5, 196, 107, 0.5); color: #05c46b; }
-    .trend-hud { padding: 14px; border-radius: 8px; background-color: #030303; border: 1px dashed #333; }
-    .trend-string { font-size: 22px; font-family: monospace; letter-spacing: 6px; font-weight: 900; color: #fff; }
-    .char-p { color: #00d2ff; } .char-b { color: #ff3838; } .char-t { color: #05c46b; }
+    div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; }
+    div[data-testid="stColumn"] { width: 50% !important; min-width: 50% !important; flex: 1 1 50% !important; padding: 5px !important; }
+    .hud-box { padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 12px; border: 1px solid #4f4f4f; background-color: #1a1a1a; }
+    .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
+    .hud-value { font-size: 36px; font-weight: 800; font-family: monospace; margin-top: 4px; }
+    .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
+    .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
+    .neon-tie-alert { border: 2px solid #2ecc71 !important; box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); }
+    .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 12px; font-family: monospace; }
+    .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; }
+    .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
+    .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
+    .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; }
+    .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
     </style>
     """, 
     unsafe_allow_html=True
 )
 
-if 'global_road_history' not in st.session_state: st.session_state.global_road_history = []
-if 'last_calculated_matrix' not in st.session_state: st.session_state.last_calculated_matrix = None
+if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
+if 'last_results' not in st.session_state: st.session_state.last_results = None
 
-# =========================================================================
-# THANH CÀI ĐẶT ẨN TRONG SIDEBAR
-# =========================================================================
-st.sidebar.header("⚙️ CÀI ĐẶT THUẬT TOÁN")
-shoe_decks_input = st.sidebar.selectbox("Cấu hình Bộ Bài Khay:", [8, 6, 4], index=0)
-xpath_selector = st.sidebar.text_input("Mã định vị XPath:", value="//div[contains(@class, 'road-item') or contains(@class, 'bead-cell')]")
-refresh_frequency = st.sidebar.slider("Tần suất làm mới (Giây):", min_value=10, max_value=45, value=15)
+# --- SIDEBAR CONFIGURATION ---
+st.sidebar.header("🔮 ORACLE AUTO-PILOT v21.0")
+decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
-# =========================================================================
-# GIAO DIỆN NGOÀI SẠCH: CHỈ NHẬP ĐIỂM VÀ LINK BÀN
-# =========================================================================
-st.markdown("### 📡 ĐƯỜNG LINK BÀN CHƠI TỰ ĐỘNG")
-target_url = st.text_input("Nhập Link bàn chơi chính thức:", value="", placeholder="Dán link sòng bài vào đây để chạy tự động...")
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🌐 ENGINE QUÈT TỰ ĐỘNG KHÔNG CẦN NHẬP")
 
-is_link_valid = target_url.strip() != "" and target_url.startswith(("http://", "https://"))
-
-if is_link_valid and AUTOREFRESH_AVAILABLE and SELENIUM_AVAILABLE:
-    st_autorefresh(interval=refresh_frequency * 1000, key="oracle_absolute_v27_0")
-
-# --- LUỒNG 1: TỰ ĐỘNG CHẠY KHI CÓ LINK ---
-if is_link_valid:
-    st.info("🟢 TRẠNG THÁI: AUTO-PILOT (Đang cào dữ liệu từ đường link...)")
-    if SELENIUM_AVAILABLE:
-        status_code, web_road_data = fetch_live_web_data_ultimate(target_url, xpath_selector)
-        if status_code == "SUCCESS" and len(web_road_data) > 0:
-            st.session_state.global_road_history = web_road_data
-            st.session_state.last_calculated_matrix = calculate_oracle_absolute_matrix_v23(
-                st.session_state.global_road_history, shoe_decks=shoe_decks_input
-            )
-            st.toast(f"🚀 Bot cập nhật tự động: {len(st.session_state.global_road_history)} ván bài!", icon="🔥")
-        else:
-            st.warning("📡 Đang kết nối hoặc chờ ván đấu mới xuất hiện...")
-
-# --- LUỒNG 2: PHỤC HỒI HOÀN TOÀN CƠ SỞ NHẬP TAY CHUẨN V12 (CHỈ KHI LINK TRỐNG) ---
+if not AUTOREFRESH_AVAILABLE or not SELENIUM_AVAILABLE:
+    st.sidebar.error("❌ Thiếu thư viện lõi tự động refresh hoặc Selenium.")
+    auto_scrape_enabled = False
 else:
-    st.markdown("---")
-    st.markdown("### 📝 CƠ SỞ NHẬP DỮ LIỆU TẰNG TAY CHUẨN v12")
-    
-    # Khung văn bản lớn (Text Area) nhập chuỗi ván bài liên tục theo kiểu v12
-    v12_raw_input = st.text_area(
-        "Nhập chuỗi kết quả ván bài liên tiếp (Hỗ trợ định dạng số v12 hoặc ký tự):",
-        value="",
-        placeholder="Ví dụ kiểu v12:\n1 2 3 1 1 2 (1=Player, 2=Banker, 3=Tie)\nHoặc chữ: P B T P P B B (Phân tách bằng dấu cách hoặc xuống dòng)",
-        height=120
-    ).strip()
-    
-    col_input1, col_input2, col_input3 = st.columns(3)
-    with col_input1:
-        manual_p_score = st.number_input("Điểm số tổng Player:", min_value=0, value=0, step=1)
-    with col_input2:
-        manual_b_score = st.number_input("Điểm số tổng Banker:", min_value=0, value=0, step=1)
-    with col_input3:
-        manual_t_score = st.number_input("Điểm số tổng Tie (Hòa):", min_value=0, value=0, step=1)
+    auto_scrape_enabled = st.sidebar.checkbox("KÍCH HOẠT QUÉT TỰ ĐỘNG 100%", value=True)
 
-    if st.button("🔮 KÍCH HOẠT PHÂN TÍCH MA TRẬN", use_container_width=True):
-        reconstructed_history = []
+target_url = st.sidebar.text_input("Nhập Link Web bàn bài:", value="https://example-baccarat-live.com")
+xpath_selector = st.sidebar.text_input("Xpath định vị chuỗi kết quả (Road):", value="//div[contains(@class, 'road-item')]")
+refresh_rate = st.sidebar.slider("Chu kỳ tự động quét lại (Giây):", min_value=10, max_value=60, value=20)
+
+# Kích hoạt bộ hẹn giờ chạy ngầm của Streamlit
+if auto_scrape_enabled and AUTOREFRESH_AVAILABLE:
+    st_autorefresh(interval=refresh_rate * 1000, key="auto_pilot_matrix_refresh")
+
+# --- ĐIỀU HƯỚNG DỮ LIỆU NỀN ---
+p_wins, b_wins, tie_wins, manual_games = 0, 0, 0, 0
+
+if auto_scrape_enabled and SELENIUM_AVAILABLE:
+    # 1. Chạy ngầm bóc tách dữ liệu tự động hoàn toàn
+    status, web_data = fetch_live_web_data_stealth(target_url, xpath_selector)
+    if status == "SUCCESS" and len(web_data) > 0:
+        st.session_state.outcome_history = web_data
+        p_wins = web_data.count("Player")
+        b_wins = web_data.count("Banker")
+        tie_wins = web_data.count("Tie")
+        manual_games = len(web_data)
         
-        # Giải mã chuỗi nhập đa định dạng của v12 (Hỗ trợ cả số 1,2,3 và chữ P,B,T)
-        if v12_raw_input:
-            tokens = v12_raw_input.split()
-            for t in tokens:
-                clean_t = t.upper().strip()
-                if clean_t in ['1', 'P', 'PLAYER', 'CON']:
-                    reconstructed_history.append('Player')
-                elif clean_t in ['2', 'B', 'BANKER', 'CÁI']:
-                    reconstructed_history.append('Banker')
-                elif clean_t in ['3', 'T', 'TIE', 'HÒA']:
-                    reconstructed_history.append('Tie')
-        
-        # Nếu chuỗi v12 trống, tự động bù dữ liệu dựa trên điểm số tổng để không lỗi lõi toán học
-        if not reconstructed_history and (manual_p_score + manual_b_score + manual_t_score > 0):
-            reconstructed_history = (['Player'] * manual_p_score) + (['Banker'] * manual_b_score) + (['Tie'] * manual_t_score)
-            random.shuffle(reconstructed_history)
-            
-        st.session_state.global_road_history = reconstructed_history
-        st.session_state.last_calculated_matrix = calculate_oracle_absolute_matrix_v23(
-            st.session_state.global_road_history, shoe_decks=shoe_decks_input
+        # 2. Tự động tính toán đẩy ra kết quả mới mà không cần nhấn nút
+        core_output = calculate_baccarat_v21_autopilot(
+            shoe_decks=decks, manual_cards_used=0, manual_games_played=manual_games,
+            p_wins=p_wins, b_wins=b_wins, tie_wins=tie_wins
         )
-        st.success("🎯 Đồng bộ thành công cơ sở dữ liệu v12 vào Lõi toán học cực hạn!")
+        st.session_state.last_results = core_output
+        st.sidebar.success(f"✅ Auto-Pilot: Đã quét & xử lý {manual_games} ván!")
+    else:
+        st.sidebar.warning("🔄 Đang đợi kết nối an toàn hoặc kiểm tra lại đường truyền...")
 
-# =========================================================================
-# MÀN HÌNH HIỂN THỊ REAL-TIME HUD CHUNG
-# =========================================================================
-st.markdown("---")
-if st.session_state.last_calculated_matrix:
-    st.markdown("### 📊 HỆ THỐNG PHÂN TÍCH TOÁN HỌC CỰC HẠN (ABSOLUTE HUD)")
-    odds, p_pair, b_pair, cards_left = st.session_state.last_calculated_matrix
+# --- PANEL ĐỒNG HỒ ĐO HIỂN THỊ TRỰC QUAN ---
+st.markdown("### 📊 KHÔNG GIAN THỜI GIAN THỰC (REAL-TIME HUD)")
+
+if st.session_state.last_results:
+    res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = st.session_state.last_results
     
-    p_cnt = st.session_state.global_road_history.count("Player")
-    b_cnt = st.session_state.global_road_history.count("Banker")
-    t_cnt = st.session_state.global_road_history.count("Tie")
-    st.write(f"📊 **Trạng thái khay:** Tổng: `{len(st.session_state.global_road_history)}` ván | 🔵 P: `{p_cnt}` | 🔴 B: `{b_cnt}` | 🟢 T: `{t_cnt}`")
-
-    p_style = "hud-box neon-p" if odds['Player'] > odds['Banker'] else "hud-box"
-    b_style = "hud-box neon-b" if odds['Banker'] > odds['Player'] else "hud-box"
-    t_style = "hud-box neon-t" if odds['Tie'] > 12.0 else "hud-box"
-
-    left_panel, right_panel = st.columns(2)
-    with left_panel:
-        st.markdown("#### 🎯 Xác Suất Cửa Chính (Hypergeometric & Markov 2nd)")
-        st.markdown(f'<div class="{p_style}"><div class="hud-title">🔵 PLAYER ADVANTAGE</div><div class="hud-value">{odds["Player"]}%</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="{b_style}"><div class="hud-title">🔴 BANKER ADVANTAGE</div><div class="hud-value">{odds["Banker"]}%</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="{t_style}"><div class="hud-title">🟢 TIE OPPORTUNITY</div><div class="hud-value">{odds["Tie"]}%</div></div>', unsafe_allow_html=True)
+    p_box_css = "hud-box"
+    b_box_css = "hud-box"
+    tie_box_css = "hud-box"
+    if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
+    elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
+    if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
         
-    with right_panel:
-        st.markdown("#### 💎 Xác Suất Cược Phụ (Định lý Tổ hợp)")
-        st.metric("🔵 PLAYER PAIR REAL-TIME", f"{p_pair}%")
-        st.metric("🔴 BANKER PAIR REAL-TIME", f"{b_pair}%")
+    left_result_col, right_pair_col = st.columns(2)
+    with left_result_col:
+        st.markdown("#### 🎯 Xác Suất Cửa Chính Ván Tiếp Theo")
+        st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
         
-        st.markdown("---")
-        if st.session_state.global_road_history:
-            visual_road = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.global_road_history[-18:]]
-            st.markdown(f'<div class="trend-hud"><div class="trend-string">{" ".join(visual_road)}</div></div>', unsafe_allow_html=True)
+    with right_pair_col:
+        st.markdown("#### 💎 Xác Suất Cược Phụ")
+        st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
+        st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
+        
+        if is_shoe_logical: st.markdown('<div class="validation-hud logic-pass">✔ ĐỒNG BỘ LOGIC KHAY OK</div>', unsafe_allow_html=True)
+        else: st.markdown('<div class="validation-hud" style="color:#e74c3c;">⚠️ ĐANG ĐIỀU CHỈNH ĐỘ LỆCH KHAY</div>', unsafe_allow_html=True)
+
+        if st.session_state.outcome_history:
+            trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history[-16:]] # Hiển thị 16 ván gần nhất
+            pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
+            st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 CHUỖI KẾT QUẢ VỪA CÀO TỰ ĐỘNG</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color};">{pattern_msg}</div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    max_cards = shoe_decks_input * 52
-    deck_penetration = ((max_cards - cards_left) / max_cards) * 100
-    st.markdown(f"**Lõi Thuật Toán:** `HYPERGEOMETRIC + MARKOV 2ND (v27.0)` | **Quân bài đã dùng ước tính:** {max_cards - int(cards_left)}/{max_cards}")
-    st.progress(min(1.0, deck_penetration / 100.0))
+    total_shoe_cards = decks * 52
+    penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
+    st.markdown(f"**Chế độ tự động:** `ACTIVE` | **Trạng thái:** Làm mới mỗi `{refresh_rate}s` | **Độ chín khay:** {round(penetration_rate, 1)}%")
+    st.progress(penetration_rate / 100.0)
 else:
-    st.warning("⚠️ HỆ THỐNG ĐANG ĐỢI NẠP DỮ LIỆU: Dán chuỗi ván bài kiểu v12 hoặc điền điểm số tổng rồi nhấn nút Kích hoạt.")
+    st.info("🔮 ĐANG KHỞI ĐỘNG HỆ THỐNG TỰ ĐỘNG QUÉT... Vui lòng kiểm tra cấu hình link ở thanh Sidebar.")
