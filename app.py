@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 # =========================================================================
 # SYSTEM CORE v18.2: ULTRA QUANTUM ENGINE (PATCHED & OPTIMIZED)
@@ -166,6 +167,16 @@ def detect_baccarat_pattern(outcome_list):
 # =========================================================================
 st.set_page_config(page_title="Oracle Engine v18.2 Manual Patched", page_icon="🔮", layout="centered")
 
+# Thành phần JavaScript tự động đẩy màn hình lên đầu khi chạy lại
+components.html(
+    """
+    <script>
+    window.parent.document.querySelector('section.main').scrollTo({top: 0, behavior: 'smooth'});
+    </script>
+    """,
+    height=0
+)
+
 st.markdown(
     """
     <style>
@@ -194,6 +205,8 @@ if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
+if 'current_game_number' not in st.session_state: st.session_state.current_game_number = 1
+if 'detailed_history_log' not in st.session_state: st.session_state.detailed_history_log = []
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -218,6 +231,8 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.outcome_history = []
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
+    st.session_state.current_game_number = 1
+    st.session_state.detailed_history_log = []
     st.rerun()
 
 # --- PANEL OUTPUT CONTROL ---
@@ -275,9 +290,12 @@ else:
 st.markdown("---")
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
+# Thiết lập bộ đếm số ván tự tăng dần thông minh
+game_num = st.number_input("Số ván hiện tại:", min_value=1, value=st.session_state.current_game_number, step=1)
+
 col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input("PLAYER (Lá bài vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
-with col_b: b_input = st.text_input("BANKER (Lá bài vừa ra):", value="", placeholder="Ví dụ: J,7")
+with col_p: p_input = st.text_input(f"PLAYER (Lá bài ván {game_num}):", value="", placeholder="Ví dụ: 5,K,2")
+with col_b: b_input = st.text_input(f"BANKER (Lá bài ván {game_num}):", value="", placeholder="Ví dụ: J,7")
 
 def clean_and_parse_input(raw_str):
     if not raw_str: return []
@@ -328,13 +346,37 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
+                
+                outcome = "Tie"
                 if p_score_eval > b_score_eval:
-                    st.session_state.outcome_history.append("Player")
+                    outcome = "Player"
                 elif b_score_eval > p_score_eval:
-                    st.session_state.outcome_history.append("Banker")
-                else:
-                    st.session_state.outcome_history.append("Tie")
-
+                    outcome = "Banker"
+                
+                st.session_state.outcome_history.append(outcome)
                 st.session_state.shoe_history.extend(p_list + b_list)
+                
+                # Lưu thông tin chi tiết vào bảng lịch sử log bài
+                res_prob = core_output[0]
+                st.session_state.detailed_history_log.append({
+                    "Ván số": game_num,
+                    "Bài Player": p_input.strip().upper(),
+                    "Bài Banker": b_input.strip().upper(),
+                    "Kết quả": f"🔵 Player Thắng ({p_score_eval}đ)" if outcome == "Player" else (f"🔴 Banker Thắng ({b_score_eval}đ)" if outcome == "Banker" else f"🟢 Hòa ({p_score_eval}đ)"),
+                    "Dự đoán tiếp theo (P/B/T)": f"{res_prob['Player']}% / {res_prob['Banker']}% / {res_prob['Tie']}%"
+                })
+                
+                # Tăng số ván tự động lên 1 ván cho lần nhập kế tiếp
+                st.session_state.current_game_number = game_num + 1
                     
             st.rerun()
+
+# --- PHẦN LỊCH SỬ CHI TIẾT (CUỐI TRANG) ---
+st.markdown("---")
+st.subheader("📜 Lịch Sử Chi Tiết Khay Bài Hiện Tại")
+if st.session_state.detailed_history_log:
+    df_history = pd.DataFrame(st.session_state.detailed_history_log)
+    # Hiển thị ván mới nhất lên đầu bảng lịch sử để dễ quan sát
+    st.dataframe(df_history.iloc[::-1], use_container_width=True, hide_index=True)
+else:
+    st.caption("Chưa có dữ liệu lịch sử ván nào được ghi nhận.")
