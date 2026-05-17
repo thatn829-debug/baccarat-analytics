@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v18.5: FIXED SYNTAX & PAIR LOGIC
+# SYSTEM CORE v18.6: FIX SYNTAX & PHONG THUY INTERFACE
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -53,7 +53,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 6:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Tính toán cửa đôi ngắn gọn tránh lỗi ngoặc
+    # Tính xác suất cửa đôi
     p_pair_prob = 0.0
     for i in range(1, 14):
         if deck_structure[i] >= 2:
@@ -131,7 +131,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                 b_draws = False
                 if b_score <= 2: b_draws = True
                 elif b_score == 3 and card3_p != 8: b_draws = True
-                elif b_score == 4 Useful and card3_p in [2, 3, 4, 5, 6, 7]: b_draws = True
+                elif b_score == 4 and card3_p in [2, 3, 4, 5, 6, 7]: b_draws = True
                 elif b_score == 5 and card3_p in [4, 5, 6, 7]: b_draws = True
                 elif b_score == 6 and card3_p in [6, 7]: b_draws = True
                 
@@ -177,15 +177,15 @@ def detect_baccarat_pattern(outcome_list):
 # =========================================================================
 # INTERFACE DESIGN & STYLES (MỆNH THỦY - MỆNH MỘC)
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v18.5 Phong Thủy", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v18.6 Phong Thủy", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
-    /* Nền chính: Xanh đại dương sẫm kết hợp đen huyền bí (Hành Thủy sinh Mộc) */
+    /* Nền chính: Gradient Xanh đại dương sẫm huyền bí (Hành Thủy sinh Mộc cực vượng) */
     .stApp {
-        background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
-        color: #ecf0f1;
+        background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important;
+        color: #ecf0f1 !important;
     }
     /* Khối hiển thị kết quả HUD */
     .hud-box { 
@@ -194,50 +194,53 @@ st.markdown(
         text-align: center; 
         margin-bottom: 12px; 
         border: 1px solid #203a43; 
-        background: rgba(15, 32, 39, 0.85); 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        background: rgba(10, 25, 30, 0.9); 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
     .hud-title { font-size: 13px; font-weight: 600; color: #a4b0be; letter-spacing: 0.5px; }
     .hud-value { font-size: 34px; font-weight: 800; font-family: monospace; margin-top: 4px; }
     
-    /* Hiệu ứng hào quang màu sắc Thủy - Mộc tộc */
+    /* Hiệu ứng màu sắc Thủy - Mộc */
     .neon-player-advantage { 
-        background-color: #0081a7 !important; 
+        background-color: #006687 !important; 
         border: 2px solid #00afb9 !important; 
         box-shadow: 0 0 15px rgba(0, 175, 185, 0.6); 
     }
     .neon-banker-advantage { 
-        background-color: #2c3e50 !important; 
-        border: 2px solid #7f8c8d !important; 
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); 
+        background-color: #243342 !important; 
+        border: 2px solid #636e72 !important; 
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); 
     }
     .neon-tie-alert { 
         border: 2px solid #2ed573 !important; 
         box-shadow: 0 0 15px rgba(46, 213, 115, 0.6); 
     }
     
-    /* Trạng thái xác thực khay bài */
+    /* Trạng thái dữ liệu */
     .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; font-family: monospace; margin-bottom: 12px; }
     .logic-pass { background-color: rgba(46, 213, 115, 0.15); border: 2px solid #2ed573; color: #2ed573; }
     .logic-fail { background-color: rgba(235, 94, 40, 0.15); border: 2px solid #eb5e28; color: #eb5e28; }
     
-    /* Khu vực hiển thị cầu / xu hướng sàn */
-    .trend-hud { padding: 14px; border-radius: 8px; background-color: rgba(10, 25, 30, 0.9); border: 1px dashed #00afb9; }
+    /* Xu hướng sàn */
+    .trend-hud { padding: 14px; border-radius: 8px; background-color: rgba(5, 15, 20, 0.9); border: 1px dashed #00afb9; }
     .trend-title { font-size: 11px; font-weight: bold; color: #00afb9; text-transform: uppercase; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
     .trend-alert { border-left: 4px solid; padding-left: 8px; margin-top: 8px; font-size: 13px; }
     
     .char-p { color: #00afb9; font-weight: bold; } 
-    .char-b { color: #fed9ff; font-weight: bold; opacity: 0.8; } 
+    .char-b { color: #ffffff; font-weight: bold; opacity: 0.7; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Tùy chỉnh thanh tiến trình và các nút bấm theo tông Xanh Mộc sinh khí */
+    /* Thanh tiến trình Mộc xanh tươi */
     .stProgress > div > div > div > div { background-color: #2ed573 !important; }
+    
+    /* Nút bấm tổng hành động màu Thủy ánh lục bùng nổ */
     div.stButton > button:first-child {
         background-color: #00afb9 !important;
         color: white !important;
         border-radius: 8px;
         border: none;
+        font-weight: bold;
         box-shadow: 0 4px 10px rgba(0, 175, 185, 0.3);
     }
     div.stButton > button:first-child:hover {
@@ -254,7 +257,7 @@ if 'outcome_history' not in st.session_state: st.session_state.outcome_history =
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
 
-# Sidebar cấu hình bên trái
+# Sidebar cài đặt
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
@@ -279,7 +282,7 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.last_played_cards = ""
     st.rerun()
 
-# --- KHU VỰC NHẬP ĐIỂM: PLAYER BÊN TRÁI | BANKER BÊN PHẢI ---
+# --- CHIA ĐÔI Ô NHẬP LIỆU: PLAYER TRÁI | BANKER PHẢI ---
 st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
 input_col_left, input_col_right = st.columns(2)
 
