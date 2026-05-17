@@ -30,7 +30,7 @@ except ImportError:
     UC_AVAILABLE = False
 
 # =========================================================================
-# LÕI THUẬT TOÁN TOÁN HỌC KHÔNG LỖI (V20.5.0 - ZERO-FAULT QUANTUM MATRIX)
+# LÕI THUẬT TOÁN ĐÃ ĐƯỢC GIA CỐ (V20.4.1 - OPTIMIZED QUANTUM MATRIX)
 # =========================================================================
 def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -44,11 +44,11 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1.0)
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.5.0)"
+        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.4.1)"
     else:
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.94) + (b_wins * 4.93) + (tie_wins * 5.01)))
         cards_left = max(0, total_initial_cards - cards_removed)
-        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.5.0"
+        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.4.1"
         if cards_removed > 0:
             consumed_ratio = cards_removed / total_initial_cards
             for card_num in deck_structure:
@@ -66,16 +66,15 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         if score_deck[val] > 0: score_deck[val] = max(0.0, score_deck[val] - 1.0)
 
     N_total = float(sum(score_deck))
-    # BẢO VỆ CHỐNG CHIA CHO KHÔNG / THIẾU BÀI NGHIÊM TRỌNG
-    if N_total <= 6.0: 
-        return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, 11.5, mode, max(0.0, cards_left)
+    if N_total <= 6: 
+        return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, 11.5, mode, cards_left
 
-    p_pair_prob = sum((deck_structure[i] / N_total) * ((deck_structure[i] - 1.0) / max(1.0, N_total - 1.0)) for i in range(1, 14) if deck_structure[i] >= 2)
+    p_pair_prob = sum((deck_structure[i] / N_total) * ((deck_structure[i] - 1) / (N_total - 1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 2)
 
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # THUẬT TOÁN ĐÃ ĐƯỢC GIA CỐ CHỐNG ZERO-DIVISION TRÊN TOÀN BỘ CÁC CHẶNG TÍCH PHÂN
+    # THUẬT TOÁN ĐÃ TỐI ƯU HÓA: CẮT TỈA NHÁNH KHÔNG KHẢ THI ĐỂ TĂNG TỐC ĐỘ XỬ LÝ TRÊN STREAMLIT
     for p_draw_1 in range(10):
         w_p1 = score_deck[p_draw_1]
         if w_p1 <= 0.001: continue
@@ -85,24 +84,25 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         for b_draw_1 in range(10):
             w_b1 = score_deck[b_draw_1]
             if w_b1 <= 0.001: continue
-            prob_b1 = prob_p1 * (w_b1 / max(1.0, N_total - 1.0))
+            prob_b1 = prob_p1 * (w_b1 / (N_total - 1.0))
             score_deck[b_draw_1] -= 1.0
             
             for p_draw_2 in range(10):
                 w_p2 = score_deck[p_draw_2]
                 if w_p2 <= 0.001: continue
-                prob_p2 = prob_b1 * (w_p2 / max(1.0, N_total - 2.0))
+                prob_p2 = prob_b1 * (w_p2 / (N_total - 2.0))
                 score_deck[p_draw_2] -= 1.0
                 
                 for b_draw_2 in range(10):
                     w_b2 = score_deck[b_draw_2]
                     if w_b2 <= 0.001: continue
-                    prob_b2 = prob_p2 * (w_b2 / max(1.0, N_total - 3.0))
+                    prob_b2 = prob_p2 * (w_b2 / (N_total - 3.0))
                     score_deck[b_draw_2] -= 1.0
                     
                     init_p = (p_draw_1 + p_draw_2) % 10
                     init_b = (b_draw_1 + b_draw_2) % 10
                     
+                    # Rẽ nhánh xử lý sớm: Thắng tự nhiên (Natural 8, 9)
                     if init_p >= 8 or init_b >= 8:
                         if init_p > init_b: player_wins += prob_b2
                         elif init_b > init_p: banker_wins += prob_b2
@@ -114,10 +114,11 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                             for p_draw_3 in range(10):
                                 w_p3 = score_deck[p_draw_3]
                                 if w_p3 <= 0.001: continue
-                                prob_p3 = prob_b2 * (w_p3 / max(1.0, N_total - 4.0))
+                                prob_p3 = prob_b2 * (w_p3 / (N_total - 4.0))
                                 score_deck[p_draw_3] -= 1.0
                                 
                                 final_p = (init_p + p_draw_3) % 10
+                                
                                 b_draws_3rd = False
                                 if init_b <= 2: b_draws_3rd = True
                                 elif init_b == 3 and p_draw_3 != 8: b_draws_3rd = True
@@ -129,7 +130,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                                     for b_draw_3 in range(10):
                                         w_b3 = score_deck[b_draw_3]
                                         if w_b3 <= 0.001: continue
-                                        prob_b3 = prob_p3 * (w_b3 / max(1.0, N_total - 5.0))
+                                        prob_b3 = prob_p3 * (w_b3 / (N_total - 5.0))
                                         final_b = (init_b + b_draw_3) % 10
                                         
                                         if final_p > final_b: player_wins += prob_b3
@@ -149,7 +150,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                                 for b_draw_3 in range(10):
                                     w_b3 = score_deck[b_draw_3]
                                     if w_b3 <= 0.001: continue
-                                    prob_b3 = prob_b2 * (w_b3 / max(1.0, N_total - 4.0))
+                                    prob_b3 = prob_b2 * (w_b3 / (N_total - 4.0))
                                     final_b = (init_b + b_draw_3) % 10
                                     
                                     if final_p > final_b: player_wins += prob_b3
@@ -173,7 +174,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         "Banker": round((banker_wins / total_prob) * 100, 2),
         "Tie": round((ties / total_prob) * 100, 2)
     }
-    return odds_res, deck_structure, p_pair_odds, mode, max(0.0, cards_left)
+    return odds_res, deck_structure, p_pair_odds, mode, cards_left
 
 def detect_baccarat_pattern(outcome_list):
     clean_list = [x for x in outcome_list if x in ["Player", "Banker"]]
@@ -199,7 +200,7 @@ def suggest_xpath_by_url(url):
     return "//div[contains(@class, 'road') or contains(@class, 'result') or contains(@class, 'cell')]"
 
 # =========================================================================
-# LÕI QUÉT KHÔNG VẾT TÍCH: GIA CỐ TUYỆT ĐỐI CHỐNG RÒ RỈ RAM (FINALLY BLOCK)
+# LÕI QUÉT KHÔNG VẾT TÍCH: GOD-MODE STEALTH ENGINE
 # =========================================================================
 def fetch_live_web_data_god_mode(url, target_xpath):
     if not UC_AVAILABLE:
@@ -221,6 +222,7 @@ def fetch_live_web_data_god_mode(url, target_xpath):
     driver = None
     try:
         driver = uc.Chrome(options=options, version_main=None) 
+        
         if STEALTH_LIB_AVAILABLE:
             stealth(driver,
                 languages=["en-US", "en"],
@@ -257,21 +259,18 @@ def fetch_live_web_data_god_mode(url, target_xpath):
             elif any(t in text for t in ['TIE', 'HÒA', 'T', '🟢']) or 'TIE' in html_class or 'GREEN' in html_class: 
                 scraped_outcomes.append('Tie')
                 
+        driver.quit()
         return "SUCCESS", scraped_outcomes
     except Exception as e:
+        if driver:
+            try: driver.quit()
+            except: pass
         return "ERROR_CONN", str(e)
-    finally:
-        # ĐẢM BẢO CHROME LUÔN LUÔN BỊ ĐÓNG KỂ CẢ KHI SẬP MẠNG ĐỂ KHÔNG BỊ TRÀN RAM MÁY CHỦ
-        if driver is not None:
-            try:
-                driver.quit()
-            except:
-                pass
 
 # =========================================================================
-# GIAO DIỆN CHÍNH (STREAMLIT UI) - BẢO TOÀN HOÀN TOÀN STYLE 
+# GIAO DIỆN CHÍNH (STREAMLIT UI) - GIỮ NGUYÊN HOÀN TOÀN TRỰC QUAN
 # =========================================================================
-st.set_page_config(page_title="Oracle God-Mode v20.5.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle God-Mode v20.4.1", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -318,7 +317,6 @@ else:
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 CHẾ ĐỘ NHẬP TAY THỦ CÔNG")
 
-# CÔ LẬP BIẾN ĐIỀU KHIỂN CHỐNG COLLISION TRẠNG THÁI
 disable_inputs = auto_scrape_enabled
 manual_cards = st.sidebar.number_input("Số lá bài đã hủy/đã chia:", 0, decks*52, 0, disabled=disable_inputs)
 p_wins_sidebar = st.sidebar.number_input("🔵 Số ván Player thắng:", 0, 150, 0, disabled=disable_inputs)
@@ -329,9 +327,9 @@ if st.sidebar.button("🗑️ RESET TOÀN BỘ SỐ LIỆU KHAY BÀI", use_conta
     st.session_state.shoe_history = []
     st.session_state.outcome_history = []
     st.session_state.last_results = None
-    st.rerun()
+    st.toast("Đã làm sạch toàn bộ bộ nhớ khay bài!")
 
-# --- ENGINE THỰC THI QUÉT WEB TỰ ĐỘNG CHỐNG TRÀN ---
+# --- ENGINE THỰC THI QUÉT WEB GIẢ LẬP CAO CẤP ---
 if auto_scrape_enabled:
     with st.spinner("🕵️ Lõi Vô Hình đang vượt Cloudflare và thu thập dữ liệu..."):
         status, web_data = fetch_live_web_data_god_mode(target_url, xpath_selector)
@@ -343,10 +341,11 @@ if auto_scrape_enabled:
                 p_wins=web_data.count("Player"), b_wins=web_data.count("Banker"), tie_wins=web_data.count("Tie")
             )
         elif status.startswith("ERROR"):
-            st.sidebar.error("⚠️ Tường lửa chặn sâu hoặc sai XPath. Đã tự động ngắt tiến trình ngầm để bảo vệ RAM.")
+            st.sidebar.error("⚠️ Tường lửa chặn quá sâu hoặc sai XPath. Hệ thống khuyến nghị chuyển về chạy BẰNG TAY để an toàn.")
 
-# --- ENGINE CHẠY BẰNG TAY (OFFLINE) ---
-if not auto_scrape_enabled:
+# --- CHẾ ĐỘ CHẠY BẰNG TAY (MANUAL MODE) ---
+if not auto_scrape_enabled and not st.session_state.last_results:
+    st.markdown('<div class="stealth-status" style="background-color:rgba(241, 196, 15, 0.1); border-color:#f1c40f; color:#f1c40f;">📴 ĐANG CHẠY BẰNG TAY (OFFLINE) - AN TOÀN TUYỆT ĐỐI KHÔNG ĐỂ LẠI DẤU VẾT</div>', unsafe_allow_html=True)
     st.session_state.last_results = calculate_baccarat_v20_ultimate(
         [], [], st.session_state.shoe_history, shoe_decks=decks,
         manual_cards_used=manual_cards,
@@ -391,15 +390,18 @@ if not auto_scrape_enabled:
     with btn_p:
         if st.button("🔵 PLAYER THẮNG", use_container_width=True):
             st.session_state.outcome_history.append("Player")
-            st.rerun()
+            st.session_state.last_results = calculate_baccarat_v20_ultimate([], [], st.session_state.shoe_history, shoe_decks=decks, manual_games_played=len(st.session_state.outcome_history), p_wins=st.session_state.outcome_history.count("Player"), b_wins=st.session_state.outcome_history.count("Banker"), tie_wins=st.session_state.outcome_history.count("Tie"))
+            st.toast("Đã ghi nhận Player!")
     with btn_b:
         if st.button("🔴 BANKER THẮNG", use_container_width=True):
             st.session_state.outcome_history.append("Banker")
-            st.rerun()
+            st.session_state.last_results = calculate_baccarat_v20_ultimate([], [], st.session_state.shoe_history, shoe_decks=decks, manual_games_played=len(st.session_state.outcome_history), p_wins=st.session_state.outcome_history.count("Player"), b_wins=st.session_state.outcome_history.count("Banker"), tie_wins=st.session_state.outcome_history.count("Tie"))
+            st.toast("Đã ghi nhận Banker!")
     with btn_t:
         if st.button("🟢 TIE THẮNG", use_container_width=True):
             st.session_state.outcome_history.append("Tie")
-            st.rerun()
+            st.session_state.last_results = calculate_baccarat_v20_ultimate([], [], st.session_state.shoe_history, shoe_decks=decks, manual_games_played=len(st.session_state.outcome_history), p_wins=st.session_state.outcome_history.count("Player"), b_wins=st.session_state.outcome_history.count("Banker"), tie_wins=st.session_state.outcome_history.count("Tie"))
+            st.toast("Đã ghi nhận Hòa!")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("##### Cách 2: Nhập chi tiết các lá bài lật (Đếm bài chính xác)")
@@ -428,5 +430,6 @@ if not auto_scrape_enabled:
             if p_real > b_real: st.session_state.outcome_history.append("Player")
             elif b_real > p_real: st.session_state.outcome_history.append("Banker")
             else: st.session_state.outcome_history.append("Tie")
+            
+            st.session_state.last_results = calculate_baccarat_v20_ultimate([], [], st.session_state.shoe_history, shoe_decks=decks, manual_games_played=len(st.session_state.outcome_history), p_wins=st.session_state.outcome_history.count("Player"), b_wins=st.session_state.outcome_history.count("Banker"), tie_wins=st.session_state.outcome_history.count("Tie"))
             st.success("Đã nạp dữ liệu thành công!")
-            st.rerun()
