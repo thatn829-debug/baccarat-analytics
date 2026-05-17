@@ -22,7 +22,7 @@ except ImportError:
     SELENIUM_AVAILABLE = False
 
 # =========================================================================
-# SYSTEM CORE v18.2: ULTRA QUANTUM ENGINE (PATCHED)
+# SYSTEM CORE v18.2: ULTRA QUANTUM ENGINE (PATCHED & OPTIMIZED)
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -40,7 +40,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] -= 1
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "SIÊU TỔ HỢP MARKOV PHI HOÀN LẠI (AUTO-SCRAPE v18.2)"
+        mode = "SIÊU TỔ HỢP MARKOV PHI HOÀN LẠI (CHI TIẾT)"
     else:
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23)))
         if cards_removed == 0 and manual_games_played > 0:
@@ -69,7 +69,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         if card_num >= 10: score_deck[0] += count
         else: score_deck[card_num] += count
 
-    # Trừ các lá bài đang có trên bàn của ván hiện tại để tính xác suất lá tiếp theo
+    # Khấu trừ các lá bài đang có trên bàn ván hiện tại để tính toán chính xác lá tiếp theo
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
         if score_deck[val] > 0: score_deck[val] -= 1
@@ -78,6 +78,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 12:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
+    # Tính toán Player Pair / Banker Pair dựa trên lượng bài còn lại trong khay
     p_pair_prob = sum((deck_structure[i]/N_total)*((deck_structure[i]-1)/(N_total-1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 4)
 
@@ -97,13 +98,13 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
     b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
 
-    # Nếu ván bài nhập vào đã kết thúc ngay từ 2 lá đầu (Natural 8, 9)
+    # Trường hợp kết thúc ngay sau 2 lá (Thắng tự nhiên - Natural 8, 9)
     if (len(p_cards) == 2 and p_score >= 8) or (len(b_cards) == 2 and b_score >= 8):
         if p_score == b_score: return {"Player": 0.0, "Banker": 0.0, "Tie": 100.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         elif p_score > b_score: return {"Player": 100.0, "Banker": 0.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
         else: return {"Player": 0.0, "Banker": 100.0, "Tie": 0.0}, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Giả lập toán học Bayes cho các trường hợp bốc lá thứ 3
+    # Giả lập toán học Bayes / Markov cho quy tắc bốc lá thứ 3
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
     if len(p_cards) >= 2 and p_score >= 6:
@@ -193,11 +194,11 @@ def fetch_live_web_data(url, target_xpath):
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
 
+    driver = None
     try:
         driver = webdriver.Chrome(options=options)
         driver.get(url)
         
-        # Thay thế sleep cứng bằng bộ đợi thông minh (Tối đa 8 giây) giúp ứng dụng mượt hơn
         WebDriverWait(driver, 8).until(
             EC.presence_of_element_located((By.XPATH, target_xpath))
         )
@@ -208,14 +209,17 @@ def fetch_live_web_data(url, target_xpath):
             text = elem.text.strip().upper()
             if 'PLAYER' in text or text == 'P': scraped_outcomes.append('Player')
             elif 'BANKER' in text or text == 'B': scraped_outcomes.append('Banker')
-            elif 'TIE' in text or text == 'T' or 'HÒA' in text: scraped_outcomes.append('Tie')
+            elif 'TIE' in text or text == 'T' or 'HÒA' in text or 'HOA' in text: scraped_outcomes.append('Tie')
             
-        driver.quit()
         return "SUCCESS", scraped_outcomes
     except Exception as e:
-        try: driver.quit()
-        except: pass
         return "ERROR_CONN", str(e)
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
 # =========================================================================
 # INTERFACE DESIGN & STYLES
@@ -238,13 +242,14 @@ st.markdown(
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; }
     .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
     .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
-    .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; }
+    .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
     .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
     </style>
     """, 
     unsafe_allow_html=True
 )
 
+# Khởi tạo Session State vững chắc
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
@@ -273,7 +278,7 @@ if auto_scrape_enabled and AUTOREFRESH_AVAILABLE:
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 Thiết lập thông số khay bài")
 
-# Nếu bật Auto-Scrape, hệ thống tự vô hiệu hóa (disable) nhập tay để tránh xung đột ma trận
+# Phục hồi giá trị đầu vào dựa trên trạng thái Auto-Scrape để tránh ghi đè lỗi dữ liệu rỗng
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, disabled=auto_scrape_enabled)
 manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0, disabled=auto_scrape_enabled)
 
@@ -311,8 +316,12 @@ if is_strict_lock:
 else:
     if st.session_state.last_results:
         results_data = st.session_state.last_results
-        if isinstance(results_data[0], str) and results_data[0].startswith("❌"): st.error(results_data[0])
-        elif isinstance(results_data[0], str) and results_data[0].startswith("⚠️"): st.warning(results_data[0])
+        
+        # SỬA LỖI ĐOẠN ĐỌC PHẢN HỒI KHI KHỞI CHẠY KHỐI LỖI CHÍNH XÁC HƠN
+        if isinstance(results_data[0], str) and results_data[0].startswith("❌"): 
+            st.error(results_data[0])
+        elif isinstance(results_data[0], str) and results_data[0].startswith("⚠️"): 
+            st.warning(results_data[0])
         else:
             res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
             
@@ -393,20 +402,22 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
         p_list = clean_and_parse_input(p_input)
         b_list = clean_and_parse_input(b_input)
         if p_list or b_list:
-            # FIX: Truyền toàn bộ p_list và b_list (không cắt [:2]) để tính toán đúng các lá bài thứ 3 thực tế
             core_output = calculate_baccarat_v18_ultimate(
                 p_list, b_list, st.session_state.shoe_history, shoe_decks=decks,
                 manual_cards_used=manual_cards, manual_games_played=manual_games,
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
             )
+            
+            # ĐÃ FIX: Kiếm tra an toàn đầu ra Core_Output để không bị Crash app
             if isinstance(core_output, str):
                 st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0, False, [])
             else:
                 res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = core_output
                 st.session_state.last_results = (res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards)
-                if not mode.startswith("LỖI"):
+                
+                # ĐÃ FIX: Logic lọc kiểm tra điều kiện lưu trữ shoe_history bằng kiểm tra kiểu tuple
+                if not isinstance(core_output, str):
                     st.session_state.last_played_cards = current_game_signature
-                    # Chỉ cộng dồn mảng bài chi tiết khi KHÔNG bật Auto-Scrape để tránh lỗi lệch cấu trúc bộ bài
                     if not auto_scrape_enabled:
                         st.session_state.shoe_history.extend(p_list + b_list)
                     st.rerun()
