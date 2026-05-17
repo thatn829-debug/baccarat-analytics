@@ -171,14 +171,14 @@ st.markdown(
     <style>
     .hud-box { padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 12px; border: 1px solid #4f4f4f; background-color: #1a1a1a; }
     .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
-    .hud-value { font-size: 36px; font-weight: 800; font-family: monospace; margin-top: 4px; }
+    .hud-value { font-size: 34px; font-weight: 800; font-family: monospace; margin-top: 4px; }
     .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
     .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
     .neon-tie-alert { border: 2px solid #2ecc71 !important; box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); }
-    .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 12px; font-family: monospace; }
+    .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; font-family: monospace; }
     .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; }
     .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; }
-    .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; margin-top: 12px; }
+    .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; }
     .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
     .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
@@ -236,26 +236,39 @@ else:
             if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
             elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
             if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
-                
-            left_result_col, right_pair_col = st.columns(2)
-            with left_result_col:
-                st.markdown("#### 📊 Dự Đoán Xác Suất Cửa Chính")
+            
+            st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH KHAY BÀI")
+            
+            # =========================================================================
+            # ĐÃ ĐIỀU CHỈNH: GIAO DIỆN 2 HÀNG SONG SONG (TRÁI VÀ PHẢI)
+            # =========================================================================
+            
+            # --- HÀNG 1 SONG SONG: PLAYER VS BANKER ---
+            row1_left, row1_right = st.columns(2)
+            with row1_left:
                 st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
-                
-            with right_pair_col:
-                st.markdown("#### 💎 Tỷ Lệ Cược Phụ Xuất Hiện")
                 st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
+            with row1_right:
+                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
                 st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
                 
-                if is_shoe_logical: st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
-                else: st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
-
+            st.markdown("---")
+            
+            # --- HÀNG 2 SONG SONG: CỬA HÒA VÀ LOGIC KHAY VS XU HƯỚNG SÀN ---
+            row2_left, row2_right = st.columns(2)
+            with row2_left:
+                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+                if is_shoe_logical: 
+                    st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
+                else: 
+                    st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
+            with row2_right:
                 if st.session_state.outcome_history:
                     trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
                     pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
                     st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color};">{pattern_msg}</div></div>', unsafe_allow_html=True)
+                else:
+                    st.info("📊 Chưa có dữ liệu xu hướng sàn cho khay này.")
 
             st.markdown("---")
             total_shoe_cards = decks * 52
@@ -330,5 +343,3 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                     st.session_state.outcome_history.append("Tie")
 
                 st.session_state.shoe_history.extend(p_list + b_list)
-            
-            # Thay vì gọi st.rerun(), ta để Streamlit tự render lại mượt mà dựa trên state mới cập nhật
