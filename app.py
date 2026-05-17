@@ -44,7 +44,6 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             
     is_shoe_logical = (len(invalid_cards_list) == 0)
     
-    # Đếm số lượng bài còn lại chính xác theo điểm (0-9)
     score_deck = [0.0] * 10
     for card_num, count in deck_structure.items():
         if card_num >= 10: score_deck[0] += count
@@ -54,7 +53,6 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 6:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Tính toán Player Pair / Banker Pair chính xác
     p_pair_prob = sum((deck_structure[i]/N_total)*((deck_structure[i]-1)/(N_total-1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 2)
 
@@ -67,13 +65,4 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             p_one_j = 2 * (cnt_j / N_total) * ((N_total - cnt_j) / (N_total - 1))
             b_pair_given_p_one_j = (max(0.0, cnt_j - 1) / (N_total - 2)) * (max(0.0, cnt_j - 2) / (N_total - 3))
             p_two_j = (cnt_j / N_total) * ((cnt_j - 1) / (N_total - 1))
-            b_pair_given_p_two_j = (max(0.0, cnt_j - 2) / (N_total - 2)) * (max(0.0, cnt_j - 3) / (N_total - 3))
-            b_pair_prob += (p_not_j * b_pair_given_p_not_j) + (p_one_j * b_pair_given_p_one_j) + (p_two_j * b_pair_given_p_two_j)
-    b_pair_odds = round(b_pair_prob * 100, 2)
-
-    # --- KHU VỰC TÍNH TOÁN XÁC SUẤT CỬA CHÍNH (ĐÃ FIX TREO) ---
-    player_wins, banker_wins, ties = 0.0, 0.0, 0.0
-
-    # TRƯỜNG HỢP 1: Dự đoán ván mới tinh (Không có bài nhập vào)
-    if not p_cards and not b_cards:
-        # Sử dụng trọng số phân phối thực
+            b_pair_given_p_two_j = (max(0.0, cnt_j - 2) / (N_total - 2)) * (max(0.0, cnt
