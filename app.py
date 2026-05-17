@@ -6,7 +6,7 @@ import math
 from urllib.parse import urlparse
 
 # =========================================================================
-# LỚP BẢO MẬT & ĐỒNG BỘ: ANTI-DETECT & ANTI-CRASH
+# KHỐI CAO CẤP: TÍCH HỢP LỚP TÀNG HÌNH THẾ HỆ MỚI (ANTI-FINGERPRINTING)
 # =========================================================================
 AUTOREFRESH_AVAILABLE = True
 try:
@@ -31,7 +31,7 @@ except ImportError:
     UC_AVAILABLE = False
 
 # =========================================================================
-# LÕI TOÁN HỌC TỐI ƯU V20.6.6 (KHÔNG CHỨA LỖI CHIA CHO 0)
+# LÕI THUẬT TOÁN TOÁN HỌC KHÔNG LỖI (V20.6.0 - ZERO-FAULT QUANTUM MATRIX)
 # =========================================================================
 def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -45,11 +45,11 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1.0)
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.6.6)"
+        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.6.0)"
     else:
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.94) + (b_wins * 4.93) + (tie_wins * 5.01)))
         cards_left = max(0, total_initial_cards - cards_removed)
-        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.6.6"
+        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.6.0"
         if cards_removed > 0:
             consumed_ratio = cards_removed / total_initial_cards
             for card_num in deck_structure:
@@ -67,7 +67,6 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         if score_deck[val] > 0: score_deck[val] = max(0.0, score_deck[val] - 1.0)
 
     N_total = float(sum(score_deck))
-    # Vá lỗi an toàn: Nếu số lượng bài còn quá ít để quét ma trận, trả về tỷ lệ mặc định thế giới
     if N_total <= 6.0: 
         return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, 11.5, mode, max(0.0, cards_left)
 
@@ -166,8 +165,7 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         score_deck[p_draw_1] += 1.0
 
     total_prob = player_wins + banker_wins + ties
-    if total_prob <= 0.0: 
-        return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, p_pair_odds, mode, max(0.0, cards_left)
+    if total_prob == 0: total_prob = 1.0
     
     odds_res = {
         "Player": round((player_wins / total_prob) * 100, 2),
@@ -200,7 +198,7 @@ def suggest_xpath_by_url(url):
     return "//div[contains(@class, 'road') or contains(@class, 'result') or contains(@class, 'cell')]"
 
 # =========================================================================
-# LÕI QUÉT ENGINE: SẠCH LỖI KHÔNG TREO THIẾT BỊ LTSC / DI ĐỘNG
+# LÕI QUÉT BẢO MẬT TỐI HẬU: GIẢ LẬP HÀNH VI TỰ NHIÊN TRÁNH PHÁT HIỆN SÂU
 # =========================================================================
 def fetch_live_web_data_god_mode(url, target_xpath):
     if not UC_AVAILABLE:
@@ -215,8 +213,10 @@ def fetch_live_web_data_god_mode(url, target_xpath):
     options.add_argument("--window-size=1440,900")
     options.add_argument("--disable-blink-features=AutomationControlled")
     
+    # Random hóa User-Agent ở mức độ sâu chống nhận diện dấu vân tay hệ thống (Fingerprint)
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ]
     options.add_argument(f"user-agent={random.choice(user_agents)}")
@@ -235,20 +235,25 @@ def fetch_live_web_data_god_mode(url, target_xpath):
             )
             
         driver.get(url)
-        time.sleep(random.uniform(5.0, 7.5))
+        # Thời gian chờ ngẫu nhiên tránh tạo nhịp sinh học giống bot (Anti-Bot Pattern Timing)
+        time.sleep(random.uniform(6.0, 9.5))
         
+        # Mô phỏng tương tác nâng cao (Human-like Interaction Simulator)
         try:
             actions = ActionChains(driver)
-            elements_to_hover = driver.find_elements(By.XPATH, "//div | //button")[:3]
+            elements_to_hover = driver.find_elements(By.XPATH, "//div | //button")[:5]
             for elem in elements_to_hover:
                 try:
-                    actions.move_to_element(elem).pause(random.uniform(0.1, 0.3)).perform()
+                    actions.move_to_element(elem).pause(random.uniform(0.1, 0.4)).perform()
                 except:
                     continue
+            for _ in range(random.randint(2, 4)):
+                actions.scroll_by_amount(0, random.randint(100, 300)).perform()
+                time.sleep(random.uniform(0.5, 1.2))
         except:
             pass
             
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 12)
         elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, target_xpath)))
         
         scraped_outcomes = []
@@ -269,14 +274,15 @@ def fetch_live_web_data_god_mode(url, target_xpath):
     finally:
         if driver is not None:
             try: 
-                driver.quit() # Giải phóng RAM triệt để
+                driver.close()
+                driver.quit()
             except: 
                 pass
 
 # =========================================================================
 # GIAO DIỆN CHÍNH (STREAMLIT UI)
 # =========================================================================
-st.set_page_config(page_title="Oracle God-Mode v20.6.6", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle God-Mode v20.6.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -299,12 +305,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Khởi tạo an toàn Session State tránh lỗi Race Condition
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
-if 'system_status' not in st.session_state: 
-    st.session_state.system_status = {"level": "NOMINAL", "msg": "Tất cả các lõi đều ổn định. Hệ thống sẵn sàng.", "action": ""}
+if 'system_status' not in st.session_state: st.session_state.system_status = {"level": "NOMINAL", "msg": "Tất cả các lõi đều ổn định. Hệ thống sẵn sàng.", "action": ""}
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("🛡️ TRUNG TÂM KIỂM SOÁT BẢO MẬT")
@@ -342,9 +346,9 @@ if st.sidebar.button("🗑️ RESET TOÀN BỘ SỐ LIỆU KHAY BÀI", use_conta
     st.session_state.system_status = {"level": "NOMINAL", "msg": "Khay bài đã được đặt lại hoàn toàn. Lõi tính toán sạch.", "action": ""}
     st.rerun()
 
-# --- ENGINE KIỂM TRA & QUÉT TRỰC TUYẾN ---
+# --- ENGINE THỰC THI QUÉT WEB TỰ ĐỘNG VÀ ĐÁNH GIÁ SỨC KHỎE HỆ THỐNG ---
 if auto_scrape_enabled:
-    with st.spinner("🕵️ Lõi Vô Hình đang vượt Cloudflare..."):
+    with st.spinner("🕵️ Lõi Vô Hình đang vượt Cloudflare và thu thập dữ liệu..."):
         status, web_data = fetch_live_web_data_god_mode(target_url, xpath_selector)
         if status == "SUCCESS" and len(web_data) > 0:
             st.session_state.outcome_history = web_data
@@ -355,28 +359,29 @@ if auto_scrape_enabled:
             )
             st.session_state.system_status = {
                 "level": "NOMINAL",
-                "msg": f"Đồng bộ trực tuyến THÀNH CÔNG. Đã tìm thấy {len(web_data)} ván bài hoàn toàn ẩn danh.",
-                "action": "✅ Không cần can thiệp. Mã nguồn chạy ổn định không lặp vô hạn."
+                "msg": f"Đồng bộ trực tuyến THÀNH CÔNG. Đã quét thấy {len(web_data)} ván bài hoàn toàn ẩn danh.",
+                "action": "✅ Không cần can thiệp. Hệ thống tự động làm mới sau mỗi chu kỳ."
             }
         elif status == "SUCCESS" and len(web_data) == 0:
             st.session_state.system_status = {
                 "level": "WARNING",
-                "msg": "Kết nối thành công nhưng KHÔNG lấy được phần tử HTML mục tiêu.",
-                "action": "⚠️ **Hành động đề xuất:** Hãy tinh chỉnh lại ô **Xpath** ở cột trái cho khớp với bàn bài."
+                "msg": "Kết nối thành công tới trang đích nhưng KHÔNG tìm thấy chuỗi dữ liệu lịch sử bài.",
+                "action": "⚠️ **Hành động đề xuất:** Cấu trúc HTML của sòng có thể vừa thay đổi. Hãy kiểm tra và điều chỉnh lại ô **Xpath định vị chuỗi kết quả** ở cột trái hoặc chuyển sang chế độ **NHẬP TAY THỦ CÔNG** để không làm gián đoạn dòng tiền."
             }
         elif status.startswith("ERROR"):
             st.session_state.system_status = {
                 "level": "CRITICAL",
-                "msg": f"Lỗi chặn kết nối: {web_data}",
-                "action": "🚨 **Hành động đề xuất:** Tắt mục 'KÍCH HOẠT QUÉT TÀNG HÌNH' và sử dụng **BÀN ĐIỀU KHIỂN CHẠY BẰNG TAY** phía dưới."
+                "msg": f"Lỗi Luồng Quét: {web_data}",
+                "action": "🚨 **Hành động đề xuất:** Tường lửa Cloudflare của sòng đang siết chặt hoặc lỗi mạng. Để bảo mật tuyệt đối, hãy **TẮT** mục 'KÍCH HOẠT QUÉT TÀNG HÌNH' ở cột trái ngay và chuyển sang sử dụng **BÀN ĐIỀU KHIỂN CHẠY BẰNG TAY** ở phía dưới."
             }
 
 if not auto_scrape_enabled:
-    st.session_state.system_status = {
-        "level": "NOMINAL_MANUAL",
-        "msg": "Đang vận hành ở chế độ OFFLINE bằng tay. Cách ly hoàn toàn.",
-        "action": "✅ **An toàn tuyệt đối:** Hệ thống tính toán dựa trên dữ liệu bạn nhập thủ công."
-    }
+    if st.session_state.system_status["level"] not in ["NOMINAL", "WARNING", "CRITICAL"]:
+        st.session_state.system_status = {
+            "level": "NOMINAL_MANUAL",
+            "msg": "Đang vận hành ở chế độ OFFLINE (Bằng tay). Cách ly hoàn toàn với máy chủ sòng.",
+            "action": "✅ **An toàn 100%:** Hãy sử dụng các nút nhấn hoặc nhập chuỗi lá bài ở phía dưới để nạp dữ liệu sau mỗi ván."
+        }
     st.session_state.last_results = calculate_baccarat_v20_ultimate(
         [], [], st.session_state.shoe_history, shoe_decks=decks,
         manual_cards_used=manual_cards,
@@ -384,16 +389,20 @@ if not auto_scrape_enabled:
         p_wins=p_wins_sidebar, b_wins=b_wins_sidebar, tie_wins=tie_wins_sidebar
     )
 
-# --- HIỂN THỊ TRẠNG THÁI HỆ THỐNG ---
+# =========================================================================
+# HIỂN THỊ Ô BÁO TÌNH TRẠNG HỆ THỐNG (SYSTEM HEALTH HUD)
+# =========================================================================
 status_info = st.session_state.system_status
 if status_info["level"] in ["NOMINAL", "NOMINAL_MANUAL"]:
     st.markdown(f'<div class="sys-monitor-box sys-good"><b>🟢 TRẠNG THÁI HỆ THỐNG: OPERATIONAL</b><br><small>{status_info["msg"]}</small><br><span style="font-size:12px; opacity:0.9;">{status_info["action"]}</span></div>', unsafe_allow_html=True)
 elif status_info["level"] == "WARNING":
-    st.markdown(f'<div class="sys-monitor-box sys-warn"><b>🟡 TRẠNG THÁI HỆ THỐNG: MISALIGNED</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(241,196,15,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sys-monitor-box sys-warn"><b>🟡 TRẠNG THÁI HỆ THỐNG: MISALIGNED (SAI LỆCH XPATH)</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(241,196,15,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
 elif status_info["level"] == "CRITICAL":
-    st.markdown(f'<div class="sys-monitor-box sys-critical"><b>🔴 TRẠNG THÁI HỆ THỐNG: SCRAPING BLOCKED</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(231,76,60,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sys-monitor-box sys-critical"><b>🔴 TRẠNG THÁI HỆ THỐNG: SCRAPING BLOCKED (BỊ CHẶN)</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(231,76,60,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
 
-# --- HIỂN THỊ KẾT QUẢ VÀ MA TRẬN XÁC SUẤT ---
+# =========================================================================
+# HIỂN THỊ KẾT QUẢ DỰ ĐOÁN
+# =========================================================================
 if st.session_state.last_results:
     res, _, p_pair, mode, cards_left = st.session_state.last_results
     
@@ -417,7 +426,7 @@ if st.session_state.last_results:
             
         st.caption(f"**Chế độ core:** {mode} | **Quân bài còn lại:** {int(cards_left)}")
 
-# --- KHỐI ĐIỀU KHIỂN THỦ CÔNG (CHỈ MỞ KHI TẮT AUTO-SCRAPE) ---
+# BÀN ĐIỀU KHIỂN CHẠY TAY BẰNG NÚT BẤM / NHẬP LÁ BÀI
 if not auto_scrape_enabled:
     st.markdown("---")
     st.subheader("🎯 BÀN ĐIỀU KHIỂN CHẠY BẰNG TAY (MANUAL MODE)")
