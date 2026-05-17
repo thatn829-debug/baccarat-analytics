@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import time
 import random
-import math
 from urllib.parse import urlparse
 
 # =========================================================================
@@ -31,7 +30,7 @@ except ImportError:
     UC_AVAILABLE = False
 
 # =========================================================================
-# LÕI THUẬT TOÁN TOÁN HỌC KHÔNG LỖI (V20.6.0 - ZERO-FAULT QUANTUM MATRIX)
+# LÕI THUẬT TOÁN TOÁN HỌC KHÔNG LỖI (V20.5.5 - ZERO-FAULT QUANTUM MATRIX)
 # =========================================================================
 def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -45,11 +44,11 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1.0)
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.6.0)"
+        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.5.5)"
     else:
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.94) + (b_wins * 4.93) + (tie_wins * 5.01)))
         cards_left = max(0, total_initial_cards - cards_removed)
-        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.6.0"
+        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.5.5"
         if cards_removed > 0:
             consumed_ratio = cards_removed / total_initial_cards
             for card_num in deck_structure:
@@ -198,7 +197,7 @@ def suggest_xpath_by_url(url):
     return "//div[contains(@class, 'road') or contains(@class, 'result') or contains(@class, 'cell')]"
 
 # =========================================================================
-# LÕI QUÉT BẢO MẬT TỐI HẬU: GIẢ LẬP HÀNH VI TỰ NHIÊN TRÁNH PHÁT HIỆN SÂU
+# LÕI QUÉT KHÔNG VẾT TÍCH: GIA CỐ TUYỆT ĐỐI CHỐNG RÒ RỈ RAM (FINALLY BLOCK)
 # =========================================================================
 def fetch_live_web_data_god_mode(url, target_xpath):
     if not UC_AVAILABLE:
@@ -209,15 +208,11 @@ def fetch_live_web_data_god_mode(url, target_xpath):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--incognito")
-    options.add_argument("--window-size=1440,900")
     options.add_argument("--disable-blink-features=AutomationControlled")
     
-    # Random hóa User-Agent ở mức độ sâu chống nhận diện dấu vân tay hệ thống (Fingerprint)
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
     ]
     options.add_argument(f"user-agent={random.choice(user_agents)}")
     
@@ -235,25 +230,17 @@ def fetch_live_web_data_god_mode(url, target_xpath):
             )
             
         driver.get(url)
-        # Thời gian chờ ngẫu nhiên tránh tạo nhịp sinh học giống bot (Anti-Bot Pattern Timing)
-        time.sleep(random.uniform(6.0, 9.5))
+        time.sleep(random.uniform(5.0, 8.0))
         
-        # Mô phỏng tương tác nâng cao (Human-like Interaction Simulator)
         try:
             actions = ActionChains(driver)
-            elements_to_hover = driver.find_elements(By.XPATH, "//div | //button")[:5]
-            for elem in elements_to_hover:
-                try:
-                    actions.move_to_element(elem).pause(random.uniform(0.1, 0.4)).perform()
-                except:
-                    continue
-            for _ in range(random.randint(2, 4)):
-                actions.scroll_by_amount(0, random.randint(100, 300)).perform()
-                time.sleep(random.uniform(0.5, 1.2))
+            for _ in range(random.randint(1, 3)):
+                actions.scroll_by_amount(0, random.randint(150, 400)).perform()
+                time.sleep(random.uniform(0.6, 1.4))
         except:
             pass
             
-        wait = WebDriverWait(driver, 12)
+        wait = WebDriverWait(driver, 10)
         elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, target_xpath)))
         
         scraped_outcomes = []
@@ -273,17 +260,15 @@ def fetch_live_web_data_god_mode(url, target_xpath):
         return "ERROR_CONN", str(e)
     finally:
         if driver is not None:
-            try: 
-                driver.close()
-                driver.quit()
-            except: 
-                pass
+            try: driver.quit()
+            except: pass
 
 # =========================================================================
 # GIAO DIỆN CHÍNH (STREAMLIT UI)
 # =========================================================================
-st.set_page_config(page_title="Oracle God-Mode v20.6.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle God-Mode v20.5.5", page_icon="🔮", layout="centered")
 
+# CSS ENGINE NÂNG CẤP THÊM BOX GIÁM SÁT TRẠNG THÁI
 st.markdown(
     """
     <style>
@@ -296,6 +281,7 @@ st.markdown(
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 5px; font-weight: 800; }
     .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
     
+    /* STYLE CHO Ô TRẠNG THÁI HỆ THỐNG CAO CẤP */
     .sys-monitor-box { padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; font-family: system-ui, sans-serif; line-height: 1.5; }
     .sys-good { background-color: rgba(46, 204, 113, 0.1); border: 1px solid #2ecc71; color: #2ecc71; }
     .sys-warn { background-color: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f; color: #f1c40f; }
@@ -376,12 +362,11 @@ if auto_scrape_enabled:
             }
 
 if not auto_scrape_enabled:
-    if st.session_state.system_status["level"] not in ["NOMINAL", "WARNING", "CRITICAL"]:
-        st.session_state.system_status = {
-            "level": "NOMINAL_MANUAL",
-            "msg": "Đang vận hành ở chế độ OFFLINE (Bằng tay). Cách ly hoàn toàn với máy chủ sòng.",
-            "action": "✅ **An toàn 100%:** Hãy sử dụng các nút nhấn hoặc nhập chuỗi lá bài ở phía dưới để nạp dữ liệu sau mỗi ván."
-        }
+    st.session_state.system_status = {
+        "level": "NOMINAL_MANUAL",
+        "msg": "Đang vận hành ở chế độ OFFLINE (Bằng tay). Cách ly hoàn toàn với máy chủ sòng.",
+        "action": "✅ **An toàn 100%:** Hãy sử dụng các nút nhấn hoặc nhập chuỗi lá bài ở phía dưới để nạp dữ liệu sau mỗi ván."
+    }
     st.session_state.last_results = calculate_baccarat_v20_ultimate(
         [], [], st.session_state.shoe_history, shoe_decks=decks,
         manual_cards_used=manual_cards,
@@ -398,7 +383,7 @@ if status_info["level"] in ["NOMINAL", "NOMINAL_MANUAL"]:
 elif status_info["level"] == "WARNING":
     st.markdown(f'<div class="sys-monitor-box sys-warn"><b>🟡 TRẠNG THÁI HỆ THỐNG: MISALIGNED (SAI LỆCH XPATH)</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(241,196,15,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
 elif status_info["level"] == "CRITICAL":
-    st.markdown(f'<div class="sys-monitor-box sys-critical"><b>🔴 TRẠNG THÁI HỆ THỐNG: SCRAPING BLOCKED (BỊ CHẶN)</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(231,76,60,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sys-monitor-box sys-critical"><b>🔴 TRẠNG THÁI HỆ THỐNG: SCRA-PING BLOCKED (BỊ CHẶN)</b><br><small>{status_info["msg"]}</small><br><hr style="margin:6px 0; border-color:rgba(231,76,60,0.3);">{status_info["action"]}</div>', unsafe_allow_html=True)
 
 # =========================================================================
 # HIỂN THỊ KẾT QUẢ DỰ ĐOÁN
