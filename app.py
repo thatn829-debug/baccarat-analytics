@@ -421,4 +421,3 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                     if not auto_scrape_enabled:
                         st.session_state.shoe_history.extend(p_list + b_list)
                     st.rerun()
-Thay đổi cấu hình quét link tự động thành chọn bàn thích hợp để quét trong trang web của nhà cái
