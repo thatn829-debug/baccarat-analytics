@@ -161,10 +161,34 @@ def detect_baccarat_pattern(outcome_list):
         return f"🔥 CẢNH BÁO: ĐANG VÀO CẦU BỆT {side_vietnamese} ({streak_count} ván liên tiếp!)", "#ff7675"
     return "📊 Khay bài đang đi sóng phẳng (Chưa có tín hiệu cầu đặc biệt)", "#2ecc71"
 
+def clean_and_parse_input(raw_str):
+    if not raw_str: return []
+    normalized = raw_str.upper().replace(" ", "")
+    tokens = []
+    i = 0
+    if "," in normalized:
+        parts = normalized.split(",")
+        for p in parts:
+            p_clean = "".join([c for c in p if c in "2345678910AJQK"])
+            if p_clean: tokens.append(p_clean)
+    else:
+        while i < len(normalized):
+            if normalized[i:i+2] == "10": tokens.append("10"); i += 2
+            elif normalized[i] in "23456789AJQK": tokens.append(normalized[i]); i += 1
+            else: i += 1
+    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13}
+    result_list = []
+    for tok in tokens:
+        if tok in mapping: result_list.append(mapping[tok])
+        elif tok.isdigit():
+            val = int(tok)
+            if 2 <= val <= 10: result_list.append(val)
+    return result_list
+
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v18.2 Manual Patched", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v18.2 Patched", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -189,7 +213,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Khởi tạo Session State vững chắc
+# Khởi tạo Session State
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
@@ -218,9 +242,63 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.outcome_history = []
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
+    # Reset widget inputs
+    if 'p_input_key' in st.session_state: st.session_state.p_input_key = ""
+    if 'b_input_key' in st.session_state: st.session_state.b_input_key = ""
     st.rerun()
 
-# --- PANEL OUTPUT CONTROL ---
+# --- ĐIỀU KHIỂN NHẬP TAY (ĐƯA LÊN TRƯỚC HOẶC TÍCH HỢP ĐỂ TRÁNH LỖI PHÂN PHỐI LUỒNG) ---
+st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
+
+col_p, col_b = st.columns(2)
+with col_p: 
+    p_input = st.text_input("PLAYER (Lá bài vừa ra):", placeholder="Ví dụ: 5,K,2", key="p_input_key")
+with col_b: 
+    b_input = st.text_input("BANKER (Lá bài vừa ra):", placeholder="Ví dụ: J,7", key="b_input_key")
+
+if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
+    current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
+    if not p_input.strip() and not b_input.strip():
+        st.warning("⚠️ Vui lòng điền thông tin quân bài để kích hoạt phép tính.")
+    elif current_game_signature == st.session_state.last_played_cards and current_game_signature != "P:|B:":
+        st.error("⛔ Trùng lặp hoàn toàn với dữ liệu ván vừa nạp!")
+    else:
+        p_list = clean_and_parse_input(p_input)
+        b_list = clean_and_parse_input(b_input)
+        if p_list or b_list:
+            core_output = calculate_baccarat_v18_ultimate(
+                p_list, b_list, st.session_state.shoe_history, shoe_decks=decks,
+                manual_cards_used=manual_cards, manual_games_played=manual_games,
+                p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
+            )
+            
+            if isinstance(core_output, str):
+                st.session_state.last_results = core_output  # Lưu trực tiếp String lỗi
+            else:
+                st.session_state.last_results = core_output
+                st.session_state.last_played_cards = current_game_signature
+                
+                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
+                p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
+                b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
+                if p_score_eval > b_score_eval:
+                    st.session_state.outcome_history.append("Player")
+                elif b_score_eval > p_score_eval:
+                    st.session_state.outcome_history.append("Banker")
+                else:
+                    st.session_state.outcome_history.append("Tie")
+
+                st.session_state.shoe_history.extend(p_list + b_list)
+                
+                # Xóa sạch ô nhập liệu để sẵn sàng cho ván tiếp theo (Auto-clear UX)
+                st.session_state.p_input_key = ""
+                st.session_state.b_input_key = ""
+                    
+            st.rerun()
+
+st.markdown("---")
+
+# --- PANEL OUTPUT CONTROL (HIỂN THỊ KẾT QUẢ ĐÃ ĐƯỢC ĐỒNG BỘ LUỒNG) ---
 if is_strict_lock:
     st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}). Vui lòng điều chỉnh lại thông số ở cột bên trái.")
 else:
@@ -228,11 +306,10 @@ else:
         results_data = st.session_state.last_results
         
         if isinstance(results_data, str):
-            if results_data.startswith("❌"): st.error(results_data)
-            else: st.warning(results_data)
-        elif isinstance(results_data, tuple) and isinstance(results_data[0], str):
-            if results_data[0].startswith("❌"): st.error(results_data[0])
-            else: st.warning(results_data[0])
+            if results_data.startswith("❌"): 
+                st.error(results_data)
+            else: 
+                st.warning(results_data)
         else:
             res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
             
@@ -255,8 +332,10 @@ else:
                 st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
                 st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
                 
-                if is_shoe_logical: st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
-                else: st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
+                if is_shoe_logical: 
+                    st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
+                else: 
+                    st.markdown(f'<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI ({", ".join(invalid_cards)})</div>', unsafe_allow_html=True)
 
                 if st.session_state.outcome_history:
                     trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
@@ -270,71 +349,3 @@ else:
             st.progress(penetration_rate / 100.0)
     else:
         st.info("🔮 ENGINE READY. Vui lòng nạp quân bài ván trực tiếp để lấy dữ liệu phân tích.")
-
-# --- ĐIỀU KHIỂN NHẬP TAY ---
-st.markdown("---")
-st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
-
-col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input("PLAYER (Lá bài vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
-with col_b: b_input = st.text_input("BANKER (Lá bài vừa ra):", value="", placeholder="Ví dụ: J,7")
-
-def clean_and_parse_input(raw_str):
-    if not raw_str: return []
-    normalized = raw_str.upper().replace(" ", "")
-    tokens = []
-    i = 0
-    if "," in normalized:
-        parts = normalized.split(",")
-        for p in parts:
-            p_clean = "".join([c for c in p if c in "2345678910AJQK"])
-            if p_clean: tokens.append(p_clean)
-    else:
-        while i < len(normalized):
-            if normalized[i:i+2] == "10": tokens.append("10"); i += 2
-            elif normalized[i] in "23456789AJQK": tokens.append(normalized[i]); i += 1
-            else: i += 1
-    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13}
-    result_list = []
-    for tok in tokens:
-        if tok in mapping: result_list.append(mapping[tok])
-        elif tok.isdigit():
-            val = int(tok)
-            if 2 <= val <= 10: result_list.append(val)
-    return result_list
-
-if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
-    current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
-    if not p_input.strip() and not b_input.strip():
-        st.warning("⚠️ Vui lòng điền thông tin quân bài để kích hoạt phép tính.")
-    elif current_game_signature == st.session_state.last_played_cards:
-        st.error("⛔ Trùng lặp hoàn toàn với dữ liệu ván vừa nạp!")
-    else:
-        p_list = clean_and_parse_input(p_input)
-        b_list = clean_and_parse_input(b_input)
-        if p_list or b_list:
-            core_output = calculate_baccarat_v18_ultimate(
-                p_list, b_list, st.session_state.shoe_history, shoe_decks=decks,
-                manual_cards_used=manual_cards, manual_games_played=manual_games,
-                p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
-            )
-            
-            if isinstance(core_output, str):
-                st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0, False, [])
-            else:
-                st.session_state.last_results = core_output
-                st.session_state.last_played_cards = current_game_signature
-                
-                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
-                p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
-                b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
-                if p_score_eval > b_score_eval:
-                    st.session_state.outcome_history.append("Player")
-                elif b_score_eval > p_score_eval:
-                    st.session_state.outcome_history.append("Banker")
-                else:
-                    st.session_state.outcome_history.append("Tie")
-
-                st.session_state.shoe_history.extend(p_list + b_list)
-                    
-            st.rerun()
