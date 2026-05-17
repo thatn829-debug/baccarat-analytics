@@ -1,4 +1,4 @@
-import streamlit as st
+Import streamlit as st
 import pandas as pd
 
 # =========================================================================
@@ -184,7 +184,6 @@ st.markdown(
     .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
     .char-p { color: #54a0ff; } .char-b { color: #ff7675; } .char-t { color: #2ecc71; }
-    .game-viewer { background-color: #262626; padding: 10px; border-radius: 5px; border: 1px solid #444; text-align: center; font-family: monospace; font-size: 18px; font-weight: bold; color: #f1c40f; margin-bottom: 10px; }
     </style>
     """, 
     unsafe_allow_html=True
@@ -195,8 +194,6 @@ if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
-if 'game_counter' not in st.session_state: st.session_state.game_counter = 1
-if 'history_log' not in st.session_state: st.session_state.history_log = []
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -221,8 +218,6 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.outcome_history = []
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
-    st.session_state.game_counter = 1
-    st.session_state.history_log = []
     st.rerun()
 
 # --- PANEL OUTPUT CONTROL ---
@@ -250,7 +245,7 @@ else:
                 
             left_result_col, right_pair_col = st.columns(2)
             with left_result_col:
-                st.markdown("#### 📊 Dự Đoán Xác Suất Cửa Chính Ván Tiếp Theo")
+                st.markdown("#### 📊 Dự Đoán Xác Suất Cửa Chính")
                 st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
@@ -280,13 +275,9 @@ else:
 st.markdown("---")
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
-# KHÓA TRƯỜNG NHẬP: Hiển thị số ván dưới dạng chỉ xem (Read-only) bằng HTML Box không cho sửa đổi
-current_game = st.session_state.game_counter
-st.markdown(f'<div class="game-viewer">🔢 ĐANG Ở VÁN THỨ: {current_game}</div>', unsafe_allow_html=True)
-
 col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input(f"PLAYER (Lá bài vừa ra):", value="", placeholder="Ví dụ: 5,K,2", key="p_in")
-with col_b: b_input = st.text_input(f"BANKER (Lá bài vừa ra):", value="", placeholder="Ví dụ: J,7", key="b_in")
+with col_p: p_input = st.text_input("PLAYER (Lá bài vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
+with col_b: b_input = st.text_input("BANKER (Lá bài vừa ra):", value="", placeholder="Ví dụ: J,7")
 
 def clean_and_parse_input(raw_str):
     if not raw_str: return []
@@ -334,44 +325,16 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 st.session_state.last_results = core_output
                 st.session_state.last_played_cards = current_game_signature
                 
-                # Tính điểm ván hiện tại để ghi nhận kết quả thực tế
+                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
-                
                 if p_score_eval > b_score_eval:
-                    actual_winner = "Player"
-                    winner_label = f"🔵 Player ({p_score_eval} điểm)"
+                    st.session_state.outcome_history.append("Player")
                 elif b_score_eval > p_score_eval:
-                    actual_winner = "Banker"
-                    winner_label = f"🔴 Banker ({b_score_eval} điểm)"
+                    st.session_state.outcome_history.append("Banker")
                 else:
-                    actual_winner = "Tie"
-                    winner_label = f"🟢 Hòa ({p_score_eval} điểm)"
+                    st.session_state.outcome_history.append("Tie")
 
-                st.session_state.outcome_history.append(actual_winner)
                 st.session_state.shoe_history.extend(p_list + b_list)
-                
-                # Lưu trữ kết quả phân tích hiện tại vào bảng lịch sử
-                prob_data = core_output[0]
-                st.session_state.history_log.append({
-                    "Số ván": f"Ván {current_game}",
-                    "Bài Player": p_input.strip().upper(),
-                    "Bài Banker": b_input.strip().upper(),
-                    "Kết quả sàn": winner_label,
-                    "Xác suất dự báo kế tiếp (P / B / T)": f"{prob_data['Player']}% | {prob_data['Banker']}% | {prob_data['Tie']}%"
-                })
-                
-                # Tự động tăng số ván lên +1
-                st.session_state.game_counter = current_game + 1
                     
             st.rerun()
-
-# --- PHẦN LỊCH SỬ KHAY BÀI CHI TIẾT (CUỐI TRANG) ---
-st.markdown("---")
-st.subheader("📜 Lịch Sử Chi Tiết Khay Bài")
-
-if st.session_state.history_log:
-    df_history = pd.DataFrame(st.session_state.history_log)
-    st.dataframe(df_history.iloc[::-1], use_container_width=True, hide_index=True)
-else:
-    st.caption("Khay bài chưa ghi nhận dữ liệu lịch sử ván đấu nào.")
