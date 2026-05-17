@@ -1,8 +1,7 @@
 import streamlit as st
-import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v19.8: FIX BUTTON TYPEERROR & CENTERED LAYOUT
+# SYSTEM CORE v20.0: STABLE STATE MANAGEMENT & CLEAN CALLBACKS
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -159,10 +158,43 @@ def detect_baccarat_pattern(outcome_list):
         return f"🔥 BỆT {side_vietnamese} ({streak_count} ván!)", "#00cec9"
     return "📊 Khay bài đi sóng phẳng", "#2ed573"
 
+def clean_and_parse_input(raw_str):
+    if not raw_str: return []
+    normalized = raw_str.upper().replace(",", " ").replace(";", " ")
+    raw_tokens = normalized.split()
+    
+    result_list = []
+    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10}
+    
+    for token in raw_tokens:
+        token = token.strip()
+        if not token: continue
+        if token in mapping:
+            result_list.append(mapping[token])
+        elif token.isdigit():
+            val = int(token)
+            if 2 <= val <= 9: result_list.append(val)
+        else:
+            sub_i = 0
+            while sub_i < len(token):
+                if token[sub_i:sub_i+2] == "10":
+                    result_list.append(10)
+                    sub_i += 2
+                elif token[sub_i] in mapping:
+                    result_list.append(mapping[token[sub_i]])
+                    sub_i += 1
+                elif token[sub_i].isdigit():
+                    v = int(token[sub_i])
+                    if 2 <= v <= 9: result_list.append(v)
+                    sub_i += 1
+                else:
+                    sub_i += 1
+    return result_list
+
 # =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v19.8", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v20.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -172,7 +204,6 @@ st.markdown(
         color: #ecf0f1 !important;
     }
     
-    /* Ép song song trên mobile */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -231,7 +262,6 @@ st.markdown(
     .char-b { color: #ffffff; font-weight: bold; opacity: 0.7; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Css nút bấm chính giữa */
     div.stButton > button {
         background-color: #00afb9 !important;
         color: white !important;
@@ -246,10 +276,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Khởi tạo các biến session state ban đầu
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'cards_per_round_history' not in st.session_state: st.session_state.cards_per_round_history = []
+
+# Khởi tạo khóa tạm cho ô nhập để tự động xóa sạch an toàn
+if 'form_iteration' not in st.session_state: st.session_state.form_iteration = 0
 
 # Sidebar cấu hình khay bài
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -268,59 +302,26 @@ calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
 is_strict_lock = (manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
 
 # --- KHU VỰC NHẬP LIỆU CHÍNH ---
-st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
+st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XỂT")
 
-# 1. Tính toán hiển thị số ván tiếp theo ngay giữa trên ô nhập điểm
+# 1. Tính toán hiển thị số ván tiếp theo dựa trên cấu hình + thực tế
 base_games = manual_games if manual_games > 0 else calculated_total_wins
 current_session_games = len(st.session_state.outcome_history)
 next_game_number = base_games + current_session_games + 1
 
 st.markdown(f'<div class="central-game-counter">🔮 VÁN TIẾP THEO: VÁN THỨ {next_game_number}</div>', unsafe_allow_html=True)
 
-# 2. Hai ô nhập bài song song (Player và Banker)
+# 2. Hai ô nhập bài song song (Player và Banker) gắn key động theo form_iteration
 input_col_left, input_col_right = st.columns(2, gap="small")
 with input_col_left:
-    p_input = st.text_input("🔵 PLAYER:", value="", placeholder="Ví dụ: 5,K,2", key="p_input_val")
+    p_input = st.text_input("🔵 PLAYER:", value="", placeholder="Ví dụ: 5,K,2", key=f"p_input_{st.session_state.form_iteration}")
 with input_col_right:
-    b_input = st.text_input("🔴 BANKER:", value="", placeholder="Ví dụ: J,7", key="b_input_val")
+    b_input = st.text_input("🔴 BANKER:", value="", placeholder="Ví dụ: J,7", key=f"b_input_{st.session_state.form_iteration}")
 
 st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
 
-# 3. DỜI NÚT GHI NHẬN VÀ TÍNH TOÁN VÀO CHÍNH GIỮA PHÍA DƯỚI 2 Ô NHẬP ĐIỂM
+# 3. NÚT TÍNH TOÁN NẰM GIỮA PHÍA DƯỚI Ô NHẬP ĐIỂM
 calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY", use_container_width=True, key="main_calc_btn")
-
-def clean_and_parse_input(raw_str):
-    if not raw_str: return []
-    normalized = raw_str.upper().replace(",", " ").replace(";", " ")
-    raw_tokens = normalized.split()
-    
-    result_list = []
-    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10}
-    
-    for token in raw_tokens:
-        token = token.strip()
-        if not token: continue
-        if token in mapping:
-            result_list.append(mapping[token])
-        elif token.isdigit():
-            val = int(token)
-            if 2 <= val <= 9: result_list.append(val)
-        else:
-            sub_i = 0
-            while sub_i < len(token):
-                if token[sub_i:sub_i+2] == "10":
-                    result_list.append(10)
-                    sub_i += 2
-                elif token[sub_i] in mapping:
-                    result_list.append(mapping[token[sub_i]])
-                    sub_i += 1
-                elif token[sub_i].isdigit():
-                    v = int(token[sub_i])
-                    if 2 <= v <= 9: result_list.append(v)
-                    sub_i += 1
-                else:
-                    sub_i += 1
-    return result_list
 
 if not st.session_state.last_results:
     st.session_state.last_results = calculate_baccarat_v18_ultimate(
@@ -357,8 +358,8 @@ if calc_triggered:
             st.session_state.cards_per_round_history.append(total_cards_this_round)
             st.session_state.shoe_history.extend(p_list + b_list)
             
-        st.session_state.p_input_val = ""
-        st.session_state.b_input_val = ""
+        # Tăng chỉ số form_iteration lên để tự động làm trống ô nhập an toàn 100%
+        st.session_state.form_iteration += 1
         st.rerun()
 
 st.markdown("---")
@@ -421,11 +422,12 @@ with util_col_1:
             if last_round_cards_count > 0:
                 st.session_state.shoe_history = st.session_state.shoe_history[:-last_round_cards_count]
             
-            st.session_state.last_results = calculate_baccarat_v18_ultimate(
+            st.session_state.last_results = calculate_baccarat_v20_ultimate(
                 [], [], st.session_state.shoe_history, shoe_decks=decks,
                 manual_cards_used=manual_cards, manual_games_played=manual_games,
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
             )
+            st.session_state.form_iteration += 1
             st.toast("⏪ Đã lùi khay bài về 1 ván!", icon="↩️")
             st.rerun()
         else:
@@ -437,6 +439,5 @@ with util_col_2:
         st.session_state.outcome_history = []
         st.session_state.cards_per_round_history = []
         st.session_state.last_results = None
-        st.session_state.p_input_val = ""
-        st.session_state.b_input_val = ""
+        st.session_state.form_iteration += 1
         st.rerun()
