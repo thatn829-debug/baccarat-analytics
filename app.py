@@ -189,17 +189,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Khởi tạo các Session State cơ sở và bổ sung bộ nhớ lưu thông số tăng dần
+# Khởi tạo Session State vững chắc
 if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
-
-# Khởi tạo bộ lưu trữ động cho các biến đếm ở sidebar
-if 'sys_manual_games' not in st.session_state: st.session_state.sys_manual_games = 0
-if 'sys_p_wins' not in st.session_state: st.session_state.sys_p_wins = 0
-if 'sys_b_wins' not in st.session_state: st.session_state.sys_b_wins = 0
-if 'sys_tie_wins' not in st.session_state: st.session_state.sys_tie_wins = 0
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -209,12 +203,11 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 THIẾT LẬP THÔNG SỐ KHAY BÀI")
 
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0)
+manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0)
 
-# Liên kết trực tiếp các thành phần nhập dữ liệu với Session State động tăng dần
-manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, key="sys_manual_games")
-p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, key="sys_p_wins")
-b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, key="sys_b_wins")
-tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, key="sys_tie_wins")
+p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0)
+b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0)
+tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0)
 
 calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
 is_strict_lock = (manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
@@ -225,10 +218,6 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.outcome_history = []
     st.session_state.last_results = None
     st.session_state.last_played_cards = ""
-    st.session_state.sys_manual_games = 0
-    st.session_state.sys_p_wins = 0
-    st.session_state.sys_b_wins = 0
-    st.session_state.sys_tie_wins = 0
     st.rerun()
 
 # --- PANEL OUTPUT CONTROL ---
@@ -336,22 +325,15 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 st.session_state.last_results = core_output
                 st.session_state.last_played_cards = current_game_signature
                 
-                # Logic phân định kết quả trận đấu hiện tại
+                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
-                
-                # CHỨC NĂNG TỰ ĐỘNG TĂNG DẦN SỐ VÁN TRÊN SIDEBAR
-                st.session_state.sys_manual_games += 1  # Tăng ván tổng
-                
                 if p_score_eval > b_score_eval:
                     st.session_state.outcome_history.append("Player")
-                    st.session_state.sys_p_wins += 1    # Tự cộng thêm ván Player thắng
                 elif b_score_eval > p_score_eval:
                     st.session_state.outcome_history.append("Banker")
-                    st.session_state.sys_b_wins += 1    # Tự cộng thêm ván Banker thắng
                 else:
                     st.session_state.outcome_history.append("Tie")
-                    st.session_state.sys_tie_wins += 1  # Tự cộng thêm ván Hòa thắng
 
                 st.session_state.shoe_history.extend(p_list + b_list)
                     
