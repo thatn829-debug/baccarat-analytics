@@ -1,25 +1,5 @@
 import streamlit as st
 import pandas as pd
-import time
-
-# =========================================================================
-# KHỐI FAIL-SAFE: TỰ ĐỘNG KIỂM TRA VÀ CÔ LẬP LỖI THƯ VIỆN
-# =========================================================================
-AUTOREFRESH_AVAILABLE = True
-try:
-    from streamlit_autorefresh import st_autorefresh
-except ImportError:
-    AUTOREFRESH_AVAILABLE = False
-
-SELENIUM_AVAILABLE = True
-try:
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-except ImportError:
-    SELENIUM_AVAILABLE = False
 
 # =========================================================================
 # SYSTEM CORE v18.2: ULTRA QUANTUM ENGINE (PATCHED & OPTIMIZED)
@@ -182,49 +162,9 @@ def detect_baccarat_pattern(outcome_list):
     return "📊 Khay bài đang đi sóng phẳng (Chưa có tín hiệu cầu đặc biệt)", "#2ecc71"
 
 # =========================================================================
-# SUB-ENGINE WEB SCRAPER (SELENIUM CORE TỐI ƯU HÓA TỐC ĐỘ)
-# =========================================================================
-def fetch_live_web_data(url, target_xpath):
-    if not SELENIUM_AVAILABLE:
-        return "ERROR_LIB", "Chưa cài đặt thư viện Selenium trên thiết bị."
-    
-    options = Options()
-    options.add_argument("--headless") 
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-
-    driver = None
-    try:
-        driver = webdriver.Chrome(options=options)
-        driver.get(url)
-        
-        WebDriverWait(driver, 8).until(
-            EC.presence_of_element_located((By.XPATH, target_xpath))
-        )
-        
-        elements = driver.find_elements(By.XPATH, target_xpath)
-        scraped_outcomes = []
-        for elem in elements:
-            text = elem.text.strip().upper()
-            if 'PLAYER' in text or text == 'P': scraped_outcomes.append('Player')
-            elif 'BANKER' in text or text == 'B': scraped_outcomes.append('Banker')
-            elif 'TIE' in text or text == 'T' or 'HÒA' in text or 'HOA' in text: scraped_outcomes.append('Tie')
-            
-        return "SUCCESS", scraped_outcomes
-    except Exception as e:
-        return "ERROR_CONN", str(e)
-    finally:
-        if driver:
-            try:
-                driver.quit()
-            except:
-                pass
-
-# =========================================================================
 # INTERFACE DESIGN & STYLES
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v18.2 Patched", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v18.2 Manual Patched", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -260,49 +200,17 @@ st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🌐 CẤU HÌNH QUÉT LINK TỰ ĐỘNG")
+st.sidebar.markdown("### 📊 THIẾT LẬP THÔNG SỐ KHAY BÀI")
 
-if not AUTOREFRESH_AVAILABLE or not SELENIUM_AVAILABLE:
-    st.sidebar.warning("⚠️ Hệ thống thiếu thư viện Scraper. Chuyển sang chế độ Nhập tay thủ công.")
-    auto_scrape_enabled = False
-else:
-    auto_scrape_enabled = st.sidebar.checkbox("Kích hoạt Quét Web Trực Tiếp", value=False)
+manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0)
+manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0)
 
-target_url = st.sidebar.text_input("Nhập Link Web cần cào dữ liệu:", value="https://example-baccarat-live.com")
-xpath_selector = st.sidebar.text_input("Xpath định vị chuỗi kết quả:", value="//div[contains(@class, 'road-item')]")
-refresh_rate = st.sidebar.slider("Tần suất quét lại hệ thống (Giây):", min_value=10, max_value=120, value=30)
-
-if auto_scrape_enabled and AUTOREFRESH_AVAILABLE:
-    st_autorefresh(interval=refresh_rate * 1000, key="data_scraper_refresh_v18_2")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 Thiết lập thông số khay bài")
-
-# Phục hồi giá trị đầu vào dựa trên trạng thái Auto-Scrape để tránh ghi đè lỗi dữ liệu rỗng
-manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0, disabled=auto_scrape_enabled)
-manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0, disabled=auto_scrape_enabled)
-
-p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0, disabled=auto_scrape_enabled)
-b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0, disabled=auto_scrape_enabled)
-tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0, disabled=auto_scrape_enabled)
-
-if auto_scrape_enabled and SELENIUM_AVAILABLE:
-    with st.spinner("🔄 Đang quét dữ liệu từ nguồn Web..."):
-        status, web_data = fetch_live_web_data(target_url, xpath_selector)
-        if status == "SUCCESS" and len(web_data) > 0:
-            st.sidebar.success(f"✅ Đã quét tự động {len(web_data)} ván!")
-            st.session_state.outcome_history = web_data
-            p_wins_input = web_data.count("Player")
-            b_wins_input = web_data.count("Banker")
-            tie_wins_input = web_data.count("Tie")
-            manual_games = len(web_data)
-        elif status.startswith("ERROR"):
-            st.sidebar.error(f"❌ Không cào được dữ liệu: {web_data}")
+p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng:", min_value=0, max_value=100, value=0)
+b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng:", min_value=0, max_value=100, value=0)
+tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", min_value=0, max_value=100, value=0)
 
 calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
-
-# PHẦN SỬA LỖI 1: Nới lỏng logic kiểm tra chặn lock nếu người dùng nhập tay để không làm treo app
-is_strict_lock = (not auto_scrape_enabled and manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
+is_strict_lock = (manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
@@ -319,19 +227,13 @@ else:
     if st.session_state.last_results:
         results_data = st.session_state.last_results
         
-        # PHẦN SỬA LỖI 2: Xử lý an toàn khi Core Engine trả về chuỗi thông báo lỗi thay vì Tuple dữ liệu
         if isinstance(results_data, str):
-            if results_data.startswith("❌"):
-                st.error(results_data)
-            else:
-                st.warning(results_data)
+            if results_data.startswith("❌"): st.error(results_data)
+            else: st.warning(results_data)
         elif isinstance(results_data, tuple) and isinstance(results_data[0], str):
-            if results_data[0].startswith("❌"):
-                st.error(results_data[0])
-            else:
-                st.warning(results_data[0])
+            if results_data[0].startswith("❌"): st.error(results_data[0])
+            else: st.warning(results_data[0])
         else:
-            # Luồng chạy bình thường khi có dữ liệu phân tích hợp lệ
             res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
             
             p_box_css = "hud-box"
@@ -359,7 +261,7 @@ else:
                 if st.session_state.outcome_history:
                     trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
                     pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
-                    st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN ĐÃ QUÉT</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color};">{pattern_msg}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color};">{pattern_msg}</div></div>', unsafe_allow_html=True)
 
             st.markdown("---")
             total_shoe_cards = decks * 52
@@ -369,7 +271,7 @@ else:
     else:
         st.info("🔮 ENGINE READY. Vui lòng nạp quân bài ván trực tiếp để lấy dữ liệu phân tích.")
 
-# --- ĐIỀU KHIỂN NHẬP TAY KHI CẦN THIẾT ---
+# --- ĐIỀU KHIỂN NHẬP TAY ---
 st.markdown("---")
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
@@ -417,14 +319,13 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
             )
             
-            # PHẦN SỬA LỖI 3: Đồng bộ hóa kiểu dữ liệu đồng nhất đưa vào Session State 
             if isinstance(core_output, str):
                 st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0, False, [])
             else:
                 st.session_state.last_results = core_output
                 st.session_state.last_played_cards = current_game_signature
                 
-                # Cập nhật kết quả sàn dựa trên ván bài vừa nhập tay để hiển thị Xu hướng (Trend string)
+                # Tự động tính điểm từ bài vừa nhập tay để đẩy vào đồ thị Xu Hướng (P - B - T)
                 p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
                 b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
                 if p_score_eval > b_score_eval:
@@ -434,7 +335,6 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 else:
                     st.session_state.outcome_history.append("Tie")
 
-                if not auto_scrape_enabled:
-                    st.session_state.shoe_history.extend(p_list + b_list)
+                st.session_state.shoe_history.extend(p_list + b_list)
                     
             st.rerun()
