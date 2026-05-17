@@ -1,4 +1,4 @@
-Import streamlit as st
+import streamlit as st
 import pandas as pd
 import time
 
@@ -300,7 +300,9 @@ if auto_scrape_enabled and SELENIUM_AVAILABLE:
             st.sidebar.error(f"❌ Không cào được dữ liệu: {web_data}")
 
 calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
-is_strict_lock = (not auto_scrape_enabled and calculated_total_wins > 0 and manual_games != calculated_total_wins)
+
+# PHẦN SỬA LỖI 1: Nới lỏng logic kiểm tra chặn lock nếu người dùng nhập tay để không làm treo app
+is_strict_lock = (not auto_scrape_enabled and manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True):
@@ -312,17 +314,24 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
 
 # --- PANEL OUTPUT CONTROL ---
 if is_strict_lock:
-    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}).")
+    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}). Vui lòng điều chỉnh lại thông số ở cột bên trái.")
 else:
     if st.session_state.last_results:
         results_data = st.session_state.last_results
         
-        # SỬA LỖI ĐOẠN ĐỌC PHẢN HỒI KHI KHỞI CHẠY KHỐI LỖI CHÍNH XÁC HƠN
-        if isinstance(results_data[0], str) and results_data[0].startswith("❌"): 
-            st.error(results_data[0])
-        elif isinstance(results_data[0], str) and results_data[0].startswith("⚠️"): 
-            st.warning(results_data[0])
+        # PHẦN SỬA LỖI 2: Xử lý an toàn khi Core Engine trả về chuỗi thông báo lỗi thay vì Tuple dữ liệu
+        if isinstance(results_data, str):
+            if results_data.startswith("❌"):
+                st.error(results_data)
+            else:
+                st.warning(results_data)
+        elif isinstance(results_data, tuple) and isinstance(results_data[0], str):
+            if results_data[0].startswith("❌"):
+                st.error(results_data[0])
+            else:
+                st.warning(results_data[0])
         else:
+            # Luồng chạy bình thường khi có dữ liệu phân tích hợp lệ
             res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
             
             p_box_css = "hud-box"
@@ -408,16 +417,24 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                 p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input
             )
             
-            # ĐÃ FIX: Kiếm tra an toàn đầu ra Core_Output để không bị Crash app
+            # PHẦN SỬA LỖI 3: Đồng bộ hóa kiểu dữ liệu đồng nhất đưa vào Session State 
             if isinstance(core_output, str):
                 st.session_state.last_results = (core_output, {}, 0.0, 0.0, "LỖI", 0, False, [])
             else:
-                res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = core_output
-                st.session_state.last_results = (res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards)
+                st.session_state.last_results = core_output
+                st.session_state.last_played_cards = current_game_signature
                 
-                # ĐÃ FIX: Logic lọc kiểm tra điều kiện lưu trữ shoe_history bằng kiểm tra kiểu tuple
-                if not isinstance(core_output, str):
-                    st.session_state.last_played_cards = current_game_signature
-                    if not auto_scrape_enabled:
-                        st.session_state.shoe_history.extend(p_list + b_list)
-                    st.rerun()
+                # Cập nhật kết quả sàn dựa trên ván bài vừa nhập tay để hiển thị Xu hướng (Trend string)
+                p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
+                b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
+                if p_score_eval > b_score_eval:
+                    st.session_state.outcome_history.append("Player")
+                elif b_score_eval > p_score_eval:
+                    st.session_state.outcome_history.append("Banker")
+                else:
+                    st.session_state.outcome_history.append("Tie")
+
+                if not auto_scrape_enabled:
+                    st.session_state.shoe_history.extend(p_list + b_list)
+                    
+            st.rerun()
