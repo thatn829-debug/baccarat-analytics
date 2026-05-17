@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v18.6: FIX SYNTAX & PHONG THUY INTERFACE
+# SYSTEM CORE v18.7: FIX MOBILE LAYOUT & PHONG THUY INTERFACE
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -175,21 +175,36 @@ def detect_baccarat_pattern(outcome_list):
     return "📊 Khay bài đi sóng phẳng", "#2ed573"
 
 # =========================================================================
-# INTERFACE DESIGN & STYLES (MỆNH THỦY - MỆNH MỘC)
+# INTERFACE DESIGN & STYLES (MỆNH THỦY - MỆNH MỘC & FIX MOBILE COLUMNS)
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v18.6 Phong Thủy", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v18.7 Phong Thủy", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
-    /* Nền chính: Gradient Xanh đại dương sẫm huyền bí (Hành Thủy sinh Mộc cực vượng) */
+    /* Nền chính: Gradient Xanh đại dương sẫm huyền bí (Hành Thủy sinh Mộc) */
     .stApp {
         background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important;
         color: #ecf0f1 !important;
     }
+    
+    /* ÉP CỘT STREAMLIT KHÔNG ĐƯỢC XẾP CHỒNG TRÊN MOBILE */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+    [data-testid="stHorizontalBlock"] > div {
+        width: 50% !important;
+        min-width: 45% !important;
+        flex: 1 1 auto !important;
+    }
+
     /* Khối hiển thị kết quả HUD */
     .hud-box { 
-        padding: 18px; 
+        padding: 14px; 
         border-radius: 12px; 
         text-align: center; 
         margin-bottom: 12px; 
@@ -197,8 +212,8 @@ st.markdown(
         background: rgba(10, 25, 30, 0.9); 
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
-    .hud-title { font-size: 13px; font-weight: 600; color: #a4b0be; letter-spacing: 0.5px; }
-    .hud-value { font-size: 34px; font-weight: 800; font-family: monospace; margin-top: 4px; }
+    .hud-title { font-size: 11px; font-weight: 600; color: #a4b0be; letter-spacing: 0.5px; }
+    .hud-value { font-size: 28px; font-weight: 800; font-family: monospace; margin-top: 4px; }
     
     /* Hiệu ứng màu sắc Thủy - Mộc */
     .neon-player-advantage { 
@@ -257,7 +272,7 @@ if 'outcome_history' not in st.session_state: st.session_state.outcome_history =
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
 
-# Sidebar cài đặt
+# Sidebar cài đặt hành tủy bảo trợ
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
@@ -282,15 +297,15 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.last_played_cards = ""
     st.rerun()
 
-# --- CHIA ĐÔI Ô NHẬP LIỆU: PLAYER TRÁI | BANKER PHẢI ---
+# --- ÉP ĐÔI Ô NHẬP LIỆU: SONG SONG TRÊN MOBILE ---
 st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
-input_col_left, input_col_right = st.columns(2)
+input_col_left, input_col_right = st.columns(2, gap="small")
 
 with input_col_left:
-    p_input = st.text_input("🔵 PLAYER (Lá vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
+    p_input = st.text_input("🔵 PLAYER:", value="", placeholder="5,K,2")
 
 with input_col_right:
-    b_input = st.text_input("🔴 BANKER (Lá vừa ra):", value="", placeholder="Ví dụ: J,7")
+    b_input = st.text_input("🔴 BANKER:", value="", placeholder="J,7")
 
 def clean_and_parse_input(raw_str):
     if not raw_str: return []
@@ -373,35 +388,31 @@ else:
             if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
             
             st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH THỦY MỘC TRẬN")
-            left_col, right_col = st.columns(2)
+            left_col, right_col = st.columns(2, gap="small")
             
             with left_col:
-                st.markdown("#### 📊 XÁC SUẤT CỬA CHÍNH")
-                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ed573;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown("#### 📊 XÁC SUẤT")
+                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROB</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROB</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROB</div><div class="hud-value" style="color: #2ed573;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
             
             with right_col:
-                st.markdown("#### 💎 CỬA ĐÔI & BỘ XÉT LOGIC")
-                st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
-                st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
+                st.markdown("#### 💎 CỬA ĐÔI & LOGIC")
+                st.metric("🔵 P-PAIR", f"{p_pair}%")
+                st.metric("🔴 B-PAIR", f"{b_pair}%")
                 
                 if is_shoe_logical: 
-                    st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="validation-hud logic-pass">✔ KHAY HỢP LỆ</div>', unsafe_allow_html=True)
                 else: 
-                    st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
-                    if invalid_cards:
-                        st.caption(f"Quân bài lỗi: {', '.join(invalid_cards)}")
+                    st.markdown('<div class="validation-hud logic-fail">⚠️ ÂM KHAY BÀI</div>', unsafe_allow_html=True)
                 
                 if st.session_state.outcome_history:
                     trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
                     pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
                     st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color}; font-weight: bold;">{pattern_msg}</div></div>', unsafe_allow_html=True)
-                else:
-                    st.info("📊 Chưa có dữ liệu xu hướng sàn.")
 
             st.markdown("---")
             total_shoe_cards = decks * 52
             penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-            st.markdown(f"**Chế độ quét:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}% ({int(cards_left)}/{total_shoe_cards} lá còn lại)")
+            st.markdown(f"**Chế độ:** `{mode}` | **Còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
             st.progress(penetration_rate / 100.0)
