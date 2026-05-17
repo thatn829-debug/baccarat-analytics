@@ -1,4 +1,4 @@
-import streamlit as st
+cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.86) + (b_wins * 4.81) + (tie_wins * 5.23)))import streamlit as st
 import pandas as pd
 
 # =========================================================================
