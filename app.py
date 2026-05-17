@@ -218,65 +218,9 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.last_played_cards = ""
     st.rerun()
 
-# --- PANEL OUTPUT CONTROL ---
-if is_strict_lock:
-    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}). Vui lòng điều chỉnh lại thông số ở cột bên trái.")
-else:
-    if st.session_state.last_results:
-        results_data = st.session_state.last_results
-        
-        if isinstance(results_data, str):
-            st.error(results_data)
-        else:
-            res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
-            
-            p_box_css = "hud-box"
-            b_box_css = "hud-box"
-            tie_box_css = "hud-box"
-            if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
-            elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
-            if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
-            
-            st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH KHAY BÀI")
-            
-            # =========================================================================
-            # ĐÃ ĐIỀU CHỈNH CHUẨN: CHIA ĐỀU THÀNH 2 CỘT DỌC SONG SONG (TRÁI VÀ PHẢI)
-            # =========================================================================
-            left_main_col, right_main_col = st.columns(2)
-            
-            # --- CỘT BÊN TRÁI: TOÀN BỘ CHỈ SỐ PLAYER & CỬA HÒA + TRẠNG THÁI ---
-            with left_main_col:
-                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
-                st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
-                
-                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
-                if is_shoe_logical: 
-                    st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
-                else: 
-                    st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
-            
-            # --- CỘT BÊN PHẢI: TOÀN BỘ CHỈ SỐ BANKER & XU HƯỚNG SÀN ---
-            with right_main_col:
-                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-                st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
-                
-                if st.session_state.outcome_history:
-                    trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
-                    pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
-                    st.markdown(f'<div class="trend-hud" style="margin-top: 12px;"><div class="trend-title">📈 XU HƯỚNG SÀN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color}; font-weight: bold;">{pattern_msg}</div></div>', unsafe_allow_html=True)
-                else:
-                    st.info("📊 Chưa có dữ liệu xu hướng sàn.")
-
-            st.markdown("---")
-            total_shoe_cards = decks * 52
-            penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-            st.markdown(f"**Chế độ quét:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}%")
-            st.progress(penetration_rate / 100.0)
-    else:
-        st.info("🔮 ENGINE READY. Vui lòng nạp quân bài ván trực tiếp để lấy dữ liệu phân tích.")
-
-# --- ĐIỀU KHIỂN NHẬP TAY ---
-st.markdown("---")
+# =========================================================================
+# CHỈNH SỬA VỊ TRÍ: ĐƯA KHU VỰC NHẬP ĐIỂM (DỮ LIỆU) LÊN TRÊN CÙNG
+# =========================================================================
 st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
 
 col_p, col_b = st.columns(2)
@@ -307,7 +251,9 @@ def clean_and_parse_input(raw_str):
             if 2 <= val <= 10: result_list.append(val)
     return result_list
 
-if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary"):
+calc_triggered = st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary")
+
+if calc_triggered:
     current_game_signature = f"P:{p_input.strip().upper()}|B:{b_input.strip().upper()}"
     if not p_input.strip() and not b_input.strip():
         st.warning("⚠️ Vui lòng điền thông tin quân bài để kích hoạt phép tính.")
@@ -340,3 +286,67 @@ if st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_w
                     st.session_state.outcome_history.append("Tie")
 
                 st.session_state.shoe_history.extend(p_list + b_list)
+
+# --- PHÂN TÁCH GIAO DIỆN ---
+st.markdown("---")
+
+# --- PANEL OUTPUT CONTROL (HIỂN THỊ KẾT QUẢ PHÍA DƯỚI) ---
+if is_strict_lock:
+    st.error(f"### 🛑 HỆ THỐNG KHÓA: Số ván tổng ({manual_games}) lệch với tổng số ván thắng lẻ ({calculated_total_wins}). Vui lòng điều chỉnh lại thông số ở cột bên trái.")
+else:
+    if st.session_state.last_results:
+        results_data = st.session_state.last_results
+        
+        if isinstance(results_data, str):
+            st.error(results_data)
+        else:
+            res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = results_data
+            
+            p_box_css = "hud-box"
+            b_box_css = "hud-box"
+            tie_box_css = "hud-box"
+            if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
+            elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
+            if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
+            
+            st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH KHAY BÀI")
+            
+            # =========================================================================
+            # ĐÃ CẬP NHẬT: CHIA THÀNH 2 CỘT PHÍA DƯỚI (CỬA CHÍNH VS CỬA ĐÔI + XÉT LOGIC)
+            # =========================================================================
+            left_col, right_col = st.columns(2)
+            
+            # --- CỘT BÊN TRÁI: TOÀN BỘ CỬA CHÍNH ---
+            with left_col:
+                st.markdown("#### 📊 XÁC SUẤT CỬA CHÍNH")
+                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+            
+            # --- CỘT BÊN PHẢI: CỬA ĐÔI, BỘ XÉT LOGIC KHAY & XU HƯỚNG ---
+            with right_col:
+                st.markdown("#### 💎 CỬA ĐÔI & BỘ XÉT LOGIC")
+                st.metric("🔵 CON ĐÔI (PLAYER PAIR)", f"{p_pair}%")
+                st.metric("🔴 CÁI ĐÔI (BANKER PAIR)", f"{b_pair}%")
+                
+                # Bộ xét logic khay bài
+                if is_shoe_logical: 
+                    st.markdown('<div class="validation-hud logic-pass">✔ LOGIC KHAY HỢP LỆ</div>', unsafe_allow_html=True)
+                else: 
+                    st.markdown('<div class="validation-hud logic-fail">⚠️ LỖI LOGIC: ÂM KHAY BÀI</div>', unsafe_allow_html=True)
+                
+                # Xu hướng sàn
+                if st.session_state.outcome_history:
+                    trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
+                    pattern_msg, pattern_color = detect_baccarat_pattern(st.session_state.outcome_history)
+                    st.markdown(f'<div class="trend-hud"><div class="trend-title">📈 XU HƯỚNG SÀN</div><div class="trend-string">{" ".join(trend_letters)}</div><div class="trend-alert" style="border-left-color: {pattern_color}; color: {pattern_color}; font-weight: bold;">{pattern_msg}</div></div>', unsafe_allow_html=True)
+                else:
+                    st.info("📊 Chưa có dữ liệu xu hướng sàn.")
+
+            st.markdown("---")
+            total_shoe_cards = decks * 52
+            penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
+            st.markdown(f"**Chế độ quét:** `{mode}` | **Độ chín khay bài:** {round(penetration_rate, 1)}%")
+            st.progress(penetration_rate / 100.0)
+    else:
+        st.info("🔮 ENGINE READY. Vui lòng nạp quân bài ván trực tiếp ở phía trên để lấy dữ liệu phân tích.")
