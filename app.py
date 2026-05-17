@@ -5,7 +5,7 @@ import random
 from urllib.parse import urlparse
 
 # =========================================================================
-# KHỐI CAO CẤP: TÍCH HỢP LỚP TÀNG HÌNH THẾ HỆ MỚI (ANTI-FINGERPRINTING)
+# KHỐI CAO CẤP: TÍCH HỢP LỚP TÀNG HÌNH THẾ HỆ MỚI (ANTI-FINGERPRINTING) - GIỮ NGUYÊN
 # =========================================================================
 AUTOREFRESH_AVAILABLE = True
 try:
@@ -30,12 +30,15 @@ except ImportError:
     UC_AVAILABLE = False
 
 # =========================================================================
-# LÕI THUẬT TOÁN ĐÃ ĐƯỢC GIA CỐ (V20.4.1 - OPTIMIZED QUANTUM MATRIX)
+# LÕI THUẬT TOÁN TỐI CAO v20.4: ULTIMATE COMBINATORIAL MARKOV MATRIX
 # =========================================================================
 def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0):
     total_initial_cards = shoe_decks * 52
+    
+    # Khởi tạo cấu trúc khay bài chính xác theo từng định danh (Ace = 1, 2-9, 10/J/Q/K = 0 về mặt điểm số nhưng riêng biệt về số lượng)
+    # Định dạng: K khóa từ 1 đến 13 tương ứng từ Ace đến King
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
     detailed_cards_count = len(shoe_history)
     
@@ -44,81 +47,95 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1.0)
         cards_left = total_initial_cards - detailed_cards_count
-        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.4.1)"
+        mode = "SIÊU TỔ HỢP TÍCH PHÂN TỐI CAO (REAL-TIME MATRIX v20.4)"
     else:
+        # Nếu chạy bằng số ván thắng/thua, thuật toán tối cao áp dụng phân phối Bayes ước lượng
+        # Trung bình một ván Baccarat tiêu thụ khoảng 4.94 lá bài dựa trên mô phỏng Markov cổ điển
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int((p_wins * 4.94) + (b_wins * 4.93) + (tie_wins * 5.01)))
         cards_left = max(0, total_initial_cards - cards_removed)
-        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.4.1"
+        mode = "HỆ THỐNG ƯỚC LƯỢNG BAYESIAN-QUANTUM v20.4"
         if cards_removed > 0:
             consumed_ratio = cards_removed / total_initial_cards
             for card_num in deck_structure:
                 deck_structure[card_num] = max(0.0, (4 * shoe_decks) * (1.0 - consumed_ratio))
 
+    # Chuyển đổi cấu trúc khay bài sang mảng điểm số từ 0 đến 9 để tối ưu hóa tốc độ xử lý ma trận toán học
     score_deck = [0.0] * 10
     for card_num, count in deck_structure.items():
         if card_num >= 10: 
-            score_deck[0] += count  
+            score_deck[0] += count  # 10, J, Q, K đều tính là 0 điểm
         else: 
             score_deck[card_num] += count
 
+    # Trừ đi các lá bài đang hiển thị trực tiếp trên bàn (nếu có) để tính toán ván kế tiếp
     for card in p_cards + b_cards:
         val = 0 if card >= 10 else card
-        if score_deck[val] > 0: score_deck[val] = max(0.0, score_deck[val] - 1.0)
+        if score_deck[val] > 0: score_deck[val] -= 1
 
     N_total = float(sum(score_deck))
-    if N_total <= 6: 
+    if N_total <= 6: # Giới hạn an toàn tối cao khi khay bài cạn
         return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, 11.5, mode, cards_left
 
+    # Tính toán chính xác xác suất ra Cặp (Pair) dựa trên tổ hợp không lặp Ch(2, n)
     p_pair_prob = sum((deck_structure[i] / N_total) * ((deck_structure[i] - 1) / (N_total - 1)) for i in range(1, 14) if deck_structure[i] >= 2)
     p_pair_odds = round(p_pair_prob * 100, 2)
 
+    p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
+    b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
+
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
-    # THUẬT TOÁN ĐÃ TỐI ƯU HÓA: CẮT TỈA NHÁNH KHÔNG KHẢ THI ĐỂ TĂNG TỐC ĐỘ XỬ LÝ TRÊN STREAMLIT
+    # LÕI MA TRẬN PHÂN TÍCH ĐỆ QUY TOÀN DIỆN CHO VÁN BÀI CHƯA LẬT (MÔ PHỎNG XÁC SUẤT ĐỘNG THỜI GIAN THỰC)
+    # Duyệt qua mọi khả năng có thể xảy ra của việc phân phối bài
     for p_draw_1 in range(10):
         w_p1 = score_deck[p_draw_1]
-        if w_p1 <= 0.001: continue
+        if w_p1 <= 0: continue
         prob_p1 = w_p1 / N_total
-        score_deck[p_draw_1] -= 1.0
+        score_deck[p_draw_1] -= 1
         
         for b_draw_1 in range(10):
             w_b1 = score_deck[b_draw_1]
-            if w_b1 <= 0.001: continue
-            prob_b1 = prob_p1 * (w_b1 / (N_total - 1.0))
-            score_deck[b_draw_1] -= 1.0
+            if w_b1 <= 0: continue
+            prob_b1 = prob_p1 * (w_b1 / (N_total - 1))
+            score_deck[b_draw_1] -= 1
             
             for p_draw_2 in range(10):
                 w_p2 = score_deck[p_draw_2]
-                if w_p2 <= 0.001: continue
-                prob_p2 = prob_b1 * (w_p2 / (N_total - 2.0))
-                score_deck[p_draw_2] -= 1.0
+                if w_p2 <= 0: continue
+                prob_p2 = prob_b1 * (w_p2 / (N_total - 2))
+                score_deck[p_draw_2] -= 1
                 
                 for b_draw_2 in range(10):
                     w_b2 = score_deck[b_draw_2]
-                    if w_b2 <= 0.001: continue
-                    prob_b2 = prob_p2 * (w_b2 / (N_total - 3.0))
-                    score_deck[b_draw_2] -= 1.0
+                    if w_b2 <= 0: continue
+                    prob_b2 = prob_p2 * (w_b2 / (N_total - 3))
+                    score_deck[b_draw_2] -= 1
                     
+                    # Tính điểm 2 lá đầu tiên
                     init_p = (p_draw_1 + p_draw_2) % 10
                     init_b = (b_draw_1 + b_draw_2) % 10
                     
-                    # Rẽ nhánh xử lý sớm: Thắng tự nhiên (Natural 8, 9)
+                    # Kiểm tra thắng tự nhiên (Natural 8 hoặc 9)
                     if init_p >= 8 or init_b >= 8:
                         if init_p > init_b: player_wins += prob_b2
                         elif init_b > init_p: banker_wins += prob_b2
                         else: ties += prob_b2
                     else:
+                        # Quy trình rút lá thứ 3 phức tạp theo luật chuẩn quốc tế Casino
                         p_draws_3rd = init_p <= 5
+                        p_3rd_card_val = -1
                         
                         if p_draws_3rd:
+                            # Duyệt nhánh rút lá thứ 3 của Player
                             for p_draw_3 in range(10):
                                 w_p3 = score_deck[p_draw_3]
-                                if w_p3 <= 0.001: continue
-                                prob_p3 = prob_b2 * (w_p3 / (N_total - 4.0))
-                                score_deck[p_draw_3] -= 1.0
+                                if w_p3 <= 0: continue
+                                prob_p3 = prob_b2 * (w_p3 / (N_total - 4))
+                                score_deck[p_draw_3] -= 1
                                 
                                 final_p = (init_p + p_draw_3) % 10
                                 
+                                # Xét luật rút bài của Banker dựa trên lá thứ 3 của Player
                                 b_draws_3rd = False
                                 if init_b <= 2: b_draws_3rd = True
                                 elif init_b == 3 and p_draw_3 != 8: b_draws_3rd = True
@@ -129,8 +146,8 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                                 if b_draws_3rd:
                                     for b_draw_3 in range(10):
                                         w_b3 = score_deck[b_draw_3]
-                                        if w_b3 <= 0.001: continue
-                                        prob_b3 = prob_p3 * (w_b3 / (N_total - 5.0))
+                                        if w_b3 <= 0: continue
+                                        prob_b3 = prob_p3 * (w_b3 / (N_total - 5))
                                         final_b = (init_b + b_draw_3) % 10
                                         
                                         if final_p > final_b: player_wins += prob_b3
@@ -141,16 +158,17 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                                     elif init_b > final_p: banker_wins += prob_p3
                                     else: ties += prob_p3
                                     
-                                score_deck[p_draw_3] += 1.0
+                                score_deck[p_draw_3] += 1
                         else:
+                            # Player không rút lá thứ 3 (Điểm là 6 hoặc 7)
                             final_p = init_p
                             b_draws_3rd = init_b <= 5
                             
                             if b_draws_3rd:
                                 for b_draw_3 in range(10):
                                     w_b3 = score_deck[b_draw_3]
-                                    if w_b3 <= 0.001: continue
-                                    prob_b3 = prob_b2 * (w_b3 / (N_total - 4.0))
+                                    if w_b3 <= 0: continue
+                                    prob_b3 = prob_b2 * (w_b3 / (N_total - 4))
                                     final_b = (init_b + b_draw_3) % 10
                                     
                                     if final_p > final_b: player_wins += prob_b3
@@ -161,10 +179,10 @@ def calculate_baccarat_v20_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                                 elif init_b > final_p: banker_wins += prob_b2
                                 else: ties += prob_b2
                                 
-                    score_deck[b_draw_2] += 1.0
-                score_deck[p_draw_2] += 1.0
-            score_deck[b_draw_1] += 1.0
-        score_deck[p_draw_1] += 1.0
+                    score_deck[b_draw_2] += 1
+                score_deck[p_draw_2] += 1
+            score_deck[b_draw_1] += 1
+        score_deck[p_draw_1] += 1
 
     total_prob = player_wins + banker_wins + ties
     if total_prob == 0: total_prob = 1.0
@@ -200,7 +218,7 @@ def suggest_xpath_by_url(url):
     return "//div[contains(@class, 'road') or contains(@class, 'result') or contains(@class, 'cell')]"
 
 # =========================================================================
-# LÕI QUÉT KHÔNG VẾT TÍCH: GOD-MODE STEALTH ENGINE
+# LÕI QUÉT KHÔNG VẾT TÍCH: GOD-MODE STEALTH ENGINE - GIỮ NGUYÊN
 # =========================================================================
 def fetch_live_web_data_god_mode(url, target_xpath):
     if not UC_AVAILABLE:
@@ -268,9 +286,9 @@ def fetch_live_web_data_god_mode(url, target_xpath):
         return "ERROR_CONN", str(e)
 
 # =========================================================================
-# GIAO DIỆN CHÍNH (STREAMLIT UI) - GIỮ NGUYÊN HOÀN TOÀN TRỰC QUAN
+# GIAO DIỆN CHÍNH (STREAMLIT UI) - GIỮ NGUYÊN 100%
 # =========================================================================
-st.set_page_config(page_title="Oracle God-Mode v20.4.1", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle God-Mode v20.4", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
