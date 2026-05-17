@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # =========================================================================
-# SYSTEM CORE v18.4: FIXED SYNTAX & PAIR LOGIC
+# SYSTEM CORE v18.5: FIXED SYNTAX & PAIR LOGIC
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -53,7 +53,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 6:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # --- TÍNH TOÁN CỬA ĐÔI (ĐÃ ĐƯỢC ĐƠN GIẢN HÓA, TRÁNH LỖI DẤU NGOẶC) ---
+    # Tính toán cửa đôi ngắn gọn tránh lỗi ngoặc
     p_pair_prob = 0.0
     for i in range(1, 14):
         if deck_structure[i] >= 2:
@@ -76,7 +76,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
             b_pair_prob += (p_not_j * b_given_p_not_j) + (p_one_j * b_given_p_one_j) + (p_two_j * b_given_p_two_j)
     b_pair_odds = round(b_pair_prob * 100, 2)
 
-    # --- XÁC SUẤT CỬA CHÍNH ---
+    # Tính toán xác suất cửa chính
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
 
     if not p_cards and not b_cards:
@@ -131,7 +131,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
                 b_draws = False
                 if b_score <= 2: b_draws = True
                 elif b_score == 3 and card3_p != 8: b_draws = True
-                elif b_score == 4 and card3_p in [2, 3, 4, 5, 6, 7]: b_draws = True
+                elif b_score == 4 Useful and card3_p in [2, 3, 4, 5, 6, 7]: b_draws = True
                 elif b_score == 5 and card3_p in [4, 5, 6, 7]: b_draws = True
                 elif b_score == 6 and card3_p in [6, 7]: b_draws = True
                 
@@ -171,31 +171,79 @@ def detect_baccarat_pattern(outcome_list):
         else: break
     if streak_count >= 4:
         side_vietnamese = "🔵 PLAYER" if last_side == "Player" else "🔴 BANKER"
-        return f"🔥 BỆT {side_vietnamese} ({streak_count} ván!)", "#ff7675"
-    return "📊 Khay bài đi sóng phẳng", "#2ecc71"
+        return f"🔥 BỆT {side_vietnamese} ({streak_count} ván!)", "#00cec9"
+    return "📊 Khay bài đi sóng phẳng", "#2ed573"
 
 # =========================================================================
-# INTERFACE DESIGN & STYLES
+# INTERFACE DESIGN & STYLES (MỆNH THỦY - MỆNH MỘC)
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v18.4", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v18.5 Phong Thủy", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
-    .hud-box { padding: 18px; border-radius: 8px; text-align: center; margin-bottom: 12px; border: 1px solid #4f4f4f; background-color: #1a1a1a; }
-    .hud-title { font-size: 13px; font-weight: 600; color: #b0b0b0; letter-spacing: 0.5px; }
+    /* Nền chính: Xanh đại dương sẫm kết hợp đen huyền bí (Hành Thủy sinh Mộc) */
+    .stApp {
+        background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+        color: #ecf0f1;
+    }
+    /* Khối hiển thị kết quả HUD */
+    .hud-box { 
+        padding: 18px; 
+        border-radius: 12px; 
+        text-align: center; 
+        margin-bottom: 12px; 
+        border: 1px solid #203a43; 
+        background: rgba(15, 32, 39, 0.85); 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .hud-title { font-size: 13px; font-weight: 600; color: #a4b0be; letter-spacing: 0.5px; }
     .hud-value { font-size: 34px; font-weight: 800; font-family: monospace; margin-top: 4px; }
-    .neon-player-advantage { background-color: #0984e3 !important; border: 2px solid #74b9ff !important; box-shadow: 0 0 15px rgba(9, 132, 227, 0.7); }
-    .neon-banker-advantage { background-color: #d63031 !important; border: 2px solid #ff7675 !important; box-shadow: 0 0 15px rgba(214, 48, 49, 0.7); }
-    .neon-tie-alert { border: 2px solid #2ecc71 !important; box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); }
+    
+    /* Hiệu ứng hào quang màu sắc Thủy - Mộc tộc */
+    .neon-player-advantage { 
+        background-color: #0081a7 !important; 
+        border: 2px solid #00afb9 !important; 
+        box-shadow: 0 0 15px rgba(0, 175, 185, 0.6); 
+    }
+    .neon-banker-advantage { 
+        background-color: #2c3e50 !important; 
+        border: 2px solid #7f8c8d !important; 
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); 
+    }
+    .neon-tie-alert { 
+        border: 2px solid #2ed573 !important; 
+        box-shadow: 0 0 15px rgba(46, 213, 115, 0.6); 
+    }
+    
+    /* Trạng thái xác thực khay bài */
     .validation-hud { padding: 12px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 14px; font-family: monospace; margin-bottom: 12px; }
-    .logic-pass { background-color: rgba(46, 204, 113, 0.15); border: 2px solid #2ecc71; color: #2ecc71; }
-    .logic-fail { background-color: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; color: #e74c3c; }
-    .trend-hud { padding: 14px; border-radius: 6px; background-color: #151515; border: 1px dashed #444; }
-    .trend-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px;}
+    .logic-pass { background-color: rgba(46, 213, 115, 0.15); border: 2px solid #2ed573; color: #2ed573; }
+    .logic-fail { background-color: rgba(235, 94, 40, 0.15); border: 2px solid #eb5e28; color: #eb5e28; }
+    
+    /* Khu vực hiển thị cầu / xu hướng sàn */
+    .trend-hud { padding: 14px; border-radius: 8px; background-color: rgba(10, 25, 30, 0.9); border: 1px dashed #00afb9; }
+    .trend-title { font-size: 11px; font-weight: bold; color: #00afb9; text-transform: uppercase; margin-bottom: 6px;}
     .trend-string { font-size: 18px; font-family: monospace; letter-spacing: 6px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow-x: auto; }
     .trend-alert { border-left: 4px solid; padding-left: 8px; margin-top: 8px; font-size: 13px; }
-    .char-p { color: #54a0ff; font-weight: bold; } .char-b { color: #ff7675; font-weight: bold; } .char-t { color: #2ecc71; font-weight: bold; }
+    
+    .char-p { color: #00afb9; font-weight: bold; } 
+    .char-b { color: #fed9ff; font-weight: bold; opacity: 0.8; } 
+    .char-t { color: #2ed573; font-weight: bold; }
+    
+    /* Tùy chỉnh thanh tiến trình và các nút bấm theo tông Xanh Mộc sinh khí */
+    .stProgress > div > div > div > div { background-color: #2ed573 !important; }
+    div.stButton > button:first-child {
+        background-color: #00afb9 !important;
+        color: white !important;
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0, 175, 185, 0.3);
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #2ed573 !important;
+        box-shadow: 0 4px 15px rgba(46, 213, 115, 0.5);
+    }
     </style>
     """, 
     unsafe_allow_html=True
@@ -206,11 +254,12 @@ if 'outcome_history' not in st.session_state: st.session_state.outcome_history =
 if 'last_results' not in st.session_state: st.session_state.last_results = None
 if 'last_played_cards' not in st.session_state: st.session_state.last_played_cards = ""
 
+# Sidebar cấu hình bên trái
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 THIẾT LẬP THÔNG SỐ KHAY BÀI")
+st.sidebar.markdown("### 📊 THIẾT LẬP THÔNG SỐ")
 
 manual_cards = st.sidebar.number_input("Số LÁ BÀI đã chia (nếu biết):", min_value=0, max_value=decks*52, value=0)
 manual_games = st.sidebar.number_input("Tổng số ván đã chạy:", min_value=0, max_value=150, value=0)
@@ -230,11 +279,15 @@ if st.sidebar.button("🔄 RESET TOÀN BỘ KHAY BÀI", use_container_width=True
     st.session_state.last_played_cards = ""
     st.rerun()
 
-st.subheader("🃏 Nhập Dữ Liệu Dự Đoán Ván Tiếp Theo")
+# --- KHU VỰC NHẬP ĐIỂM: PLAYER BÊN TRÁI | BANKER BÊN PHẢI ---
+st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
+input_col_left, input_col_right = st.columns(2)
 
-col_p, col_b = st.columns(2)
-with col_p: p_input = st.text_input("PLAYER (Lá bài vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
-with col_b: b_input = st.text_input("BANKER (Lá bài vừa ra):", value="", placeholder="Ví dụ: J,7")
+with input_col_left:
+    p_input = st.text_input("🔵 PLAYER (Lá vừa ra):", value="", placeholder="Ví dụ: 5,K,2")
+
+with input_col_right:
+    b_input = st.text_input("🔴 BANKER (Lá vừa ra):", value="", placeholder="Ví dụ: J,7")
 
 def clean_and_parse_input(raw_str):
     if not raw_str: return []
@@ -260,7 +313,7 @@ def clean_and_parse_input(raw_str):
             if 2 <= val <= 10: result_list.append(val)
     return result_list
 
-calc_triggered = st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True, type="primary")
+calc_triggered = st.button("🚀 GHI NHẬN VÀ TÍNH TOÁN VÁN TIẾP THEO", use_container_width=True)
 
 if not st.session_state.last_results:
     st.session_state.last_results = calculate_baccarat_v18_ultimate(
@@ -316,14 +369,14 @@ else:
             elif res['Banker'] > res['Player'] and res['Banker'] > res['Tie']: b_box_css = "hud-box neon-banker-advantage"
             if res['Tie'] > 12.5: tie_box_css = "hud-box neon-tie-alert"
             
-            st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH KHAY BÀI")
+            st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH THỦY MỘC TRẬN")
             left_col, right_col = st.columns(2)
             
             with left_col:
                 st.markdown("#### 📊 XÁC SUẤT CỬA CHÍNH")
-                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value">{res["Player"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER PROBABILITY</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER PROBABILITY</div><div class="hud-value">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ecc71;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN PROBABILITY</div><div class="hud-value" style="color: #2ed573;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
             
             with right_col:
                 st.markdown("#### 💎 CỬA ĐÔI & BỘ XÉT LOGIC")
