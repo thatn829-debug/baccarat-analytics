@@ -1,7 +1,8 @@
 import streamlit as st
+import math
 
 # =========================================================================
-# SYSTEM CORE v37.7 (ADVANCED ANOMALY DETECTION & STRICT FLOW LOCK)
+# SYSTEM CORE v37.9 (ISOLATED LOGIC: GLOBAL DEVIATION & STOCHASTIC GUARD)
 # =========================================================================
 def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -9,8 +10,14 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
     total_initial_cards = shoe_decks * 52
     invalid_logic_messages = []
     
+    # Thống kê tổng số ván thực tế dựa trên dữ liệu cấu hình gốc + lịch sử ván nhập
+    total_p_wins = p_wins + sum(1 for r in round_detailed_log if r['outcome'] == "Player")
+    total_b_wins = b_wins + sum(1 for r in round_detailed_log if r['outcome'] == "Banker")
+    total_t_wins = tie_wins + sum(1 for r in round_detailed_log if r['outcome'] == "Tie")
+    global_total_games = total_p_wins + total_b_wins + total_t_wins
+
     # ---------------------------------------------------------------------
-    # 1. BỘ XẾT LOGIC ĐỘC LẬP VÀ TOÀN DIỆN (Đã sửa lỗi mù dòng chảy)
+    # 1. BỘ XẾT LOGIC ĐỘC LẬP (Tích hợp Luật Kiểm tra Độ lệch Phi logic)
     # ---------------------------------------------------------------------
     logic_deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
     all_cards_stream = []
@@ -21,7 +28,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
             if card_val in logic_deck_structure:
                 logic_deck_structure[card_val] -= 1.0
                 
-    # Quy luật 1: Kiểm tra âm kho bài (Giữ nguyên)
+    # Quy luật 1: Kiểm tra âm kho bài
     card_labels = {1: "A", 10: "10", 11: "J", 12: "Q", 13: "K"}
     for card_num in range(1, 14):
         count = logic_deck_structure[card_num]
@@ -29,16 +36,38 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
             label = card_labels.get(card_num, f"Số {card_num}")
             invalid_logic_messages.append(f"❌ {label} vượt giới hạn (Âm {abs(int(count))} lá trong kho bài)")
 
-    # Quy luật 2: PHÁT HIỆN BẤT THƯỜNG (ANOMALY DETECTOR) - CHẶN CHUỖI BÀI ẢO
-    # Nếu trong lịch sử chia bài xuất hiện quá 12 quân bài trùng lặp liên tiếp mà không có quân khác 
+    # Quy luật 2: Phát hiện chuỗi trùng lặp quân bài bất khả thi
     if len(all_cards_stream) >= 12:
         for card_num in range(1, 14):
-            # Kiểm tra xem 12 lá bài gần nhất có phải là cùng 1 loại quân hay không
             if all_cards_stream[-12:].count(card_num) == 12:
                 label = card_labels.get(card_num, f"Số {card_num}")
-                invalid_logic_messages.append(f"🚨 CẢNH BÁO: Phát hiện chuỗi trùng lặp bất khả thi! Quân {label} xuất hiện liên tục không đổi qua các ván. Sàn đang có dấu hiệu lỗi hoặc nhập liệu sai thực tế.")
+                invalid_logic_messages.append(f"🚨 CẢNH BÁO: Chuỗi quân trùng lặp bất khả thi! Quân {label} liên tục lặp lại.")
 
-    # Quy luật 3: Đối chiếu luật rút bài và kết quả thực tế
+    # Quy luật 3: Kiểm tra chuỗi Hòa bệt liên tiếp ngắn hạn
+    current_tie_streak = 0
+    for round_data in reversed(round_detailed_log):
+        if round_data['outcome'] == "Tie": current_tie_streak += 1
+        else: break
+    if current_tie_streak == 5:
+        invalid_logic_messages.append(f"⚠️ NGƯỠNG HIẾM GẶP: Xuất hiện {current_tie_streak} ván HÒA liên tiếp (Tỷ lệ ngẫu nhiên 1/128,000 ván).")
+    elif current_tie_streak >= 6:
+        invalid_logic_messages.append(f"🚨 CHUỖI HÒA BẤT THƯỜNG: Xuất hiện {current_tie_streak} ván HÒA liên tiếp! Vượt ngưỡng giới hạn ngẫu nhiên.")
+
+    # Quy luật 4: KIỂM TRA ĐỘ LỆCH PHI LOGIC TOÀN CỤC (GLOBAL DEVIATION GUARD) - TÍCH HỢP MỚI
+    if global_total_games >= 30:
+        actual_tie_rate = (total_t_wins / global_total_games) * 100
+        if actual_tie_rate > 20.0:
+            invalid_logic_messages.append(f"🚨 PHI LOGIC CỬA HÒA: Tỷ lệ Hòa thực tế quá cao ({actual_tie_rate:.1f}% trên {global_total_games} ván). Ngưỡng ngẫu nhiên tối đa là 15%.")
+            
+    # Đếm số ván liên tiếp không xuất hiện Hòa
+    no_tie_counter = 0
+    for round_data in reversed(round_detailed_log):
+        if round_data['outcome'] != "Tie": no_tie_counter += 1
+        else: break
+    if no_tie_counter >= 60:
+        invalid_logic_messages.append(f"🚨 PHI LOGIC DÒNG CHẢY: Đã {no_tie_counter} ván liên tiếp KHÔNG CÓ HÒA. Vượt ngưỡng cạn kiệt ngẫu nhiên tự nhiên.")
+
+    # Quy luật 5: Đối chiếu luật rút bài và điểm số từng ván
     for idx, round_data in enumerate(round_detailed_log):
         p_cards = round_data['p_cards']
         b_cards = round_data['b_cards']
@@ -46,7 +75,6 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
         
         if len(p_cards) > 0 or len(b_cards) > 0:
             total_cards_this_round = len(p_cards) + len(b_cards)
-            
             if total_cards_this_round < 4 or total_cards_this_round > 6:
                 invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Số lượng bài không hợp lệ ({total_cards_this_round} lá).")
             
@@ -59,8 +87,6 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
             
             if recorded_outcome != actual_calculated_outcome:
                 invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Sai quy luật kết quả! Bài lật {p_score} vs {b_score} nhưng ghi nhận {recorded_outcome.upper()}.")
-
-    is_shoe_logical = (len(invalid_logic_messages) == 0)
 
     # ---------------------------------------------------------------------
     # 2. THUẬT TOÁN TOÁN HỌC XÁC SUẤT TRUYỀN THỐNG (Vận hành độc lập)
@@ -94,7 +120,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
     N_total = float(sum(score_deck))
     if N_total <= 6:
         odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
-        return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_logic_messages
+        return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, (len(invalid_logic_messages) == 0), invalid_logic_messages
 
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
@@ -108,6 +134,13 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
     b_prob = max(35.0, min(65.0, 45.86 - (shift_ratio * 12.5)))
     t_prob = 100.0 - p_prob - b_prob
 
+    # Tiếp tục Quy luật 4 bổ sung: So sánh biên độ lệch Delta khi đủ tập mẫu lớn
+    if global_total_games >= 40:
+        actual_p_rate = (total_p_wins / global_total_games) * 100
+        delta_p = abs(actual_p_rate - p_prob)
+        if delta_p > 15.0:
+            invalid_logic_messages.append(f"🚨 LỆCH BIÊN ĐỘ TOÁN HỌC: Player thực tế chiếm {actual_p_rate:.1f}% nhưng thuật toán tính toán khay bài chỉ cho phép quanh mức {p_prob:.1f}% (Lệch Delta: {delta_p:.1f}%). Dữ liệu sàn đi phi logic hoặc có dấu hiệu can thiệp!")
+
     p_pair_prob = 0.0
     for i in range(1, 14):
         if deck_structure[i] >= 2: 
@@ -116,6 +149,8 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
     b_pair_odds = round(p_pair_odds * 1.015, 2)
 
     odds_res = {"Player": round(p_prob, 2), "Banker": round(b_prob, 2), "Tie": round(t_prob, 2)}
+    is_shoe_logical = (len(invalid_logic_messages) == 0)
+    
     return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_logic_messages
 
 def detect_baccarat_pattern(outcome_list):
@@ -192,9 +227,9 @@ def parse_baccarat_input_v37(raw_str):
     return result_list
 
 # =========================================================================
-# V37.0 ORIGINAL INTERFACE SPECIFICATION
+# SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v37.7 Anomaly Detection", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v37.9 Global Guard", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -323,7 +358,7 @@ else:
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔵 P-PAIR</div><div class="hud-value" style="color:#00afb9; font-size:20px;">{p_pair}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔴 B-PAIR</div><div class="hud-value" style="color:#fed9ff; font-size:20px;">{b_pair}%</div></div>', unsafe_allow_html=True)
         
-        # HIỂN THỊ BÁO LỖI LOGIC DÒNG CHẢY NGAY LẬP TỨC KHI CÓ BẤT THƯỜNG TRÙNG LẶP
+        # BÁO CÁO TRỌNG TÀI LOGIC: Hiển thị lỗi biên độ lệch Delta và lỗi dòng chảy Hòa tại đây
         if is_shoe_logical: 
             st.markdown('<div class="validation-hud logic-pass">✔ KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
         else: 
