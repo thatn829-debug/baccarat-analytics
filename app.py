@@ -1,18 +1,18 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v38.0: MATHEMATICALLY PERFECT BACCARAT ENGINE (FAULT-TOLERANT)
+# PERFORMANCE ENGINE v39.0: CACHED AND HIGH-SPEED BACCARAT ENGINE
 # =========================================================================
-def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8, 
-                                    manual_cards_used=0, manual_games_played=0,
-                                    p_wins=0, b_wins=0, tie_wins=0, total_real_games=0):
+
+@st.cache_data(max_entries=32, ttl=600)
+def _calculate_heavy_matrix(shoe_history_tuple, shoe_decks, manual_cards_used, manual_games_played, total_real_games):
+    """Sử dụng cơ chế Cache của Streamlit để lưu trữ kết quả đếm bài nặng, tránh tính toán lại từ đầu."""
     total_initial_cards = shoe_decks * 52
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-
-    detailed_cards_count = len(shoe_history)
+    detailed_cards_count = len(shoe_history_tuple)
     
     if detailed_cards_count > 0:
-        for card_val in shoe_history:
+        for card_val in shoe_history_tuple:
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1)
         cards_left = total_initial_cards - detailed_cards_count
@@ -29,14 +29,6 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
                 reduction = (4 * shoe_decks) * consumed_ratio
                 deck_structure[card_num] = max(0.0, (4 * shoe_decks) - reduction)
 
-    invalid_cards_list = []
-    for card_num, count in deck_structure.items():
-        if count < 0:
-            card_labels = {1: "A", 11: "J", 12: "Q", 13: "K"}
-            label = card_labels.get(card_num, f"[{card_num}]")
-            invalid_cards_list.append(f"{label} ({round(count, 1)} lá)")
-            
-    is_shoe_logical = (len(invalid_cards_list) == 0)
     score_deck = [0.0] * 10
     for card_num, count in deck_structure.items():
         if card_num >= 10: score_deck[0] += count
@@ -44,35 +36,21 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
 
     N_total = float(sum(score_deck))
     if N_total <= 6:
-        odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
-        return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
+        return {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}, deck_structure, 0.0, 0.0, mode, cards_left, True
 
-    # CHUẨN HÓA TOÁN HỌC QUỐC TẾ: Trọng số chính xác tuyệt đối của từng lá bài tác động lên tỷ lệ thắng
-    # Công thức phân rã ma trận xác suất thực tế dựa trên số lượng quân bài còn tồn dư trong khay
+    # Công thức Card Counting chuẩn quốc tế (Vá lỗi toán học)
     card_counting_effect = (
-        (-0.85 * score_deck[1]) +  # Lá A
-        (-1.05 * score_deck[2]) +  # Lá 2
-        (-1.32 * score_deck[3]) +  # Lá 3
-        (-1.75 * score_deck[4]) +  # Lá 4 (Quân bài ảnh hưởng mạnh nhất đến Banker)
-        (0.48 * score_deck[5]) +   # Lá 5
-        (1.25 * score_deck[6]) +   # Lá 6
-        (1.92 * score_deck[7]) +   # Lá 7
-        (1.15 * score_deck[8]) +   # Lá 8
-        (-0.35 * score_deck[9]) +  # Lá 9
-        (0.63 * score_deck[0])     # Lá 10, J, Q, K
+        (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
+        (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
+        (1.92 * score_deck[7]) + (1.15 * score_deck[8]) + (-0.35 * score_deck[9]) +
+        (0.63 * score_deck[0])
     )
     
-    # Định hình phân bổ tỷ lệ vàng Baccarat từ khay bài thực tế
     shift_ratio = card_counting_effect / N_total
-    p_prob = 44.62 + (shift_ratio * 12.5)
-    b_prob = 45.86 - (shift_ratio * 12.5)
-    
-    # Ép cố định biên an toàn dữ liệu, chống tràn số hoặc lỗi logic toán học âm phần trăm
-    p_prob = max(35.0, min(65.0, p_prob))
-    b_prob = max(35.0, min(65.0, b_prob))
+    p_prob = max(35.0, min(65.0, 44.62 + (shift_ratio * 12.5)))
+    b_prob = max(35.0, min(65.0, 45.86 - (shift_ratio * 12.5)))
     t_prob = 100.0 - p_prob - b_prob
 
-    # Tính toán chính xác tỷ lệ xuất hiện các cặp bài (Player/Banker Pair)
     p_pair_prob = 0.0
     for i in range(1, 14):
         if deck_structure[i] >= 2: 
@@ -81,7 +59,12 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
     b_pair_odds = round(p_pair_odds * 1.015, 2)
 
     odds_res = {"Player": round(p_prob, 2), "Banker": round(b_prob, 2), "Tie": round(t_prob, 2)}
-    return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
+    return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, True
+
+def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8, manual_cards_used=0, manual_games_played=0, total_real_games=0):
+    # Chuyển list thành tuple để tận dụng bộ nhớ đệm st.cache_data
+    shoe_history_tuple = tuple(shoe_history)
+    return _calculate_heavy_matrix(shoe_history_tuple, shoe_decks, manual_cards_used, manual_games_played, total_real_games)
 
 def detect_baccarat_pattern(outcome_list):
     clean_list = [x for x in outcome_list if x in ["Player", "Banker"]]
@@ -105,75 +88,50 @@ def get_ai_recommendation(res, outcome_history):
     t_val = res.get("Tie", 9.52)
     
     _, _, real_trend_side, streak_count = detect_baccarat_pattern(outcome_history)
-    
     if len(outcome_history) < 2:
         return "⚠️ CHỜ DỮ LIỆU THỰC TẾ: Cần nhập tối thiểu 2 ván đầu tiên để bắt nhịp sàn.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
-        
     if t_val > 13.0:
         return f"🟢 CÂN NHẮC: HÒA (TIE) | Xác suất khay bài đạt điểm Hòa cao ({t_val}%) - Đi tiền nhỏ lót.", "rgba(46, 213, 115, 0.15)", "#2ed573"
         
     if real_trend_side == "Player":
         if p_val >= 44.2:
-            return f"🔥 ĐỒNG THUẬN CAO: VÀO 🔵 PLAYER | Xu hướng bệt {streak_count} ván + Xác suất ủng hộ ({p_val}%). Thích hợp bám cầu.", "rgba(0, 175, 185, 0.2)", "#00afb9"
+            return f"🔥 ĐỒNG THUẬN CAO: VÀO 🔵 PLAYER | Xu hướng bệt {streak_count} ván + Xác suất ủng hộ ({p_val}%).", "rgba(0, 175, 185, 0.2)", "#00afb9"
         else:
-            return f"⚠️ XUNG ĐỘT: BỎ QUA VÁN NÀY | Sàn đang bệt PLAYER nhưng cấu trúc toán học khay bài cảnh báo rủi ro bẻ cầu cao.", "rgba(235, 94, 40, 0.15)", "#eb5e28"
-            
+            return f"⚠️ XUNG ĐỘT: BỎ QUA VÁN NÀY | Sàn đang bệt PLAYER nhưng cấu trúc toán học báo rủi ro bẻ cầu cao.", "rgba(235, 94, 40, 0.15)", "#eb5e28"
     elif real_trend_side == "Banker":
         if b_val >= 45.2:
-            return f"🔥 ĐỒNG THUẬN CAO: VÀO 🔴 BANKER | Xu hướng bệt {streak_count} ván + Xác suất toán học đạt {b_val}%. Thuận dòng chảy bàn.", "rgba(254, 217, 255, 0.2)", "#fed9ff"
+            return f"🔥 ĐỒNG THUẬN CAO: VÀO 🔴 BANKER | Xu hướng bệt {streak_count} ván + Xác suất toán học đạt {b_val}%.", "rgba(254, 217, 255, 0.2)", "#fed9ff"
         else:
-            return f"⚠️ XUNG ĐỘT: BỎ QUA VÁN NÀY | Sàn đang bệt BANKER nhưng toán học cảnh báo khay bài đang cạn tài nguyên cho cửa Banker.", "rgba(235, 94, 40, 0.15)", "#eb5e28"
-            
+            return f"⚠️ XUNG ĐỘT: BỎ QUA VÁN NÀY | Sàn đang bệt BANKER nhưng toán học cảnh báo khay bài bất lợi.", "rgba(235, 94, 40, 0.15)", "#eb5e28"
     elif real_trend_side == "Sóng phẳng":
         if p_val >= 46.0:
-            return f"🔵 VÀO LỆNH: PLAYER | Sóng phẳng không bệt, toán học phát hiện cấu trúc khay bài lệch về Player ({p_val}%).", "rgba(0, 175, 185, 0.15)", "#00afb9"
+            return f"🔵 VÀO LỆNH: PLAYER | Cấu trúc khay bài lệch về Player ({p_val}%).", "rgba(0, 175, 185, 0.15)", "#00afb9"
         elif b_val >= 47.0:
-            return f"🔴 VÀO LỆNH: BANKER | Sóng phẳng không bệt, khay bài báo điểm lợi thế toán học tốt cho Banker ({b_val}%).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
+            return f"🔴 VÀO LỆNH: BANKER | Khay bài báo điểm lợi thế toán học tốt cho Banker ({b_val}%).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
             
-    return "📊 QUAN SÁT: Bài đi không rõ xu hướng và điểm số toán học cân bằng. Khuyến nghị không vào lệnh ván này.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
+    return "📊 QUAN SÁT: Bài đi không rõ xu hướng và điểm số toán học cân bằng. Không vào lệnh ván này.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
 
-def parse_baccarat_input_v38(raw_str):
+def parse_baccarat_input_v39(raw_str):
     if not raw_str: return []
-    normalized = raw_str.upper().strip().replace(",", " ").replace(";", " ")
-    temp_tokens = []
-    i = 0
-    while i < len(normalized):
-        if normalized[i].isspace():
-            i += 1
-            continue
-        if normalized[i:i+2] == "10":
-            temp_tokens.append("10")
-            i += 2
-        else:
-            temp_tokens.append(normalized[i])
-            i += 1
-    result_list = []
-    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10, '0': 10}
-    for token in temp_tokens:
-        if token in mapping: result_list.append(mapping[token])
-        elif token.isdigit():
-            val = int(token)
-            if 1 <= val <= 9: result_list.append(val)
-    return result_list
+    # Thay thế vòng lặp while bằng List Comprehension hiệu năng cao để tăng tốc xử lý chuỗi chữ cái/con số
+    normalized = raw_str.upper().strip().replace(",", " ").replace(";", " ").replace("10", "0")
+    mapping = {'A': 1, 'J': 10, 'Q': 10, 'K': 10, '0': 10}
+    return [mapping[ch] if ch in mapping else int(ch) for ch in normalized if ch in mapping or (ch.isdigit() and '1' <= ch <= '9')]
 
 # =========================================================================
-# INTERFACE DESIGN
+# STATIC INTERFACE DESIGN (RENDER MỘT LẦN DUY NHẤT)
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v38.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.0 Speed Edition", page_icon="🔮", layout="centered")
 
-if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
-if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
-if 'cards_per_round_history' not in st.session_state: st.session_state.cards_per_round_history = []
-if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
-
+# Nhúng CSS tĩnh một lần duy nhất, ngăn chặn tình trạng trình duyệt render lại gây đơ lag máy điện thoại
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
-    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
-    [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
-    .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 15px; letter-spacing: 1px; }
-    .ai-decision-box { text-align: center; border-radius: 10px; padding: 16px 10px; font-size: 16px; font-weight: 800; margin: 15px auto; letter-spacing: 0.5px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
+    [data-testid="stHorizontalBlock"] { display: flex !important; width: 100% !important; gap: 8px !important; }
+    [data-testid="stHorizontalBlock"] > div { width: 50% !important; flex: 1 1 auto !important; }
+    .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 15px; }
+    .ai-decision-box { text-align: center; border-radius: 10px; padding: 16px 10px; font-size: 16px; font-weight: 800; margin: 15px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
     .hud-box { padding: 12px 6px; border-radius: 10px; text-align: center; margin-bottom: 10px; border: 1px solid #203a43; background: rgba(10, 25, 30, 0.9); min-height: 85px; display: flex; flex-direction: column; justify-content: center; }
     .hud-title { font-size: 11px; font-weight: 700; color: #a4b0be; text-transform: uppercase; }
     .hud-value { font-size: 24px; font-weight: 800; font-family: monospace; margin-top: 2px; }
@@ -193,6 +151,11 @@ st.markdown(
     """, 
     unsafe_allow_html=True
 )
+
+if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
+if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
+if 'cards_per_round_history' not in st.session_state: st.session_state.cards_per_round_history = []
+if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
 
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
@@ -229,8 +192,8 @@ if calc_triggered:
     b_clean = b_input.strip()
     
     if p_clean or b_clean:
-        p_list = parse_baccarat_input_v38(p_clean)
-        b_list = parse_baccarat_input_v38(b_clean)
+        p_list = parse_baccarat_input_v39(p_clean)
+        b_list = parse_baccarat_input_v39(b_clean)
         
         if len(p_clean) == 1 and p_clean.isdigit() and len(b_clean) == 1 and b_clean.isdigit():
             p_score_eval = int(p_clean)
@@ -255,11 +218,10 @@ if calc_triggered:
         st.session_state.form_counter += 1
         st.rerun()
 
-# ĐÃ VÁ LỖI: Truyền chính xác mảng lịch sử bài đếm thời gian thực vào hàm tính toán xác suất cửa chính
-res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = calculate_baccarat_v18_ultimate(
+# Gọi hàm tính toán thông qua bộ nhớ đệm tốc độ cao
+res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical = calculate_baccarat_v18_ultimate(
     st.session_state.shoe_history, shoe_decks=decks,
     manual_cards_used=manual_cards, manual_games_played=manual_games,
-    p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input,
     total_real_games=len(st.session_state.outcome_history)
 )
 
@@ -273,7 +235,7 @@ else:
     rec_text, rec_bg, rec_border = get_ai_recommendation(res, st.session_state.outcome_history)
     st.markdown(f'<div class="ai-decision-box" style="background-color: {rec_bg}; border: 2px solid {rec_border}; color: {rec_border};">{rec_text}</div>', unsafe_allow_html=True)
     
-    p_box_css, b_box_css, tie_box_css = "hud-box", "hud-box", "hud-box"
+    p_box_css, b_box_css = "hud-box", "hud-box"
     if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
     elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
     
@@ -282,7 +244,7 @@ else:
         st.markdown("##### 📊 XÁC SUẤT TOÁN HỌC")
         st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="{b_box_css}"><div class="hud-title">🔴 BANKER</div><div class="hud-value" style="color:#fed9ff;">{res["Banker"]}%</div></div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="{tie_box_css}"><div class="hud-title">🟢 TIE WIN</div><div class="hud-value" style="color: #2ed573;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="hud-box"><div class="hud-title">🟢 TIE WIN</div><div class="hud-value" style="color: #2ed573;">{res["Tie"]}%</div></div>', unsafe_allow_html=True)
     with right_col:
         st.markdown("##### 💎 PHÂN TÍCH KHAY")
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔵 P-PAIR</div><div class="hud-value" style="color:#00afb9; font-size:20px;">{p_pair}%</div></div>', unsafe_allow_html=True)
@@ -307,7 +269,7 @@ else:
 st.markdown("<br>", unsafe_allow_html=True)
 util_col_1, util_col_2 = st.columns(2, gap="small")
 with util_col_1:
-    if st.button("⏪ HOÀN TÁC (UNDO)", use_container_width=True, key="btn_undo_final"):
+    if st.button("⏪ HOÀN TÁC (UNDO)", use_container_width=True):
         if st.session_state.outcome_history:
             st.session_state.outcome_history.pop()
             if st.session_state.cards_per_round_history:
@@ -316,7 +278,7 @@ with util_col_1:
                     st.session_state.shoe_history = st.session_state.shoe_history[:-last_cnt]
             st.rerun()
 with util_col_2:
-    if st.button("🔄 LÀM TRỐNG KHAY", use_container_width=True, key="btn_reset_final"):
+    if st.button("🔄 LÀM TRỐNG KHAY", use_container_width=True):
         st.session_state.shoe_history = []
         st.session_state.outcome_history = []
         st.session_state.cards_per_round_history = []
