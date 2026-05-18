@@ -208,14 +208,14 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v38.7 Centered Button", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v38.8 Single Row Inline", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
-    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
-    [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
+    /* Giữ layout cột co giãn ngang tối đa trên mobile/web */
+    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; align-items: flex-end !important; }
     .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 15px; }
     .ai-decision-box { text-align: center; border-radius: 10px; padding: 16px 10px; font-size: 16px; font-weight: 800; margin: 15px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
     .hud-box { padding: 12px 6px; border-radius: 10px; text-align: center; margin-bottom: 10px; border: 1px solid #203a43; background: rgba(10, 25, 30, 0.9); min-height: 85px; display: flex; flex-direction: column; justify-content: center; }
@@ -234,7 +234,7 @@ st.markdown(
     .char-p { color: #00afb9; font-weight: bold; } 
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
-    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; }
+    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; height: 43px !important; margin-bottom: 1px !important;}
     </style>
     """, 
     unsafe_allow_html=True
@@ -267,25 +267,28 @@ next_game_number = base_games + current_session_games + 1
 
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
-# Khối nhập dữ liệu Player / Banker bài thực tế
-input_col_left, input_col_right = st.columns(2, gap="small")
-with input_col_left:
-    p_input = st.text_input("🔵 PLAYER (Bài/Điểm):", key=f"p_in_{st.session_state.form_counter}", placeholder="Ví dụ: k2 hoặc 7")
-with input_col_right:
-    b_input = st.text_input("🔴 BANKER (Bài/Điểm):", key=f"b_in_{st.session_state.form_counter}", placeholder="Ví dụ: a8 hoặc 5")
-
 # ---------------------------------------------------------------------
-# ĐIỀU CHỈNH BỐ CỤC: DỜI NÚT BẤM VÀO CHÍNH GIỮA PHÍA DƯỚI Ô NHẬP ĐIỂM
+# TỐI ƯU HÀNG NGANG: ĐƯA TẤT CẢ THÀNH 1 HÀNG, ĐỘ DOÀI NÚT CÂN ĐỐI TUYỆT ĐỐI
 # ---------------------------------------------------------------------
-button_col_left, button_col_center, button_col_right = st.columns([1, 2, 1], gap="small")
-with button_col_center:
-    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
+p_clean, b_clean = "", ""
+action_row_col1, action_row_col2, action_row_col3 = st.columns([2, 2, 3], gap="small")
 
+with action_row_col1:
+    p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
+with action_row_col2:
+    b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
+with action_row_col3:
+    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN")
+
+# Xử lý chuỗi dữ liệu đầu vào và bộ lọc kiểm tra rỗng
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    if p_clean or b_clean:
+    # KỊCH BẢN CẢNH BÁO: Nếu chưa nhập điểm ở cả 2 bên mà cố tình nhấn nút tính toán
+    if not p_clean and not b_clean:
+        st.warning("⚠️ **Không thể tính toán ván rác!** Vui lòng nhập thông tin điểm hoặc quân bài lật thực tế cho Player hoặc Banker trước khi nhấn nút ghi nhận.")
+    else:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
         
