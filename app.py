@@ -208,16 +208,16 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v39.0 Mobile-Fixed", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.1 Central Button", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
     
-    /* Thiết lập cho khối 2 ô nhập liệu nằm thẳng hàng 50-50 mượt mà trên Mobile */
-    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
-    [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
+    /* Ép hiển thị 2 ô nhập liệu song song không vỡ layout */
+    .input-container-row [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
+    .input-container-row [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
     
     .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 12px; }
     .ai-decision-box { text-align: center; border-radius: 10px; padding: 14px 10px; font-size: 15px; font-weight: 800; margin: 12px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
@@ -238,8 +238,8 @@ st.markdown(
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Thiết lập nút bấm full viền 100% nằm ngay bên dưới */
-    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; font-size: 15px !important; }
+    /* CSS Căn chỉnh Nút bấm nằm gọn gàng ở giữa, kích thước thu gọn thanh thoát */
+    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 10px 0px; width: 100% !important; font-size: 14px !important; height: 42px !important;}
     </style>
     """, 
     unsafe_allow_html=True
@@ -273,24 +273,30 @@ next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# FIX LỖI BIẾN: Đảm bảo đồng bộ cấu trúc layout hai ô ngang chuẩn Mobile
+# KHỐI 1: HAI Ô NHẬP LIỆU NẰM NGANG
 # ---------------------------------------------------------------------
+st.markdown('<div class="input-container-row">', unsafe_allow_html=True)
 input_row_col1, input_row_col2 = st.columns(2, gap="small")
 with input_row_col1:
     p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
 with input_row_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Nút bấm đặt ngay phía dưới, độ dài bằng chiều rộng 2 ô cộng lại
-calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
+# ---------------------------------------------------------------------
+# KHỐI 2: ĐỊNH VỊ NÚT BẤM CÂN BẰNG NGAY GIỮA PHÍA DƯỚI KHỐI TRÊN
+# ---------------------------------------------------------------------
+btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 5, 1], gap="none")
+with btn_layout_center:
+    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN")
 
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    # Cảnh báo nếu chưa nhập thông tin
+    # Cảnh báo rỗng nếu người dùng chưa nhập gì cả
     if not p_clean and not b_clean:
-        st.warning("⚠️ **Vui lòng nhập điểm!** Bạn chưa điền thông tin bài lật thực tế cho Player hay Banker.")
+        st.warning("⚠️ **Vui lòng nhập điểm!** Hệ thống không nhận diện được dữ liệu trống.")
     else:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
