@@ -1,25 +1,27 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v37.6 (ISOLATED RULES ENGINE: QUANTITY, FLOW & OUTCOME VALIDATION)
+# SYSTEM CORE v37.7 (ADVANCED ANOMALY DETECTION & STRICT FLOW LOCK)
 # =========================================================================
 def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0, total_real_games=0):
     total_initial_cards = shoe_decks * 52
-    
-    # ---------------------------------------------------------------------
-    # 1. BỘ XẾT LOGIC ĐỘC LẬP VÀ TOÀN DIỆN (Không ảnh hưởng thuật toán xác suất)
-    # ---------------------------------------------------------------------
     invalid_logic_messages = []
     
-    # Quy luật 1: Kiểm tra số lượng giới hạn của từng quân bài (A-K)
+    # ---------------------------------------------------------------------
+    # 1. BỘ XẾT LOGIC ĐỘC LẬP VÀ TOÀN DIỆN (Đã sửa lỗi mù dòng chảy)
+    # ---------------------------------------------------------------------
     logic_deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
+    all_cards_stream = []
+    
     for round_data in round_detailed_log:
+        all_cards_stream.extend(round_data['p_cards'] + round_data['b_cards'])
         for card_val in (round_data['p_cards'] + round_data['b_cards']):
             if card_val in logic_deck_structure:
                 logic_deck_structure[card_val] -= 1.0
                 
+    # Quy luật 1: Kiểm tra âm kho bài (Giữ nguyên)
     card_labels = {1: "A", 10: "10", 11: "J", 12: "Q", 13: "K"}
     for card_num in range(1, 14):
         count = logic_deck_structure[card_num]
@@ -27,34 +29,36 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
             label = card_labels.get(card_num, f"Số {card_num}")
             invalid_logic_messages.append(f"❌ {label} vượt giới hạn (Âm {abs(int(count))} lá trong kho bài)")
 
-    # Quy luật 2: Kiểm tra tính hợp lệ giữa các quân bài lật ra và kết quả ghi nhận
+    # Quy luật 2: PHÁT HIỆN BẤT THƯỜNG (ANOMALY DETECTOR) - CHẶN CHUỖI BÀI ẢO
+    # Nếu trong lịch sử chia bài xuất hiện quá 12 quân bài trùng lặp liên tiếp mà không có quân khác 
+    if len(all_cards_stream) >= 12:
+        for card_num in range(1, 14):
+            # Kiểm tra xem 12 lá bài gần nhất có phải là cùng 1 loại quân hay không
+            if all_cards_stream[-12:].count(card_num) == 12:
+                label = card_labels.get(card_num, f"Số {card_num}")
+                invalid_logic_messages.append(f"🚨 CẢNH BÁO: Phát hiện chuỗi trùng lặp bất khả thi! Quân {label} xuất hiện liên tục không đổi qua các ván. Sàn đang có dấu hiệu lỗi hoặc nhập liệu sai thực tế.")
+
+    # Quy luật 3: Đối chiếu luật rút bài và kết quả thực tế
     for idx, round_data in enumerate(round_detailed_log):
         p_cards = round_data['p_cards']
         b_cards = round_data['b_cards']
         recorded_outcome = round_data['outcome']
         
-        # Chỉ kiểm tra quy luật ván nếu người dùng thực sự nhập chuỗi bài cụ thể
         if len(p_cards) > 0 or len(b_cards) > 0:
             total_cards_this_round = len(p_cards) + len(b_cards)
             
-            # Kiểm tra số lượng lá bài tối đa/tối thiểu của một ván Baccarat chuẩn (4 đến 6 lá)
             if total_cards_this_round < 4 or total_cards_this_round > 6:
-                invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Số lượng bài không hợp lệ ({total_cards_this_round} lá). Luật sòng chỉ cho phép 4-6 lá/ván.")
+                invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Số lượng bài không hợp lệ ({total_cards_this_round} lá).")
             
-            # Tính toán điểm thực tế từ các lá bài đã nhập
             p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
             b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
             
-            # Tìm kết quả đúng dựa trên điểm số thực tế của bài
             actual_calculated_outcome = "Tie"
             if p_score > b_score: actual_calculated_outcome = "Player"
             elif b_score > p_score: actual_calculated_outcome = "Banker"
             
-            # Đối chiếu kết quả thực tế từ lá bài với kết quả ghi nhận trên hệ thống xu hướng
             if recorded_outcome != actual_calculated_outcome:
-                invalid_logic_messages.append(
-                    f"⚠️ Ván {idx+1}: Sai quy luật kết quả! Bài lật ra là P:{p_score} điểm - B:{b_score} điểm (Cửa {actual_calculated_outcome.upper()} thắng) nhưng dữ liệu ghi nhận lại là {recorded_outcome.upper()}."
-                )
+                invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Sai quy luật kết quả! Bài lật {p_score} vs {b_score} nhưng ghi nhận {recorded_outcome.upper()}.")
 
     is_shoe_logical = (len(invalid_logic_messages) == 0)
 
@@ -62,14 +66,10 @@ def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks
     # 2. THUẬT TOÁN TOÁN HỌC XÁC SUẤT TRUYỀN THỐNG (Vận hành độc lập)
     # ---------------------------------------------------------------------
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-    all_flat_cards = []
-    for r in round_detailed_log:
-        all_flat_cards.extend(r['p_cards'] + r['b_cards'])
-        
-    detailed_cards_count = len(all_flat_cards)
+    detailed_cards_count = len(all_cards_stream)
     
     if detailed_cards_count > 0:
-        for card_val in all_flat_cards:
+        for card_val in all_cards_stream:
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.1, deck_structure[card_val] - 1)
         cards_left = total_initial_cards - detailed_cards_count
@@ -194,7 +194,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # V37.0 ORIGINAL INTERFACE SPECIFICATION
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v37.6 Advanced Logic", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v37.7 Anomaly Detection", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -224,7 +224,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Cấu trúc lưu trữ lịch sử phiên nâng cao để lưu chi tiết các lá bài theo ván phục vụ kiểm tra quy luật
 if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
@@ -267,21 +266,17 @@ if calc_triggered:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
         
-        # Đọc điểm số độc lập để phân loại kết quả xu hướng
         p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10 if p_list else 0
         b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10 if b_list else 0
         
-        # Nếu nhập điểm số đơn lẻ (ví dụ: 7 hoặc 5)
         if len(p_clean) == 1 and p_clean.isdigit() and len(b_clean) == 1 and b_clean.isdigit():
             p_score_eval = int(p_clean)
             b_score_eval = int(b_clean)
             
-        # Xác định kết quả ghi nhận lên bảng xu hướng
         current_outcome = "Tie"
         if p_score_eval > b_score_eval: current_outcome = "Player"
         elif b_score_eval > p_score_eval: current_outcome = "Banker"
         
-        # Lưu trữ cấu trúc log chi tiết để Trọng tài Logic làm việc riêng biệt
         st.session_state.round_detailed_log.append({
             'p_cards': p_list,
             'b_cards': b_list,
@@ -292,7 +287,6 @@ if calc_triggered:
         st.session_state.form_counter += 1
         st.rerun()
 
-# Trích xuất mảng lịch sử bài phẳng từ bộ log chi tiết để phục vụ thuật toán xác suất độc lập
 all_flat_history = []
 for r in st.session_state.round_detailed_log:
     all_flat_history.extend(r['p_cards'] + r['b_cards'])
@@ -329,7 +323,7 @@ else:
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔵 P-PAIR</div><div class="hud-value" style="color:#00afb9; font-size:20px;">{p_pair}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔴 B-PAIR</div><div class="hud-value" style="color:#fed9ff; font-size:20px;">{b_pair}%</div></div>', unsafe_allow_html=True)
         
-        # BÁO CÁO CỦA TRỌNG TÀI LOGIC: Liệt kê toàn bộ lỗi dòng chảy bài và lỗi kết quả không hợp lệ
+        # HIỂN THỊ BÁO LỖI LOGIC DÒNG CHẢY NGAY LẬP TỨC KHI CÓ BẤT THƯỜNG TRÙNG LẶP
         if is_shoe_logical: 
             st.markdown('<div class="validation-hud logic-pass">✔ KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
         else: 
