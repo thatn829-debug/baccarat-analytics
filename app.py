@@ -1,13 +1,14 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v30.0: PERFECT SCORE-DETECTION & STATIC GAME LOCK
+# SYSTEM CORE v31.0: REAL-TIME SCORE MATCHING & TREND SYNCHRONIZATION
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0):
     total_initial_cards = shoe_decks * 52
     
+    # Đoạn mạch siêu tốc chống nghẽn luồng khi mới mở app
     if len(shoe_history) == 0 and manual_cards_used == 0 and manual_games_played == 0 and p_wins == 0 and b_wins == 0 and tie_wins == 0:
         odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
         deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
@@ -16,7 +17,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
 
     if manual_cards_used > total_initial_cards or manual_games_played > int(total_initial_cards / 4):
-        return "❌ Bất hợp lý: Cấu hình vượt quá giới hạn vật lý của khay bài!", {}, 0.0, 0.0, "LỖI", total_initial_cards, False, []
+        return "❌ Cấu hình vượt quá giới hạn vật lý của khay bài!", {}, 0.0, 0.0, "LỖI", total_initial_cards, False, []
 
     detailed_cards_count = len(shoe_history)
     
@@ -58,6 +59,7 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
     if N_total <= 6:
         return "⚠️ Cảnh báo: Khay bài không đủ quân để thiết lập không gian mẫu!", deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
+    # Tính toán cửa đôi động dựa trên cấu trúc bài còn lại
     p_pair_prob = 0.0
     for i in range(1, 14):
         if deck_structure[i] >= 2:
@@ -207,17 +209,13 @@ def get_ai_recommendation(res, outcome_history):
 
     return "⚠️ KHUYẾN NGHỊ: BỎ QUA VÁN NÀY (Chờ dòng bài ổn định)", "rgba(164, 176, 190, 0.1)", "#a4b0be"
 
-# BỘ PHÂN TÍCH NHẬN DIỆN THÔNG MINH: ĐIỂM SỐ TRỰC TIẾP VS LÁ BÀI CHI TIẾT
-def parse_baccarat_input_v30(raw_str):
+def parse_baccarat_input_v31(raw_str):
     if not raw_str: return []
     normalized = raw_str.upper().strip().replace(",", " ").replace(";", " ")
     tokens = normalized.split()
     
-    # Nếu chỉ điền đúng 1 ký số đơn lẻ từ 0-9 -> Xác định đây là điểm số trực tiếp của cửa
     if len(tokens) == 1 and tokens[0].isdigit():
-        val = int(tokens[0])
-        if 0 <= val <= 9:
-            return [val] # Trả về mảng chứa điểm mục tiêu độc lập
+        return [int(tokens[0])]
             
     result_list = []
     mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10, '0': 10}
@@ -234,7 +232,7 @@ def parse_baccarat_input_v30(raw_str):
 # =========================================================================
 # INTERFACE DESIGN
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v30.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v31.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -310,7 +308,7 @@ st.markdown(
     .trend-string { font-size: 16px; font-family: monospace; letter-spacing: 4px; font-weight: 800; }
     
     .char-p { color: #00afb9; font-weight: bold; } 
-    .char-b { color: #ffffff; font-weight: bold; opacity: 0.7; } 
+    .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
     div.stButton > button {
@@ -351,37 +349,45 @@ st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
 base_games = manual_games if manual_games > 0 else calculated_total_wins
 current_session_games = len(st.session_state.outcome_history)
 
-# KHÓA CỨNG: Số ván hiển thị cố định chuẩn xác theo lịch sử thực tế
+# Đóng băng chính xác số ván đấu hiện tại cho đến khi nhấn tính toán
 next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 DỰ ĐOÁN CHO: VÁN THỨ {next_game_number}</div>', unsafe_allow_html=True)
 
 with st.form(key="baccarat_input_form", clear_on_submit=True):
     input_col_left, input_col_right = st.columns(2, gap="small")
     with input_col_left:
-        p_input = st.text_input("🔵 PLAYER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: điền 7 hoặc lá bài 5,K,2")
+        p_input = st.text_input("🔵 PLAYER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: điền 7 hoặc 5,K,2")
     with input_col_right:
-        b_input = st.text_input("🔴 BANKER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: điền 5 hoặc lá bài J,7")
+        b_input = st.text_input("🔴 BANKER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: điền 5 hoặc J,7")
         
     calc_triggered = st.form_submit_button("🚀 GHI NHẬN KẾT QUẢ VÁN VỪA QUA")
 
-# CHỈ KHI BẤM NÚT TÍNH TOÁN XONG MỚI ĐƯỢC PHÉP NHẢY VÁN KẾ TIẾP
+# ĐỒNG BỘ TUYỆT ĐỐI XU HƯỚNG TỪ ĐIỂM SỐ NHẬP VÀO
 if calc_triggered:
-    if p_input.strip() or b_input.strip():
-        p_list = parse_baccarat_input_v30(p_input)
-        b_list = parse_baccarat_input_v30(b_input)
+    p_clean = p_input.strip()
+    b_clean = b_input.strip()
+    
+    if p_clean or b_clean:
+        p_list = parse_baccarat_input_v31(p_clean)
+        b_list = parse_baccarat_input_v31(b_clean)
         
-        # Nếu nhập rỗng mặc định coi như 0 điểm
-        p_val_temp = p_list if p_list else [0]
-        b_val_temp = b_list if b_list else [0]
-        
-        # Kiểm tra xem người dùng đang nhập điểm trực tiếp (1 chữ số < 10) hay nhập quân bài chi tiết
-        is_p_direct_score = (len(p_val_temp) == 1 and p_input.strip().isdigit() and int(p_input.strip()) < 10)
-        is_b_direct_score = (len(b_val_temp) == 1 and b_input.strip().isdigit() and int(b_input.strip()) < 10)
-        
-        # Trích xuất điểm số chuẩn xác không bị nhầm lẫn
-        p_score_eval = p_val_temp[0] if is_p_direct_score else (sum([0 if c >= 10 else c for c in p_val_temp]) % 10)
-        b_score_eval = b_val_temp[0] if is_b_direct_score else (sum([0 if c >= 10 else c for c in b_val_temp]) % 10)
+        # Trường hợp 1: Nhập điểm trực tiếp bằng 1 chữ số duy nhất (Từ 0 đến 9)
+        if p_clean.isdigit() and b_clean.isdigit() and len(p_list) == 1 and len(b_list) == 1:
+            p_score_eval = p_list[0]
+            b_score_eval = b_list[0]
+            st.session_state.cards_per_round_history.append(0) # Đánh dấu không trừ lá bài vật lý
             
+        # Trường hợp 2: Nhập danh sách lá bài chi tiết (Ví dụ: 5,K,2 hoặc J,7)
+        else:
+            p_val_temp = p_list if p_list else [0]
+            b_val_temp = b_list if b_list else [0]
+            p_score_eval = sum([0 if c >= 10 else c for c in p_val_temp]) % 10
+            b_score_eval = sum([0 if c >= 10 else c for c in b_val_temp]) % 10
+            
+            st.session_state.cards_per_round_history.append(len(p_list) + len(b_list))
+            st.session_state.shoe_history.extend(p_list + b_list)
+            
+        # So sánh điểm thực tế để ép bảng xu hướng cập nhật chuẩn xác
         if p_score_eval > b_score_eval:
             st.session_state.outcome_history.append("Player")
         elif b_score_eval > p_score_eval:
@@ -389,15 +395,9 @@ if calc_triggered:
         else:
             st.session_state.outcome_history.append("Tie")
             
-        # Chỉ lưu vào khay bài chi tiết nếu người dùng nhập theo kiểu lá bài
-        if not (is_p_direct_score or is_b_direct_score):
-            st.session_state.cards_per_round_history.append(len(p_list) + len(b_list))
-            st.session_state.shoe_history.extend(p_list + b_list)
-        else:
-            # Nếu nhập điểm trực tiếp, lưu bộ đếm tượng trưng để Undo không lỗi
-            st.session_state.cards_per_round_history.append(0)
+        st.rerun()
 
-# Chạy phân tích
+# Thực hiện tính toán cho ván tiếp theo
 res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = calculate_baccarat_v18_ultimate(
     [], [], st.session_state.shoe_history, shoe_decks=decks,
     manual_cards_used=manual_cards, manual_games_played=manual_games,
@@ -444,7 +444,7 @@ else:
         else: 
             st.markdown('<div class="validation-hud logic-fail">⚠️ ÂM KHAY BÀI</div>', unsafe_allow_html=True)
         
-    # HIỂN THỊ BẢNG XU HƯỚNG ĐỒNG BỘ CHUẨN XÁC 100%
+    # HIỂN THỊ BẢNG XU HƯỚNG KHỚP 100% THEO ĐIỂM SỐ THỰC TẾ ĐÃ NHẬP
     if st.session_state.outcome_history:
         trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
         pattern_msg, pattern_color, _ = detect_baccarat_pattern(st.session_state.outcome_history)
