@@ -208,7 +208,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v38.6 Modular", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v38.7 Centered Button", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -267,13 +267,19 @@ next_game_number = base_games + current_session_games + 1
 
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
+# Khối nhập dữ liệu Player / Banker bài thực tế
 input_col_left, input_col_right = st.columns(2, gap="small")
 with input_col_left:
     p_input = st.text_input("🔵 PLAYER (Bài/Điểm):", key=f"p_in_{st.session_state.form_counter}", placeholder="Ví dụ: k2 hoặc 7")
 with input_col_right:
     b_input = st.text_input("🔴 BANKER (Bài/Điểm):", key=f"b_in_{st.session_state.form_counter}", placeholder="Ví dụ: a8 hoặc 5")
 
-calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
+# ---------------------------------------------------------------------
+# ĐIỀU CHỈNH BỐ CỤC: DỜI NÚT BẤM VÀO CHÍNH GIỮA PHÍA DƯỚI Ô NHẬP ĐIỂM
+# ---------------------------------------------------------------------
+button_col_left, button_col_center, button_col_right = st.columns([1, 2, 1], gap="small")
+with button_col_center:
+    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
 
 if calc_triggered:
     p_clean = p_input.strip()
