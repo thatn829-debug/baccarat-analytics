@@ -208,15 +208,13 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v39.3 Mobile Layout", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.4 Fixed Count", page_icon="🔮", layout="centered")
 
-# CSS tạo nền tối và định cấu hình màu sắc giao diện HUD sang trọng
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
     
-    /* Ép buộc thanh chia cột (columns) của ô nhập liệu giữ nguyên dạng ngang, KHÔNG ĐƯỢC tự động xuống hàng trên Mobile */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -247,7 +245,6 @@ st.markdown(
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Làm đẹp nút bấm chính chủ */
     div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 8px 0px; font-size: 14px !important; }
     </style>
     """, 
@@ -258,6 +255,8 @@ if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
 if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
 if 'logic_fail_counter' not in st.session_state: st.session_state.logic_fail_counter = 0
+# Khởi tạo bộ đếm cộng dồn ván thực tế riêng
+if 'session_added_games' not in st.session_state: st.session_state.session_added_games = 0
 
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
@@ -276,13 +275,14 @@ is_strict_lock = (manual_games > 0 and calculated_total_wins > 0 and manual_game
 
 st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
 base_games = manual_games if manual_games > 0 else calculated_total_wins
-current_session_games = len(st.session_state.outcome_history)
-next_game_number = base_games + current_session_games + 1
+
+# Sửa logic tính toán số ván tiếp theo: Chỉ dựa vào base_games + số ván thực tế đã bấm nút tính toán
+next_game_number = base_games + st.session_state.session_added_games + 1
 
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# KHỐI 1: HAI Ô NHẬP LIỆU (BẮT BUỘC CHIA ĐÔI SONG SONG DÙNG GAP)
+# KHỐI 1: HAI Ô NHẬP LIỆU CHIA ĐÔI SONG SONG NẰM NGANG
 # ---------------------------------------------------------------------
 input_row_col1, input_row_col2 = st.columns(2, gap="small")
 with input_row_col1:
@@ -290,11 +290,10 @@ with input_row_col1:
 with input_row_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
 
-# Sắp xếp khoảng cách nhỏ xuống nút bấm
 st.write("")
 
 # ---------------------------------------------------------------------
-# KHỐI 2: NÚT TÍNH TOÁN - CĂN GIỮA PHÍA DƯỚI 2 Ô TRÊN TRÊN DI ĐỘNG
+# KHỐI 2: NÚT TÍNH TOÁN - CĂN GIỮA PHÍA DƯỚI 2 Ô NHẬP
 # ---------------------------------------------------------------------
 btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 4, 1], gap="small")
 with btn_layout_center:
@@ -328,26 +327,23 @@ if calc_triggered:
         })
         st.session_state.outcome_history.append(current_outcome)
         st.session_state.form_counter += 1
+        st.session_state.session_added_games += 1  # Chỉ tăng số ván khi bấm tính toán
         st.rerun()
 
-# Thu thập chuỗi bài thô phục vụ lõi toán học độc lập
 all_flat_history = []
 for r in st.session_state.round_detailed_log:
     all_flat_history.extend(r['p_cards'] + r['b_cards'])
 
-# LẤY THÔNG SỐ THỐNG KÊ TOÀN CỤC PHỤC VỤ KHỐI TRỌNG TÀI
 total_p_wins = p_wins_input + sum(1 for r in st.session_state.round_detailed_log if r['outcome'] == "Player")
 total_b_wins = b_wins_input + sum(1 for r in st.session_state.round_detailed_log if r['outcome'] == "Banker")
 total_t_wins = tie_wins_input + sum(1 for r in st.session_state.round_detailed_log if r['outcome'] == "Tie")
 global_total_games = total_p_wins + total_b_wins + total_t_wins
 
-# BƯỚC 1: CHẠY LÕI TOÁN HỌC THUẦN TÚY TRƯỚC
 res, p_pair, b_pair, mode, cards_left = calculate_baccarat_v18_pure_math(
     all_flat_history, shoe_decks=decks, manual_cards_used=manual_cards, 
     manual_games_played=manual_games, total_real_games=len(st.session_state.outcome_history)
 )
 
-# BƯỚC 2: CHẠY KHỐI TRỌNG TÀI LOGIC
 invalid_messages = verify_shoe_integrity(
     st.session_state.round_detailed_log, shoe_decks=decks, 
     global_total_games=global_total_games, total_t_wins=total_t_wins, 
@@ -419,6 +415,8 @@ with util_col_1:
             st.session_state.outcome_history.pop()
             if st.session_state.round_detailed_log:
                 st.session_state.round_detailed_log.pop()
+            if st.session_state.session_added_games > 0:
+                st.session_state.session_added_games -= 1
             st.rerun()
 with util_col_2:
     if st.button("🔄 LÀM TRỐNG (ĐỔI BÀN)", use_container_width=True, key="btn_reset_final"):
@@ -426,4 +424,5 @@ with util_col_2:
         st.session_state.outcome_history = []
         st.session_state.form_counter = 0
         st.session_state.logic_fail_counter = 0
+        st.session_state.session_added_games = 0
         st.rerun()
