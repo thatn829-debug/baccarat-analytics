@@ -3,15 +3,13 @@ import numpy as np
 import math
 
 # =========================================================================
-# MODULE 1: ĐỘNG CƠ ĐẾM BÀI CHUẨN TOÁN HỌC V55.8 (FIXED ENGINE)
+# MODULE 1: ĐỘNG CƠ ĐẾM BÀI CHUẨN TOÁN HỌC V55.9 (STABLE MOBILE ENGINE)
 # =========================================================================
 def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks):
     total_initial_cards = shoe_decks * 52
     exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
     
     all_flat_cards = []
-    valid_rounds_count = len(all_rounds_log)
-    
     current_streak_side = None
     current_streak_count = 0
     
@@ -45,7 +43,6 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks):
         
     p_0 = sum([exact_cards_left[i] for i in [10, 11, 12, 13]]) / cards_remaining
 
-    # Xác suất cơ sở trung lập chuẩn tổ hợp
     base_p = 44.62 + (total_counting_bias * 2.0)
     base_b = 45.86 - (total_counting_bias * 2.0)
     base_t = 9.52 + (p_0 * 2.5)
@@ -144,23 +141,35 @@ def parse_baccarat_input_v55(raw_str):
     return result_list
 
 # =========================================================================
-# SYSTEM INTERFACE DISPLAY (TỐI ƯU HÓA HOÀN TOÀN CHO ĐIỆN THOẠI)
+# SYSTEM INTERFACE DISPLAY (THIẾT KẾ PHẲNG DỌC KHÔNG CHIA CỘT CHO MOBILE)
 # =========================================================================
-st.set_page_config(page_title="Oracle Action-Filter v55.8", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Mobile v55.9", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
-    .stApp { background: #02040a !important; color: #ecf0f1 !important; }
-    .action-panel { border-radius: 12px; padding: 20px; margin: 15px auto; text-align: center; box-shadow: 0px 4px 20px rgba(0,0,0,0.5); }
-    .action-status { font-size: 22px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 8px; }
-    .action-msg { font-size: 14px; opacity: 0.85; margin-bottom: 12px; line-height: 1.4; }
-    .action-vol { font-size: 16px; font-weight: 800; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 10px; }
-    .score-log-hud { padding: 12px; border-radius: 8px; background-color: #0d1117; border: 1px solid #30363d; margin-top: 15px; font-family: monospace; font-size: 12px; color: #c9d1d9; }
+    /* Ép giao diện chạy mượt trên mọi kích thước màn hình dọc của điện thoại */
+    .stApp { background: #02040a !important; color: #ecf0f1 !important; padding: 10px !important; }
     
-    /* Sửa lỗi hiển thị nút bấm lớn, dễ bấm trên Mobile */
-    div.stButton > button { background-color: #21262d !important; color: #c9d1d9 !important; border: 1px solid #30363d !important; border-radius: 8px; font-weight: 700; width: 100% !important; padding: 12px 0px !important; }
-    div.stButton > button:hover { background-color: #30363d !important; color: #ffffff !important; }
+    /* Hộp thông báo hành động thông minh */
+    .action-panel { border-radius: 12px; padding: 18px; margin: 12px 0px; text-align: center; box-shadow: 0px 4px 15px rgba(0,0,0,0.6); }
+    .action-status { font-size: 20px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .action-msg { font-size: 13.5px; opacity: 0.85; margin-bottom: 10px; line-height: 1.4; }
+    .action-vol { font-size: 15px; font-weight: 800; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 8px; }
+    
+    /* Bảng hiển thị chỉ số phụ dạng hàng dọc tinh tế */
+    .mobile-metric-box { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .metric-tag { font-size: 13px; font-weight: 700; color: #8b949e; }
+    .metric-num { font-size: 16px; font-weight: 800; font-family: monospace; }
+    
+    .score-log-hud { padding: 12px; border-radius: 8px; background-color: #0d1117; border: 1px solid #30363d; margin-top: 12px; font-family: monospace; font-size: 12px; color: #c9d1d9; }
+    
+    /* Tối ưu hóa nút bấm khổng lồ, xếp dọc toàn diện */
+    div.stButton > button { background-color: #21262d !important; color: #c9d1d9 !important; border: 1px solid #30363d !important; border-radius: 10px; font-weight: 800; width: 100% !important; padding: 14px 0px !important; font-size: 15px !important; margin-bottom: 10px !important; }
+    div.stButton > button:hover { background-color: #30363d !important; color: #ffffff !important; border-color: #8b949e !important; }
+    
+    /* Xóa khoảng trắng thừa của Streamlit trên điện thoại */
+    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
     </style>
     """, 
     unsafe_allow_html=True
@@ -168,19 +177,18 @@ st.markdown(
 
 if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
 
-st.sidebar.header("🛸 THIẾT LẬP KHAY BÀI")
-decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
+# Đưa cài đặt bộ bài lên khu vực chính để không cần vuốt mở Sidebar trên điện thoại
+decks = st.selectbox("Chọn số bộ bài sòng đang dùng:", [8, 6, 4], index=0)
 total_log_games = len(st.session_state.round_detailed_log)
 
-st.markdown("### 🧬 ORACLE ACTION-FILTER V55.8")
-st.markdown(f"**Dữ liệu khay bài:** Đã ghi nhận `{total_log_games}` ván.")
+st.markdown("### 🧬 ORACLE MOBILE SYSTEM V55.9")
+st.caption(f"Trạng thái khay bài hiện tại: Đã nhập `{total_log_games}` ván.")
 
-# Thiết kế Form dọc thân thiện 100% với màn hình điện thoại
+# Form nhập bài dạng dọc hoàn toàn, không chia cột ngang
 with st.form(key="baccarat_input_form", clear_on_submit=True):
-    p_input = st.text_input("🔵 QUÂN BÀI PLAYER CHI TIẾT:", placeholder="Ví dụ: 5 2 K")
-    b_input = st.text_input("🔴 QUÂN BÀI BANKER CHI TIẾT:", placeholder="Ví dụ: A 7")
+    p_input = st.text_input("🔵 QUÂN BÀI PLAYER:", placeholder="Ví dụ: 5 2 K")
+    b_input = st.text_input("🔴 QUÂN BÀI BANKER:", placeholder="Ví dụ: A 7")
     st.write("")
-    # Nút bấm submit bắt buộc nằm trong Form để tránh lỗi "Missing Submit Button"
     calc_triggered = st.form_submit_button("⚡ PHÂN TÍCH VÀ RA LỆNH ĐẶT")
 
 if calc_triggered and (p_input.strip() or b_input.strip()):
@@ -194,11 +202,11 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
 
 st.markdown("---")
 
-# TÍNH TOÁN XÁC SUẤT VÀ ĐƯA RA HƯỚNG DẪN ĐẶT CƯỢC
+# HỆ THỐNG TÍNH TOÁN VÀ ĐƯA RA LỆNH TRỰC QUAN
 final_p, final_b, final_t, cards_left, volatility, is_critical, streak_side, streak_count = calculate_v55_quantum_chao_engine(st.session_state.round_detailed_log, shoe_decks=decks)
 cmd = get_action_directive(final_p, final_b, is_critical, streak_side, streak_count, st.session_state.round_detailed_log)
 
-# BẢNG ĐIỀU HÀNH ĐẶT CƯỢC TRỰC QUAN KHÔNG PHÂN VÂN
+# BẢNG RA LỆNH ĐẶT CƯỢC SIÊU TO - CHỈ CẦN NHÌN VÀ ĐÁNH KHÔNG CẦN NGHĨ
 st.markdown(
     f'<div class="action-panel" style="background-color: {cmd["bg"]}; border: 2px solid {cmd["color"]}; color: {cmd["color"]};">'
     f'<div class="action-status">{cmd["status"]}</div>'
@@ -208,22 +216,26 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# CHI TIẾT XÁC SUẤT THỰC (HIỂN THỊ THÊM ĐỂ THEO DÕI)
-col_p, col_b, col_t = st.columns(3)
-with col_p: st.metric("🔵 PLAYER", f"{final_p:.1f}%")
-with col_b: st.metric("🔴 BANKER", f"{final_b:.1f}%")
-with col_t: st.metric("🟢 TIE", f"{final_t:.1f}%")
+# HIỂN THỊ XÁC SUẤT THEO DÒNG DỌC TIỆN LỢI CHO MOBILE
+st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔵 XÁC SUẤT PLAYER:</span><span class="metric-num" style="color:#00afb9;">{final_p:.1f}%</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔴 XÁC SUẤT BANKER:</span><span class="metric-num" style="color:#ff4757;">{final_b:.1f}%</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 XÁC SUẤT TIE (HÒA):</span><span class="metric-num" style="color:#2ecc71;">{final_t:.1f}%</span></div>', unsafe_allow_html=True)
 
+# LỊCH SỬ DÒNG CHẢY BÀI KHÔNG GIAN
 if st.session_state.round_detailed_log:
-    st.markdown('<div class="score-log-hud"><b>📊 LỊCH SỬ KHAY BÀI HIỆN TẠI:</b><br>', unsafe_allow_html=True)
+    st.markdown('<div class="score-log-hud"><b>📊 LỊCH SỬ KHAY BÀI THỰC TẾ:</b><br>', unsafe_allow_html=True)
     for idx, r in enumerate(st.session_state.round_detailed_log):
         st.markdown(f"• Ván {idx+1}: [P] {r['p_score']}đ vs {r['b_score']}đ [B] ➡️ **{r['outcome'].upper()}**")
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
-util_col_1, util_col_2 = st.columns(2, gap="small")
-with util_col_1:
-    if st.button("⏪ HOÀN TÁC VÁN VỪA NHẬP", use_container_width=True):
-        if st.session_state.round_detailed_log: st.session_state.round_detailed_log.pop(); st.rerun()
-with util_col_2:
-    if st.button("🔄 LÀM TRỐNG KHAY BÀI", use_container_width=True): st.session_state.round_detailed_log = []; st.rerun()
+
+# TIỆN ÍCH QUẢN LÝ KHAY BÀI XẾP CHỒNG DỌC (ANTI-CRASH)
+if st.button("⏪ HOÀN TÁC VÁN VỪA NHẬP"):
+    if st.session_state.round_detailed_log:
+        st.session_state.round_detailed_log.pop()
+        st.rerun()
+
+if st.button("🔄 LÀM TRỐNG KHAY BÀI MỚI"):
+    st.session_state.round_detailed_log = []
+    st.rerun()
