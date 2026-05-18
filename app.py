@@ -208,14 +208,14 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v38.9 Mobile-Optimized", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.0 Mobile-Fixed", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
     
-    /* Thiết lập cho khối 2 cột nhập liệu nằm thẳng hàng, không bị nhảy hàng trên Mobile */
+    /* Thiết lập cho khối 2 ô nhập liệu nằm thẳng hàng 50-50 mượt mà trên Mobile */
     [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
     [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
     
@@ -238,7 +238,7 @@ st.markdown(
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Tối ưu kích thước nút bấm trên Điện thoại: Đạt chiều rộng 100% full viền */
+    /* Thiết lập nút bấm full viền 100% nằm ngay bên dưới */
     div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; font-size: 15px !important; }
     </style>
     """, 
@@ -273,22 +273,22 @@ next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# MOBILE LAYOUT: CHỈ ĐỂ 2 Ô NHẬP NẰM NGANG, NÚT BẤM DỜI XUỐNG DƯỚI FULL RỘNG
+# FIX LỖI BIẾN: Đảm bảo đồng bộ cấu trúc layout hai ô ngang chuẩn Mobile
 # ---------------------------------------------------------------------
 input_row_col1, input_row_col2 = st.columns(2, gap="small")
-with input_col1:
+with input_row_col1:
     p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
-with input_col2:
+with input_row_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
 
-# Nút bấm đặt ngay phía dưới, độ dài tự động căng bằng chính xác 2 ô nhập cộng lại (Full chiều rộng màn hình dọc)
+# Nút bấm đặt ngay phía dưới, độ dài bằng chiều rộng 2 ô cộng lại
 calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
 
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    # CẢNH BÁO BỎ TRỐNG: Xuất hiện ngay trên màn hình mobile nếu bấm nhầm khi chưa nhập điểm
+    # Cảnh báo nếu chưa nhập thông tin
     if not p_clean and not b_clean:
         st.warning("⚠️ **Vui lòng nhập điểm!** Bạn chưa điền thông tin bài lật thực tế cho Player hay Banker.")
     else:
