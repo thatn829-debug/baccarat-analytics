@@ -1,7 +1,7 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v37.0 (FIXED): KEEP ORIGINAL UI / REPAIR MATHEMATICS LOGIC
+# SYSTEM CORE v37.3 (PURE MATHEMATICAL LOGIC): NO SIMULATION, REAL CARDS ONLY
 # =========================================================================
 def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -11,6 +11,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
 
     detailed_cards_count = len(shoe_history)
     
+    # Logic trừ bài thực tế: Người dùng nhập lá nào, hệ thống trừ chính xác lá đó
     if detailed_cards_count > 0:
         for card_val in shoe_history:
             if card_val in deck_structure:
@@ -20,7 +21,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
     else:
         total_games_played = max(manual_games_played, total_real_games)
         cards_removed = max(0, manual_cards_used if manual_cards_used > 0 else int(total_games_played * 4.852))
-        cards_left = max(0, total_initial_cards - cards_removed)
+        cards_left = total_initial_cards - cards_removed
         mode = "MA TRẬN PHÂN RÃ BAYES PHI TUYẾN TÍNH"
         
         if cards_removed > 0:
@@ -47,7 +48,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
         odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
         return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # ĐÃ VÁ: Cập nhật ma trận đếm bài Griffin chuẩn quốc tế
+    # Ma trận đếm bài Quốc tế Griffin chuẩn hóa theo tỷ lệ hao hụt thực tế
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -135,7 +136,7 @@ def parse_baccarat_input_v37(raw_str):
             temp_tokens.append(normalized[i])
             i += 1
     result_list = []
-    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10, '0': 10}
+    mapping = {'A': 1, 'J': 10, 'Q': 10, 'K': 10, '10': 10, '0': 10} # Chuẩn hóa J,Q,K về giá trị 10 điểm trong ma trận
     for token in temp_tokens:
         if token in mapping: result_list.append(mapping[token])
         elif token.isdigit():
@@ -146,9 +147,8 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # V37.0 ORIGINAL INTERFACE SPECIFICATION
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v37.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v37.3 Real Logic", page_icon="🔮", layout="centered")
 
-# GIỮ NGUYÊN: Bộ CSS giao diện gốc v37.0 đẹp mắt
 st.markdown(
     """
     <style>
@@ -220,18 +220,21 @@ if calc_triggered:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
         
-        if len(p_clean) == 1 and p_clean.isdigit() and len(b_clean) == 1 and b_clean.isdigit():
-            p_score_eval = int(p_clean)
-            b_score_eval = int(b_clean)
-            st.session_state.cards_per_round_history.append(0)
-        else:
-            p_val_temp = p_list if p_list else [0]
-            b_val_temp = b_list if b_list else [0]
-            p_score_eval = sum([0 if c >= 10 else c for c in p_val_temp]) % 10
-            b_score_eval = sum([0 if c >= 10 else c for c in b_val_temp]) % 10
-            
-            st.session_state.cards_per_round_history.append(len(p_list) + len(b_list))
-            st.session_state.shoe_history.extend(p_list + b_list)
+        # LOGIC CHUẨN XÁC TUYỆT ĐỐI: Không sinh ngẫu nhiên. Nhập lá nào, tính chuẩn lá đó.
+        p_val_temp = p_list if p_list else [0]
+        b_val_temp = b_list if b_list else [0]
+        
+        # Tính toán điểm số ván đấu để xét xu hướng
+        p_score_eval = sum([0 if c >= 10 else c for c in p_val_temp]) % 10
+        b_score_eval = sum([0 if c >= 10 else c for c in b_val_temp]) % 10
+        
+        # Lưu số lượng lá bài thực tế bạn nhập vào lịch sử để thuật toán đếm bài trừ đi
+        actual_round_cards = []
+        if p_list: actual_round_cards.extend(p_list)
+        if b_list: actual_round_cards.extend(b_list)
+        
+        st.session_state.cards_per_round_history.append(len(actual_round_cards))
+        st.session_state.shoe_history.extend(actual_round_cards)
             
         if p_score_eval > b_score_eval:
             st.session_state.outcome_history.append("Player")
@@ -243,7 +246,6 @@ if calc_triggered:
         st.session_state.form_counter += 1
         st.rerun()
 
-# ĐÃ VÁ LỖI GỐC: Truyền chính xác `st.session_state.shoe_history` thay vì mảng rỗng `[]`
 res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = calculate_baccarat_v18_ultimate(
     st.session_state.shoe_history, shoe_decks=decks,
     manual_cards_used=manual_cards, manual_games_played=manual_games,
@@ -301,7 +303,6 @@ with util_col_1:
             if st.session_state.cards_per_round_history:
                 last_cnt = st.session_state.cards_per_round_history.pop()
                 if last_cnt > 0: 
-                    # ĐÃ VÁ: Đồng bộ chính xác việc loại bỏ bài ra khỏi shoe_history khi UNDO
                     st.session_state.shoe_history = st.session_state.shoe_history[:-last_cnt]
             st.rerun()
 with util_col_2:
