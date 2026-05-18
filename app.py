@@ -208,33 +208,38 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v38.8 Single Row Inline", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v38.9 Mobile-Optimized", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
-    /* Giữ layout cột co giãn ngang tối đa trên mobile/web */
-    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; align-items: flex-end !important; }
-    .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 15px; }
-    .ai-decision-box { text-align: center; border-radius: 10px; padding: 16px 10px; font-size: 16px; font-weight: 800; margin: 15px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
-    .hud-box { padding: 12px 6px; border-radius: 10px; text-align: center; margin-bottom: 10px; border: 1px solid #203a43; background: rgba(10, 25, 30, 0.9); min-height: 85px; display: flex; flex-direction: column; justify-content: center; }
-    .hud-title { font-size: 11px; font-weight: 700; color: #a4b0be; text-transform: uppercase; }
-    .hud-value { font-size: 24px; font-weight: 800; font-family: monospace; margin-top: 2px; }
+    
+    /* Thiết lập cho khối 2 cột nhập liệu nằm thẳng hàng, không bị nhảy hàng trên Mobile */
+    [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
+    [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
+    
+    .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 12px; }
+    .ai-decision-box { text-align: center; border-radius: 10px; padding: 14px 10px; font-size: 15px; font-weight: 800; margin: 12px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
+    .hud-box { padding: 10px 4px; border-radius: 10px; text-align: center; margin-bottom: 8px; border: 1px solid #203a43; background: rgba(10, 25, 30, 0.9); min-height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .hud-title { font-size: 10px; font-weight: 700; color: #a4b0be; text-transform: uppercase; }
+    .hud-value { font-size: 22px; font-weight: 800; font-family: monospace; margin-top: 1px; }
     .neon-player-advantage { background-color: #005573 !important; border: 2px solid #00afb9 !important; }
     .neon-banker-advantage { background-color: #1e2b38 !important; border: 2px solid #57606f !important; }
-    .validation-hud { padding: 10px; border-radius: 6px; text-align: left; font-weight: 700; font-size: 11px; font-family: monospace; margin-bottom: 10px; line-height: 1.4; max-height: 180px; overflow-y: auto;}
+    .validation-hud { padding: 8px; border-radius: 6px; text-align: left; font-weight: 700; font-size: 11px; font-family: monospace; margin-bottom: 10px; line-height: 1.4; max-height: 150px; overflow-y: auto;}
     .logic-pass { background-color: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; color: #2ed573; text-align: center;}
     .logic-warn { background-color: rgba(254, 202, 87, 0.15); border: 2px solid #feca57; color: #feca57; }
     .logic-fail { background-color: rgba(235, 94, 40, 0.2); border: 2px solid #eb5e28; color: #ff7675; }
-    .table-switch-lock { background: linear-gradient(90deg, #ff416c, #ff4b2b); border: 3px solid #ffffff; border-radius: 12px; color: white !important; font-size: 18px; font-weight: 900; padding: 25px 15px; text-align: center; box-shadow: 0px 0px 25px #ff4b2b; margin: 20px 0px; letter-spacing: 1px; }
-    .trend-hud { padding: 12px; border-radius: 8px; background-color: rgba(5, 15, 20, 0.9); border: 1px dashed #00afb9; margin-top: 5px; }
-    .trend-title { font-size: 11px; font-weight: bold; color: #00afb9; text-transform: uppercase; margin-bottom: 4px;}
-    .trend-string { font-size: 16px; font-family: monospace; letter-spacing: 4px; font-weight: 800; }
+    .table-switch-lock { background: linear-gradient(90deg, #ff416c, #ff4b2b); border: 3px solid #ffffff; border-radius: 12px; color: white !important; font-size: 16px; font-weight: 900; padding: 20px 12px; text-align: center; box-shadow: 0px 0px 20px #ff4b2b; margin: 15px 0px; letter-spacing: 0.5px; }
+    .trend-hud { padding: 10px; border-radius: 8px; background-color: rgba(5, 15, 20, 0.9); border: 1px dashed #00afb9; margin-top: 5px; }
+    .trend-title { font-size: 10px; font-weight: bold; color: #00afb9; text-transform: uppercase; margin-bottom: 4px;}
+    .trend-string { font-size: 15px; font-family: monospace; letter-spacing: 3px; font-weight: 800; }
     .char-p { color: #00afb9; font-weight: bold; } 
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
-    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; height: 43px !important; margin-bottom: 1px !important;}
+    
+    /* Tối ưu kích thước nút bấm trên Điện thoại: Đạt chiều rộng 100% full viền */
+    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 12px 0px; width: 100% !important; font-size: 15px !important; }
     </style>
     """, 
     unsafe_allow_html=True
@@ -268,26 +273,24 @@ next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# TỐI ƯU HÀNG NGANG: ĐƯA TẤT CẢ THÀNH 1 HÀNG, ĐỘ DOÀI NÚT CÂN ĐỐI TUYỆT ĐỐI
+# MOBILE LAYOUT: CHỈ ĐỂ 2 Ô NHẬP NẰM NGANG, NÚT BẤM DỜI XUỐNG DƯỚI FULL RỘNG
 # ---------------------------------------------------------------------
-p_clean, b_clean = "", ""
-action_row_col1, action_row_col2, action_row_col3 = st.columns([2, 2, 3], gap="small")
-
-with action_row_col1:
+input_row_col1, input_row_col2 = st.columns(2, gap="small")
+with input_col1:
     p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
-with action_row_col2:
+with input_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
-with action_row_col3:
-    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN")
 
-# Xử lý chuỗi dữ liệu đầu vào và bộ lọc kiểm tra rỗng
+# Nút bấm đặt ngay phía dưới, độ dài tự động căng bằng chính xác 2 ô nhập cộng lại (Full chiều rộng màn hình dọc)
+calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN VÁN NÀY")
+
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    # KỊCH BẢN CẢNH BÁO: Nếu chưa nhập điểm ở cả 2 bên mà cố tình nhấn nút tính toán
+    # CẢNH BÁO BỎ TRỐNG: Xuất hiện ngay trên màn hình mobile nếu bấm nhầm khi chưa nhập điểm
     if not p_clean and not b_clean:
-        st.warning("⚠️ **Không thể tính toán ván rác!** Vui lòng nhập thông tin điểm hoặc quân bài lật thực tế cho Player hoặc Banker trước khi nhấn nút ghi nhận.")
+        st.warning("⚠️ **Vui lòng nhập điểm!** Bạn chưa điền thông tin bài lật thực tế cho Player hay Banker.")
     else:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
@@ -348,7 +351,7 @@ else:
         st.markdown(
             f'<div class="table-switch-lock">'
             f'🚨 PHÁT HIỆN GIAN LẬN LIÊN TỤC: ĐỔI BÀN NGAY LẬP TỨC!<br>'
-            f'<span style="font-size:13px; font-weight:normal;">Hệ thống phát hiện {st.session_state.logic_fail_counter} lỗi phi thực tế '
+            f'<span style="font-size:12px; font-weight:normal;">Hệ thống phát hiện {st.session_state.logic_fail_counter} lỗi phi thực tế '
             f'(Lặp chuỗi quân bài/Lệch tỷ lệ Delta toán học). Dữ liệu bàn chơi đã bị bẻ cong hoàn toàn, không thể phân tích!</span>'
             f'</div>', 
             unsafe_allow_html=True
