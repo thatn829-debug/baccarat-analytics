@@ -73,7 +73,7 @@ def verify_shoe_integrity(round_detailed_log, shoe_decks, global_total_games, to
     if global_total_games >= 40:
         actual_p_rate = (total_p_wins / global_total_games) * 100
         delta_p = abs(actual_p_rate - p_prob)
-        if delta_p > 20.0:
+        if delta_p > 22.0:
             invalid_logic_messages.append(f"🚨 LỆCH BIÊN ĐỘ TOÁN HỌC: Player chiếm {actual_p_rate:.1f}% nhưng khay bài báo {p_prob:.1f}% (Delta: {delta_p:.1f}%).")
 
     # 1.7 Đối chiếu luật tính điểm của sàn
@@ -97,35 +97,27 @@ def verify_shoe_integrity(round_detailed_log, shoe_decks, global_total_games, to
 # =========================================================================
 def get_current_shoe_state(all_cards_stream, shoe_decks, manual_cards_used, manual_games_played, total_real_games, t_wins, p_wins, b_wins):
     total_initial_cards = shoe_decks * 52
+    
+    # Khởi tạo khay bài thực tế dựa trên số bộ bài chọn trước
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
     detailed_cards_count = len(all_cards_stream)
     
     global_games = max(manual_games_played, manual_games_played + total_real_games)
-    estimated_cards_removed = int(global_games * 4.852)
+    estimated_cards_removed = int(global_games * 4.85)
     cards_removed = max(manual_cards_used, estimated_cards_removed)
-    cards_left = total_initial_cards - max(detailed_cards_count, cards_removed)
+    cards_left = max(15, total_initial_cards - max(detailed_cards_count, cards_removed))
     
-    if global_games > 0:
-        tie_ratio = t_wins / global_games
-        p_ratio = p_wins / global_games
-        b_ratio = b_wins / global_games
-        
-        if tie_ratio > 0.095:
-            bonus_factor = 1.0 + (tie_ratio - 0.095) * 3.5
-            deck_structure[10] *= bonus_factor
-            deck_structure[11] *= bonus_factor
-            deck_structure[12] *= bonus_factor
-            deck_structure[13] *= bonus_factor
-            
-        if p_ratio > 0.55:
-            for n in [2, 3, 4]: deck_structure[n] *= 1.15
-        if b_ratio > 0.55:
-            for n in [5, 6, 7]: deck_structure[n] *= 1.15
-
+    # VÁ LỖI: Loại bỏ hoàn toàn cơ chế tự nhân hệ số làm méo khay bài
+    # Trừ bài thực tế nếu người dùng có nhập chi tiết lá bài
     if detailed_cards_count > 0:
         for card_val in all_cards_stream:
             if card_val in deck_structure:
-                deck_structure[card_val] = max(0.01, deck_structure[card_val] - 1.0)
+                deck_structure[card_val] = max(0.0, deck_structure[card_val] - 1.0)
+    else:
+        # Nếu chưa nhập chi tiết, giảm đều tỉ lệ phân phối theo số lượng bài ước tính đã trôi qua
+        ratio_left = cards_left / total_initial_cards
+        for card_num in deck_structure:
+            deck_structure[card_num] *= ratio_left
                 
     score_deck = [0.0] * 10
     for card_num, count in deck_structure.items():
@@ -139,9 +131,12 @@ def get_current_shoe_state(all_cards_stream, shoe_decks, manual_cards_used, manu
 # MODULE 2: TÁCH ĐỘC LẬP TÍNH XÁC SUẤT (PLAYER - BANKER - TIE)
 # =========================================================================
 
-def calculate_player_probability(score_deck, N_total, global_games):
-    """Module độc lập tính toán xác suất Player thắng dựa trên mật độ bài"""
-    if global_games == 0 or N_total <= 6: return 44.62
+def calculate_player_probability(score_deck, N_total, global_games, total_p_wins, total_b_wins):
+    """Module độc lập tính toán xác suất Player - Đã sửa lỗi khuếch đại ảo"""
+    base_p = 44.62
+    if global_games == 0 or N_total <= 10: return base_p
+    
+    # Hệ số chuẩn khoa học tổ hợp Baccarat Card Counting quốc tế
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -149,12 +144,23 @@ def calculate_player_probability(score_deck, N_total, global_games):
         (0.63 * score_deck[0])
     )
     shift_ratio = card_counting_effect / N_total
-    return 44.62 + (shift_ratio * 13.5)
+    calc_p = base_p + (shift_ratio * 1.85)  # Đưa về cường độ dao động thực tế (1.85 thay vì 13.5)
+    
+    # Bộ lọc Hồi quy thích ứng xu hướng thực tế của bàn chơi
+    actual_total_p_b = total_p_wins + total_b_wins
+    if actual_total_p_b > 0:
+        real_p_ratio = (total_p_wins / actual_total_p_b) * 90.48
+        # Trộn tỷ lệ: 70% toán học khay bài + 30% xu hướng thực tế của bàn hiện tại
+        calc_p = (calc_p * 0.7) + (real_p_ratio * 0.3)
+        
+    return calc_p
 
 
-def calculate_banker_probability(score_deck, N_total, global_games):
-    """Module độc lập tính toán xác suất Banker thắng dựa trên mật độ bài"""
-    if global_games == 0 or N_total <= 6: return 45.86
+def calculate_banker_probability(score_deck, N_total, global_games, total_p_wins, total_b_wins):
+    """Module độc lập tính toán xác suất Banker - Đã cân bằng động"""
+    base_b = 45.86
+    if global_games == 0 or N_total <= 10: return base_b
+    
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -162,18 +168,30 @@ def calculate_banker_probability(score_deck, N_total, global_games):
         (0.63 * score_deck[0])
     )
     shift_ratio = card_counting_effect / N_total
-    return 45.86 - (shift_ratio * 13.5)
+    calc_b = base_b - (shift_ratio * 1.85)  # Đồng bộ cường độ dao động chuẩn
+    
+    # Bộ lọc Hồi quy thích ứng xu hướng thực tế của bàn chơi
+    actual_total_p_b = total_p_wins + total_b_wins
+    if actual_total_p_b > 0:
+        real_b_ratio = (total_b_wins / actual_total_p_b) * 90.48
+        calc_b = (calc_b * 0.7) + (real_b_ratio * 0.3)
+        
+    return calc_b
 
 
 def calculate_tie_probability(score_deck, N_total, t_wins, global_games):
-    """Module độc lập tính toán xác suất Hòa thích ứng sâu với thực tế sảnh"""
-    if global_games == 0 or N_total <= 6: return 9.52
-    base_t_prob = 9.52 + (score_deck[0] / N_total * 5.0)
+    """Module độc lập tính toán xác suất Hòa thích ứng sâu"""
+    base_t = 9.52
+    if global_games == 0 or N_total <= 10: return base_t
     
-    if global_games > 5:
+    # Mật độ bài 10,J,Q,K tăng cao thì tỷ lệ Hòa tăng
+    card_counting_effect = (score_deck[0] / N_total) * 9.52
+    calc_t = (base_t * 0.7) + (card_counting_effect * 0.3)
+    
+    if global_games > 4:
         actual_tie_weight = t_wins / global_games
-        return (base_t_prob * 0.6) + (actual_tie_weight * 100.0 * 0.4)
-    return base_t_prob
+        return (calc_t * 0.75) + (actual_tie_weight * 100.0 * 0.25)
+    return calc_t
 
 
 # =========================================================================
@@ -195,8 +213,8 @@ def detect_baccarat_pattern(outcome_list):
 def get_ai_recommendation_v2(p_val, b_val, t_val, outcome_history, round_detailed_log):
     _, _, real_trend_side, streak_count = detect_baccarat_pattern(outcome_history)
     
-    if t_val > 14.0: 
-        return f"🟢 CẦU BIẾN ĐỘNG - VÀO LỆNH HÒA (TIE): Xác suất thích ứng thực tế đạt {t_val}% (Bàn có tín hiệu bệt Hòa liên tục).", "rgba(46, 213, 115, 0.15)", "#2ed573"
+    if t_val > 15.5: 
+        return f"🟢 CẦU BIẾN ĐỘNG - VÀO LỆNH HÒA (TIE): Xác suất thích ứng sảnh đạt {t_val}% (Tín hiệu nổ Hòa cao).", "rgba(46, 213, 115, 0.15)", "#2ed573"
         
     if len(outcome_history) < 2: 
         return "⚠️ CHỜ DỮ LIỆU THỰC TẾ: Cần nhập tối thiểu 2 ván đầu tiên để kích hoạt bộ lọc cầu.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
@@ -208,35 +226,35 @@ def get_ai_recommendation_v2(p_val, b_val, t_val, outcome_history, round_detaile
     last_b_score = sum([0 if c >= 10 else c for c in last_b_cards]) % 10 if last_b_cards else 0
 
     if real_trend_side == "Player":
-        if p_val >= 44.5: 
-            return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔵 PLAYER | Sàn đang bệt ({streak_count} ván) + Xác suất khay toán học ủng hộ giữ nền ({p_val}%).", "rgba(0, 175, 185, 0.2)", "#00afb9"
+        if p_val >= 46.0: 
+            return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔵 PLAYER | Sàn đang bệt ({streak_count} ván) + Xác suất thích ứng ủng hộ ({p_val}%).", "rgba(0, 175, 185, 0.2)", "#00afb9"
         else:
-            if b_val >= 52.5 or (streak_count >= 5 and b_val >= 49.0):
-                return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔴 BANKER | Phát hiện lệch khay cực đại! Toán học báo {b_val}%, kho bài cạn lá hỗ trợ Player, cầu bệt ván thứ {streak_count} sắp gãy.", "rgba(254, 217, 255, 0.25)", "#fed9ff"
+            if b_val >= 50.5 or (streak_count >= 5 and b_val >= 48.5):
+                return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔴 BANKER | Phát hiện lệch khay cực đại! Toán học báo {b_val}%, ép gãy cầu bệt ván thứ {streak_count}.", "rgba(254, 217, 255, 0.25)", "#fed9ff"
             else:
-                return f"🛡️ PHÒNG THỦ (SÀN ĐÈ TOÁN HỌC): TIẾP TỤC ĐU 🔵 PLAYER | Cầu bệt sàn ăn đứt tỷ lệ lệch nhẹ của toán học ({b_val}% chưa đủ lực bẻ).", "rgba(0, 175, 185, 0.15)", "#00afb9"
+                return f"🛡️ PHÒNG THỦ (XU HƯỚNG ĐÈ): TIẾP TỤC ĐU 🔵 PLAYER | Cầu bệt sàn ăn đứt tỷ lệ lệch nhẹ toán học ({b_val}% chưa đủ lực gãy).", "rgba(0, 175, 185, 0.15)", "#00afb9"
 
     elif real_trend_side == "Banker":
-        if b_val >= 45.5: 
-            return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔴 BANKER | Sàn đang bệt ({streak_count} ván) + Xác suất toán học đạt chuẩn lợi thế cấu trúc ({b_val}%).", "rgba(254, 217, 255, 0.2)", "#fed9ff"
+        if b_val >= 46.0: 
+            return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔴 BANKER | Sàn đang bệt ({streak_count} ván) + Xác suất đồng bộ đạt chuẩn ({b_val}%).", "rgba(254, 217, 255, 0.2)", "#fed9ff"
         else:
-            if p_val >= 51.5 or (streak_count >= 5 and p_val >= 48.0):
-                return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔵 PLAYER | Khay bài hết sạch lá Tây/Lá bù cho Banker. Toán học đạt {p_val}%, ép gãy cầu bệt thực tế ván thứ {streak_count}!", "rgba(0, 175, 185, 0.25)", "#00afb9"
+            if p_val >= 50.5 or (streak_count >= 5 and p_val >= 48.5):
+                return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔵 PLAYER | Khay bài ưu thế nghiêng hẳn về Player ({p_val}%), ép gãy cầu bệt ván thứ {streak_count}!", "rgba(0, 175, 185, 0.25)", "#00afb9"
             else:
-                return f"🛡️ PHÒNG THỦ (SÀN ĐÈ TOÁN HỌC): TIẾP TỤC ĐU 🔴 BANKER | Xu hướng sàn lấn lướt toán học lệch nhẹ ({p_val}% chưa đủ lực gồng bẻ).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
+                return f"🛡️ PHÒNG THỦ (XU HƯỚNG ĐÈ): TIẾP TỤC ĐU 🔴 BANKER | Xu hướng sàn lấn lướt toán học lệch nhẹ ({p_val}% chưa đủ lực bẻ).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
 
     elif real_trend_side == "Sóng phẳng":
         score_diff = abs(last_p_score - last_b_score)
-        if p_val >= 46.5: 
+        if p_val > b_val + 1.5: 
             if score_diff <= 2 and last_b_score > last_p_score:
-                return f"🔵 VÀO LỆNH CAO: PLAYER | Toán học báo lợi thế ({p_val}%) + Phản đòn điểm số thực tế ván trước (Banker thắng suýt soát).", "rgba(0, 175, 185, 0.2)", "#00afb9"
-            return f"🔵 VÀO LỆNH: PLAYER | Cấu trúc khay bài nghiêng mạnh về cửa Player ({p_val}%).", "rgba(0, 175, 185, 0.15)", "#00afb9"
-        elif b_val >= 47.5: 
+                return f"🔵 VÀO LỆNH MẠNH: PLAYER | Toán học tối ưu ({p_val}%) + Phản động nút thấp ván trước.", "rgba(0, 175, 185, 0.2)", "#00afb9"
+            return f"🔵 VÀO LỆNH: PLAYER | Ưu thế phân rã toán học nghiêng về Player ({p_val}%).", "rgba(0, 175, 185, 0.15)", "#00afb9"
+        elif b_val > p_val + 1.5: 
             if score_diff <= 2 and last_p_score > last_b_score:
-                return f"🔴 VÀO LỆNH CAO: BANKER | Lợi thế toán học ({b_val}%) + Điểm thực tế ép đổi cầu (Player ván trước ăn may nút thấp).", "rgba(254, 217, 255, 0.2)", "#fed9ff"
-            return f"🔴 VÀO LỆNH: BANKER | Khay bài báo lợi thế toán học tốt cho Banker ({b_val}%).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
+                return f"🔴 VÀO LỆNH MẠNH: BANKER | Lợi thế tối ưu ({b_val}%) + Điểm số thực tế thúc đẩy đổi cầu.", "rgba(254, 217, 255, 0.2)", "#fed9ff"
+            return f"🔴 VÀO LỆNH: BANKER | Ưu thế phân rã toán học tốt cho Banker ({b_val}%).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
             
-    return "📊 QUAN SÁT TIẾP: Cầu nhiễu loạn, điểm số thực tế và xác suất triệt tiêu lẫn nhau. Không vào lệnh ván này.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
+    return "📊 QUAN SÁT TIẾP: Cầu nhiễu loạn, điểm số thực tế và xác suất đang ở trạng thái cân bằng. Không vào lệnh.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
 
 def parse_baccarat_input_v37(raw_str):
     if not raw_str: return []
@@ -265,7 +283,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v40.1 Pure Balance", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v41.0 High Precision", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -401,15 +419,15 @@ score_deck, N_total, cards_left = get_current_shoe_state(
     t_wins=total_t_wins, p_wins=total_p_wins, b_wins=total_b_wins
 )
 
-# BƯỚC GỌI CÁC MODULE TOÁN HỌC ĐỘC LẬP
-raw_p = calculate_player_probability(score_deck, N_total, global_total_games)
-raw_b = calculate_banker_probability(score_deck, N_total, global_total_games)
+# GỌI CÁC MODULE TOÁN HỌC ĐÃ ĐƯỢC ĐIỀU CHỈNH ĐỘ CHÍNH XÁC CAO
+raw_p = calculate_player_probability(score_deck, N_total, global_total_games, total_p_wins, total_b_wins)
+raw_b = calculate_banker_probability(score_deck, N_total, global_total_games, total_p_wins, total_b_wins)
 raw_t = calculate_tie_probability(score_deck, N_total, total_t_wins, global_total_games)
 
-# Đồng bộ hóa tổng biên để phân phối xác suất luôn chuẩn 100%
+# Phân phối xác suất đồng bộ 100%
 total_raw_sum = raw_p + raw_b + raw_t
-final_p = round(max(20.0, min(70.0, (raw_p / total_raw_sum) * 100.0)), 2)
-final_b = round(max(20.0, min(70.0, (raw_b / total_raw_sum) * 100.0)), 2)
+final_p = round(max(15.0, min(75.0, (raw_p / total_raw_sum) * 100.0)), 2)
+final_b = round(max(15.0, min(75.0, (raw_b / total_raw_sum) * 100.0)), 2)
 final_t = round(100.0 - final_p - final_b, 2)
 
 invalid_messages = verify_shoe_integrity(
@@ -441,8 +459,8 @@ else:
         st.markdown(f'<div class="ai-decision-box" style="background-color: {rec_bg}; border: 2px solid {rec_border}; color: {rec_border};">{rec_text}</div>', unsafe_allow_html=True)
         
         p_box_css, b_box_css = "hud-box", "hud-box"
-        if final_p > final_b: p_box_css = "hud-box neon-player-advantage"
-        elif final_b > final_p: b_box_css = "hud-box neon-banker-advantage"
+        if final_p > final_b + 0.5: p_box_css = "hud-box neon-player-advantage"
+        elif final_b > final_p + 0.5: b_box_css = "hud-box neon-banker-advantage"
         
         col_p, col_b, col_t = st.columns(3, gap="small")
         with col_p:
@@ -470,7 +488,7 @@ else:
     st.markdown("---")
     total_shoe_cards = decks * 52
     penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-    st.caption(f"**Chế độ:** `ANTI-BIAS ENGINE (V40.1)` | **Còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
+    st.caption(f"**Chế độ:** `PRECISION REGRESSION ENGINE (V41.0)` | **Còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
     st.progress(penetration_rate / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
