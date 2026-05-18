@@ -208,13 +208,26 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v39.2 Fixed", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.3 Mobile Layout", page_icon="🔮", layout="centered")
 
+# CSS tạo nền tối và định cấu hình màu sắc giao diện HUD sang trọng
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
     
+    /* Ép buộc thanh chia cột (columns) của ô nhập liệu giữ nguyên dạng ngang, KHÔNG ĐƯỢC tự động xuống hàng trên Mobile */
+    div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div {
+        flex: 1 1 0% !important;
+        min-width: 0px !important;
+    }
+
     .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 12px; }
     .ai-decision-box { text-align: center; border-radius: 10px; padding: 14px 10px; font-size: 15px; font-weight: 800; margin: 12px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
     .hud-box { padding: 10px 4px; border-radius: 10px; text-align: center; margin-bottom: 8px; border: 1px solid #203a43; background: rgba(10, 25, 30, 0.9); min-height: 75px; display: flex; flex-direction: column; justify-content: center; }
@@ -234,7 +247,7 @@ st.markdown(
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* Thiết kế nút bấm thanh thoát, bo góc */
+    /* Làm đẹp nút bấm chính chủ */
     div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 8px 0px; font-size: 14px !important; }
     </style>
     """, 
@@ -269,18 +282,21 @@ next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# KHỐI 1: HAI Ô NHẬP LIỆU CHIA ĐÔI SONG SONG NẰM NGANG
+# KHỐI 1: HAI Ô NHẬP LIỆU (BẮT BUỘC CHIA ĐÔI SONG SONG DÙNG GAP)
 # ---------------------------------------------------------------------
-input_row_col1, input_row_col2 = st.columns(2)
+input_row_col1, input_row_col2 = st.columns(2, gap="small")
 with input_row_col1:
     p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
 with input_row_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
 
+# Sắp xếp khoảng cách nhỏ xuống nút bấm
+st.write("")
+
 # ---------------------------------------------------------------------
-# KHỐI 2: ĐỊNH VỊ NÚT BẤM NẰM CHÍNH GIỮA PHÍA DƯỚI HAI Ô TRÊN
+# KHỐI 2: NÚT TÍNH TOÁN - CĂN GIỮA PHÍA DƯỚI 2 Ô TRÊN TRÊN DI ĐỘNG
 # ---------------------------------------------------------------------
-btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 3, 1])
+btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 4, 1], gap="small")
 with btn_layout_center:
     calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN", use_container_width=True)
 
@@ -364,7 +380,7 @@ else:
         if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
         elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
         
-        left_col, right_col = st.columns(2)
+        left_col, right_col = st.columns(2, gap="small")
         with left_col:
             st.markdown("##### 📊 XÁC SUẤT TOÁN HỌC")
             st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
@@ -396,7 +412,7 @@ else:
     st.progress(penetration_rate / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
-util_col_1, util_col_2 = st.columns(2)
+util_col_1, util_col_2 = st.columns(2, gap="small")
 with util_col_1:
     if st.button("⏪ HOÀN TÁC (UNDO)", use_container_width=True, key="btn_undo_final"):
         if st.session_state.outcome_history:
