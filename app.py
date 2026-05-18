@@ -208,16 +208,12 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v39.1 Central Button", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.2 Fixed", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
     <style>
     .stApp { background: linear-gradient(145deg, #0f2027, #1f404b, #2c5364) !important; color: #ecf0f1 !important; }
-    
-    /* Ép hiển thị 2 ô nhập liệu song song không vỡ layout */
-    .input-container-row [data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
-    .input-container-row [data-testid="stHorizontalBlock"] > div { width: 50% !important; min-width: 46% !important; flex: 1 1 auto !important; }
     
     .central-game-counter { text-align: center; background: rgba(0, 175, 185, 0.15); border: 1px solid #00afb9; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 15px; font-weight: 800; color: #00afb9; margin-bottom: 12px; }
     .ai-decision-box { text-align: center; border-radius: 10px; padding: 14px 10px; font-size: 15px; font-weight: 800; margin: 12px auto; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); line-height: 1.4; }
@@ -238,8 +234,8 @@ st.markdown(
     .char-b { color: #e74c3c; font-weight: bold; } 
     .char-t { color: #2ed573; font-weight: bold; }
     
-    /* CSS Căn chỉnh Nút bấm nằm gọn gàng ở giữa, kích thước thu gọn thanh thoát */
-    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 10px 0px; width: 100% !important; font-size: 14px !important; height: 42px !important;}
+    /* Thiết kế nút bấm thanh thoát, bo góc */
+    div.stButton > button { background-color: #00afb9 !important; color: white !important; border-radius: 8px; font-weight: bold; padding: 8px 0px; font-size: 14px !important; }
     </style>
     """, 
     unsafe_allow_html=True
@@ -273,30 +269,27 @@ next_game_number = base_games + current_session_games + 1
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# KHỐI 1: HAI Ô NHẬP LIỆU NẰM NGANG
+# KHỐI 1: HAI Ô NHẬP LIỆU CHIA ĐÔI SONG SONG NẰM NGANG
 # ---------------------------------------------------------------------
-st.markdown('<div class="input-container-row">', unsafe_allow_html=True)
-input_row_col1, input_row_col2 = st.columns(2, gap="small")
+input_row_col1, input_row_col2 = st.columns(2)
 with input_row_col1:
     p_input = st.text_input("🔵 PLAYER:", key=f"p_in_{st.session_state.form_counter}", placeholder="k2 hoặc 7")
 with input_row_col2:
     b_input = st.text_input("🔴 BANKER:", key=f"b_in_{st.session_state.form_counter}", placeholder="a8 hoặc 5")
-st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# KHỐI 2: ĐỊNH VỊ NÚT BẤM CÂN BẰNG NGAY GIỮA PHÍA DƯỚI KHỐI TRÊN
+# KHỐI 2: ĐỊNH VỊ NÚT BẤM NẰM CHÍNH GIỮA PHÍA DƯỚI HAI Ô TRÊN
 # ---------------------------------------------------------------------
-btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 5, 1], gap="none")
+btn_layout_l, btn_layout_center, btn_layout_r = st.columns([1, 3, 1])
 with btn_layout_center:
-    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN")
+    calc_triggered = st.button("🚀 GHI NHẬN & TÍNH TOÁN", use_container_width=True)
 
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    # Cảnh báo rỗng nếu người dùng chưa nhập gì cả
     if not p_clean and not b_clean:
-        st.warning("⚠️ **Vui lòng nhập điểm!** Hệ thống không nhận diện được dữ liệu trống.")
+        st.warning("⚠️ Vui lòng nhập điểm thực tế!")
     else:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
@@ -332,13 +325,13 @@ total_b_wins = b_wins_input + sum(1 for r in st.session_state.round_detailed_log
 total_t_wins = tie_wins_input + sum(1 for r in st.session_state.round_detailed_log if r['outcome'] == "Tie")
 global_total_games = total_p_wins + total_b_wins + total_t_wins
 
-# BƯỚC 1: CHẠY LÕI TOÁN HỌC THUẦN TÚY TRƯỚC (ĐẢM BẢO KHÔNG BỊ TRỄ HOẶC SAI SỐ)
+# BƯỚC 1: CHẠY LÕI TOÁN HỌC THUẦN TÚY TRƯỚC
 res, p_pair, b_pair, mode, cards_left = calculate_baccarat_v18_pure_math(
     all_flat_history, shoe_decks=decks, manual_cards_used=manual_cards, 
     manual_games_played=manual_games, total_real_games=len(st.session_state.outcome_history)
 )
 
-# BƯỚC 2: CHẠY KHỐI TRỌNG TÀI LOGIC (SAU KHI ĐÃ CÓ KẾT QUẢ TOÁN HỌC ĐỂ ĐỐI CHIẾU ĐELTA)
+# BƯỚC 2: CHẠY KHỐI TRỌNG TÀI LOGIC
 invalid_messages = verify_shoe_integrity(
     st.session_state.round_detailed_log, shoe_decks=decks, 
     global_total_games=global_total_games, total_t_wins=total_t_wins, 
@@ -352,13 +345,12 @@ st.markdown("---")
 if is_strict_lock:
     st.error(f"### 🛑 HỆ THỐNG KHÓA: Thông số cấu hình gốc không đồng nhất.")
 else:
-    # CHẾ ĐỘ TỰ ĐỘNG PHONG TỎA NẾU QUÁ TẢI LỖI PHI LOGIC NGHIÊM TRỌNG
     if st.session_state.logic_fail_counter >= 3:
         st.markdown(
             f'<div class="table-switch-lock">'
             f'🚨 PHÁT HIỆN GIAN LẬN LIÊN TỤC: ĐỔI BÀN NGAY LẬP TỨC!<br>'
             f'<span style="font-size:12px; font-weight:normal;">Hệ thống phát hiện {st.session_state.logic_fail_counter} lỗi phi thực tế '
-            f'(Lặp chuỗi quân bài/Lệch tỷ lệ Delta toán học). Dữ liệu bàn chơi đã bị bẻ cong hoàn toàn, không thể phân tích!</span>'
+            f'(Lặp chuỗi quân bài/Lệch tỷ lệ Delta toán học). Bàn chơi bị bẻ cong hoàn toàn!</span>'
             f'</div>', 
             unsafe_allow_html=True
         )
@@ -372,7 +364,7 @@ else:
         if res['Player'] > res['Banker']: p_box_css = "hud-box neon-player-advantage"
         elif res['Banker'] > res['Player']: b_box_css = "hud-box neon-banker-advantage"
         
-        left_col, right_col = st.columns(2, gap="small")
+        left_col, right_col = st.columns(2)
         with left_col:
             st.markdown("##### 📊 XÁC SUẤT TOÁN HỌC")
             st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER</div><div class="hud-value" style="color:#00afb9;">{res["Player"]}%</div></div>', unsafe_allow_html=True)
@@ -383,7 +375,6 @@ else:
             st.markdown(f'<div class="hud-box"><div class="hud-title">🔵 P-PAIR</div><div class="hud-value" style="color:#00afb9; font-size:20px;">{p_pair}%</div></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="hud-box"><div class="hud-title">🔴 B-PAIR</div><div class="hud-value" style="color:#fed9ff; font-size:20px;">{b_pair}%</div></div>', unsafe_allow_html=True)
             
-            # Giao diện khối Trọng Tài logic 
             if st.session_state.logic_fail_counter == 0: 
                 st.markdown('<div class="validation-hud logic-pass">✔ KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
             elif st.session_state.logic_fail_counter == 1:
@@ -405,7 +396,7 @@ else:
     st.progress(penetration_rate / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
-util_col_1, util_col_2 = st.columns(2, gap="small")
+util_col_1, util_col_2 = st.columns(2)
 with util_col_1:
     if st.button("⏪ HOÀN TÁC (UNDO)", use_container_width=True, key="btn_undo_final"):
         if st.session_state.outcome_history:
@@ -414,7 +405,7 @@ with util_col_1:
                 st.session_state.round_detailed_log.pop()
             st.rerun()
 with util_col_2:
-    if st.button("🔄 LÀM TRỐNG KHAY (ĐỔI BÀN)", use_container_width=True, key="btn_reset_final"):
+    if st.button("🔄 LÀM TRỐNG (ĐỔI BÀN)", use_container_width=True, key="btn_reset_final"):
         st.session_state.round_detailed_log = []
         st.session_state.outcome_history = []
         st.session_state.form_counter = 0
