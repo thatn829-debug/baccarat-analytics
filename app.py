@@ -1,7 +1,7 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v23.0: ACCURATE SCORE CONVERSION & REAL TREND FIX
+# SYSTEM CORE v24.0: PERFECT RAW CARDS & DIRECT SCORE PARSER
 # =========================================================================
 def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
@@ -78,15 +78,19 @@ def calculate_baccarat_v18_ultimate(p_cards, b_cards, shoe_history, shoe_decks=8
         odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
         return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
 
-    # Bản vá: Nếu người dùng nhập thẳng 1 con số điểm (ví dụ nhập 8), tạm bỏ qua việc trừ bài thô để tránh âm khay
-    if not (len(p_cards) == 1 and p_cards[0] <= 9 and len(b_cards) == 1 and b_cards[0] <= 9):
+    # Kiểm tra xem có phải định dạng nhập điểm trực tiếp hay không
+    is_p_score_direct = (len(p_cards) == 1 and p_cards[0] < 10)
+    is_b_score_direct = (len(b_cards) == 1 and b_cards[0] < 10)
+
+    # Nếu KHÔNG PHẢI nhập điểm trực tiếp thì mới trừ các lá bài khỏi bộ bài sống
+    if not (is_p_score_direct or is_b_score_direct):
         for card in p_cards + b_cards:
             val = 0 if card >= 10 else card
             if score_deck[val] > 0: score_deck[val] -= 1
 
     player_wins, banker_wins, ties = 0.0, 0.0, 0.0
-    p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
-    b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
+    p_score = p_cards[0] if is_p_score_direct else (sum([0 if c >= 10 else c for c in p_cards]) % 10)
+    b_score = b_cards[0] if is_b_score_direct else (sum([0 if c >= 10 else c for c in b_cards]) % 10)
 
     if len(p_cards) == 2 and len(b_cards) == 2 and (p_score >= 8 or b_score >= 8):
         if p_score > b_score: player_wins = 1.0
@@ -187,7 +191,7 @@ def get_ai_recommendation(res, outcome_history):
             
     elif real_trend_side == "Banker":
         if b_val >= 46.0:
-            return "🔥 VÀO LỆNETH: 🔴 BANKER (Thuận xu hướng thực tế)", "rgba(254, 217, 255, 0.15)", "#fed9ff"
+            return "🔥 VÀO LỆNH: 🔴 BANKER (Thuận xu hướng thực tế)", "rgba(254, 217, 255, 0.15)", "#fed9ff"
         else:
             return "⚠️ KHUYẾN NGHỊ: BỎ QUA VÁN NÀY (Xu hướng thực tế lệch tính toán)", "rgba(235, 94, 40, 0.1)", "#eb5e28"
             
@@ -199,28 +203,35 @@ def get_ai_recommendation(res, outcome_history):
 
     return "⚠️ KHUYẾN NGHỊ: BỎ QUA VÁN NÀY (Chờ dòng bài ổn định)", "rgba(164, 176, 190, 0.1)", "#a4b0be"
 
-def clean_and_parse_input(raw_str):
+# BẢN VÁ: HÀM SÀNG LỌC ĐẦU VÀO ĐẢM BẢO CHẤP NHẬN CẢ ĐIỂM SỐ ĐƠN LẺ VÀ LÁ BÀI CHI TIẾT
+def clean_and_parse_input_v24(raw_str):
     if not raw_str: return []
-    normalized = raw_str.upper().replace(",", " ").replace(";", " ")
-    raw_tokens = normalized.split()
+    normalized = raw_str.upper().strip().replace(",", " ").replace(";", " ")
+    tokens = normalized.split()
     
     result_list = []
-    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10}
+    mapping = {'A': 1, 'J': 11, 'Q': 12, 'K': 13, '10': 10, '0': 10}
     
-    for token in raw_tokens:
-        token = token.strip()
+    # Trường hợp người dùng chỉ nhập đúng một con số điểm từ 0 đến 9
+    if len(tokens) == 1 and tokens[0].isdigit() and len(tokens[0]) == 1:
+        val = int(tokens[0])
+        return [val] # Trả về mảng chứa điểm trực tiếp luôn
+        
+    # Trường hợp nhập chuỗi quân bài bình thường (ví dụ: 5 K 2 hoặc J,7)
+    for token in tokens:
         if not token: continue
         if token in mapping:
             result_list.append(mapping[token])
         elif token.isdigit():
             val = int(token)
-            if 1 <= val <= 13: result_list.append(val)
+            if 1 <= val <= 13: 
+                result_list.append(val)
     return result_list
 
 # =========================================================================
 # GIAO DIỆN CHÍNH
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v23.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v24.0", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -344,9 +355,9 @@ st.markdown(f'<div class="central-game-counter">🔮 VÁN TIẾP THEO: VÁN TH�
 
 input_col_left, input_col_right = st.columns(2, gap="small")
 with input_col_left:
-    p_input = st.text_input("🔵 PLAYER (Bài/Điểm):", value="", placeholder="Ví dụ: 5,K,2 hoặc gõ điểm: 7", key=f"p_input_{st.session_state.form_iteration}")
+    p_input = st.text_input("🔵 PLAYER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: 5,K,2 hoặc chỉ nhập điểm: 7", key=f"p_input_{st.session_state.form_iteration}")
 with input_col_right:
-    b_input = st.text_input("🔴 BANKER (Bài/Điểm):", value="", placeholder="Ví dụ: J,7 hoặc gõ điểm: 5", key=f"b_input_{st.session_state.form_iteration}")
+    b_input = st.text_input("🔴 BANKER (Bài hoặc Điểm):", value="", placeholder="Ví dụ: J,7 hoặc chỉ nhập điểm: 5", key=f"b_input_{st.session_state.form_iteration}")
 
 st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
 
@@ -360,23 +371,18 @@ if not st.session_state.last_results:
     )
 
 if calc_triggered:
-    p_list = clean_and_parse_input(p_input)
-    b_list = clean_and_parse_input(b_input)
+    p_list = clean_and_parse_input_v24(p_input)
+    b_list = clean_and_parse_input_v24(b_input)
     
-    # THUẬT TOÁN CHUẨN HÓA ĐIỂM SỐ TUYỆT ĐỐI KHÔNG BỎ SÓT VÁN
+    # Kiểm tra nếu có dữ liệu đầu vào (kể cả chỉ gõ 1 chữ số điểm)
     if p_list or b_list:
-        # Nếu nhập thẳng 1 con số đơn lẻ từ 0-9 (nhập điểm trực tiếp)
-        if len(p_list) == 1 and p_list[0] <= 9:
-            p_score_eval = p_list[0]
-        else:
-            p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10
-
-        if len(b_list) == 1 and b_list[0] <= 9:
-            b_score_eval = b_list[0]
-        else:
-            b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10
+        is_p_direct = (len(p_list) == 1 and p_list[0] < 10)
+        is_b_direct = (len(b_list) == 1 and b_list[0] < 10)
+        
+        p_score_eval = p_list[0] if is_p_direct else (sum([0 if c >= 10 else c for c in p_list]) % 10)
+        b_score_eval = b_list[0] if is_b_direct else (sum([0 if c >= 10 else c for c in b_list]) % 10)
             
-        # Chốt kết quả thắng thua để thêm vào bảng xu hướng ngay lập tức
+        # Ghi nhận kết quả vào mảng lịch sử ván thực tế
         if p_score_eval > b_score_eval:
             st.session_state.outcome_history.append("Player")
         elif b_score_eval > p_score_eval:
@@ -384,8 +390,7 @@ if calc_triggered:
         else:
             st.session_state.outcome_history.append("Tie")
             
-        total_cards_this_round = len(p_list) + len(b_list)
-        st.session_state.cards_per_round_history.append(total_cards_this_round)
+        st.session_state.cards_per_round_history.append(len(p_list) + len(b_list))
         st.session_state.shoe_history.extend(p_list + b_list)
 
     core_output = calculate_baccarat_v18_ultimate(
@@ -416,7 +421,7 @@ else:
             
             st.markdown("### 🔮 KẾT QUẢ PHÂN TÍCH THỦY MỘC TRẬN")
             
-            # --- KHỐI AI QUÂN SƯ QUÉT KẾT QUẢ THỰC TẾ ---
+            # --- KHỐI AI QUÂN SƯ QUÉT XU HƯỚNG ---
             rec_text, rec_bg, rec_border = get_ai_recommendation(res, st.session_state.outcome_history)
             st.markdown(
                 f'<div class="ai-decision-box" style="background-color: {rec_bg}; border: 2px solid {rec_border}; color: {rec_border};">'
