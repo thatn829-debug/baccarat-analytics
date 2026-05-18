@@ -169,55 +169,41 @@ def get_ai_recommendation_v2(res, outcome_history, round_detailed_log):
     _, _, real_trend_side, streak_count = detect_baccarat_pattern(outcome_history)
     
     if len(outcome_history) < 2: 
-        return "⚠️ CHỜ DỮ LIỆU THỰC TẾ: Cần nhập tối thiểu 2 ván đầu tiên.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
+        return "⚠️ CHỜ DỮ LIỆU THỰC TẾ: Cần nhập tối thiểu 2 ván đầu tiên để kích hoạt bộ lọc cầu.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
     
-    # Ưu tiên bẫy nổ cửa Hòa khi xác suất khay toán học vượt ngưỡng
     if t_val > 13.5: 
         return f"🟢 CÂN NHẮC NỔ HÒA (TIE): Xác suất khay đạt {t_val}% (Ngưỡng bẫy toán học cao).", "rgba(46, 213, 115, 0.15)", "#2ed573"
     
-    # Lấy thông tin điểm thực tế của ván gần nhất để bổ trợ bộ lọc tinh
     last_round = round_detailed_log[-1] if round_detailed_log else None
     last_p_cards = last_round['p_cards'] if last_round else []
     last_b_cards = last_round['b_cards'] if last_round else []
     last_p_score = sum([0 if c >= 10 else c for c in last_p_cards]) % 10 if last_p_cards else 0
     last_b_score = sum([0 if c >= 10 else c for c in last_b_cards]) % 10 if last_b_cards else 0
 
-    # ---------------------------------------------------------------------
-    # KỊCH BẢN XUNG ĐỘT 1: SÀN ĐANG BỆT PLAYER NHƯNG TOÁN HỌC ỦNG HỘ BANKER
-    # ---------------------------------------------------------------------
     if real_trend_side == "Player":
         if p_val >= 44.5: 
             return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔵 PLAYER | Sàn đang bệt ({streak_count} ván) + Xác suất khay toán học ủng hộ giữ nền ({p_val}%).", "rgba(0, 175, 185, 0.2)", "#00afb9"
-        else: # Xung đột xuất hiện: Sàn bệt Player nhưng Toán học báo Banker cao hơn
+        else:
             if b_val >= 52.5 or (streak_count >= 5 and b_val >= 49.0):
                 return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔴 BANKER | Phát hiện lệch khay cực đại! Toán học báo {b_val}%, kho bài cạn lá hỗ trợ Player, cầu bệt ván thứ {streak_count} sắp gãy.", "rgba(254, 217, 255, 0.25)", "#fed9ff"
             else:
                 return f"🛡️ PHÒNG THỦ (SÀN ĐÈ TOÁN HỌC): TIẾP TỤC ĐU 🔵 PLAYER | Cầu bệt sàn ăn đứt tỷ lệ lệch nhẹ của toán học ({b_val}% chưa đủ lực bẻ).", "rgba(0, 175, 185, 0.15)", "#00afb9"
 
-    # ---------------------------------------------------------------------
-    # KỊCH BẢN XUNG ĐỘT 2: SÀN ĐANG BỆT BANKER NHƯNG TOÁN HỌC ỦNG HỘ PLAYER
-    # ---------------------------------------------------------------------
     elif real_trend_side == "Banker":
         if b_val >= 45.5: 
             return f"🔥 THUẬN CẦU XU HƯỚNG: ĐU THEO 🔴 BANKER | Sàn đang bệt ({streak_count} ván) + Xác suất toán học đạt chuẩn lợi thế cấu trúc ({b_val}%).", "rgba(254, 217, 255, 0.2)", "#fed9ff"
-        else: # Xung đột xuất hiện: Sàn bệt Banker nhưng Toán học báo Player cao hơn
+        else:
             if p_val >= 51.5 or (streak_count >= 5 and p_val >= 48.0):
                 return f"⚡ LỆNH BẺ CẦU TOÁN HỌC: VÀO 🔵 PLAYER | Khay bài hết sạch lá Tây/Lá bù cho Banker. Toán học đạt {p_val}%, ép gãy cầu bệt thực tế ván thứ {streak_count}!", "rgba(0, 175, 185, 0.25)", "#00afb9"
             else:
-                return f"🛡️ PHÒNG THỦ (SÀN ĐÈ TOÁN HỌC): TIẾP TỤC ĐU 🔴 BANKER | Xu hướng sàn lấn lướt toán học lệch nhẹ ({p_val}% chưa đủ lực gồng bẻ).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
+                return f"🛡️ PHÒNG THỦ (SÀN ĐÈ TOÁN HỌC): TIẾP TỤC ĐU 🔴 BANKER | Xuuyên hướng sàn lấn lướt toán học lệch nhẹ ({p_val}% chưa đủ lực gồng bẻ).", "rgba(254, 217, 255, 0.15)", "#fed9ff"
 
-    # ---------------------------------------------------------------------
-    # KỊCH BẢN 3: SÓNG PHẲNG (CẦU KHÔNG BỆT - RA LUÂN PHIÊN CHIẾT KHẤU ĐIỂM)
-    # ---------------------------------------------------------------------
     elif real_trend_side == "Sóng phẳng":
-        # Kết hợp điểm số thực tế: Nếu ván trước thắng sát nút 1 điểm chênh lệch (ví dụ 5-4, 7-6)
         score_diff = abs(last_p_score - last_b_score)
-        
         if p_val >= 46.5: 
             if score_diff <= 2 and last_b_score > last_p_score:
                 return f"🔵 VÀO LỆNH CAO: PLAYER | Toán học báo lợi thế ({p_val}%) + Phản đòn điểm số thực tế ván trước (Banker thắng suýt soát).", "rgba(0, 175, 185, 0.2)", "#00afb9"
             return f"🔵 VÀO LỆNH: PLAYER | Cấu trúc khay bài nghiêng mạnh về cửa Player ({p_val}%).", "rgba(0, 175, 185, 0.15)", "#00afb9"
-            
         elif b_val >= 47.5: 
             if score_diff <= 2 and last_p_score > last_b_score:
                 return f"🔴 VÀO LỆNH CAO: BANKER | Lợi thế toán học ({b_val}%) + Điểm thực tế ép đổi cầu (Player ván trước ăn may nút thấp).", "rgba(254, 217, 255, 0.2)", "#fed9ff"
@@ -252,7 +238,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v39.6 Smart AI", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v39.7 Precision", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -300,6 +286,7 @@ if 'outcome_history' not in st.session_state: st.session_state.outcome_history =
 if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
 if 'logic_fail_counter' not in st.session_state: st.session_state.logic_fail_counter = 0
 
+# KHỞI TẠO BỘ ĐỆM ĐÓNG BĂNG TRẠNG THÁI GỐC
 if 'frozen_base_games' not in st.session_state: st.session_state.frozen_base_games = None
 if 'session_added_games' not in st.session_state: st.session_state.session_added_games = 0
 
@@ -319,11 +306,14 @@ calculated_total_wins = p_wins_input + b_wins_input + tie_wins_input
 is_strict_lock = (manual_games > 0 and calculated_total_wins > 0 and manual_games != calculated_total_wins)
 
 live_base = manual_games if manual_games > 0 else calculated_total_wins
-if st.session_state.frozen_base_games is None:
+
+# SỬA LỖI ĐÓNG BĂNG GỐC: Khi người dùng sửa sidebar, hệ thống lưu mốc đó làm điểm bắt đầu nhập điểm
+if st.session_state.frozen_base_games is None or st.session_state.session_added_games == 0:
     st.session_state.frozen_base_games = live_base
 
 st.markdown("### 🃏 DỮ LIỆU VÁN ĐANG XÉT")
-next_game_number = st.session_state.frozen_base_games + st.session_state.session_added_games + 1
+# FIX SỐ VÁN KHÔNG NHẢY SỚM: Ván hiện tại bằng đúng số ván đóng băng từ cấu hình sidebar + số ván đã bấm tính toán thực tế (Không tự động + 1 bừa bãi)
+next_game_number = st.session_state.frozen_base_games + st.session_state.session_added_games
 
 st.markdown(f'<div class="central-game-counter">🔮 VÀO ĐIỂM CHO VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
@@ -374,7 +364,7 @@ if calc_triggered:
         st.session_state.outcome_history.append(current_outcome)
         st.session_state.form_counter += 1
         
-        st.session_state.frozen_base_games = live_base
+        # CHỈ KHI BẤM NÚT NÀY THÌ SỐ VÁN MỚI ĐƯỢC PHÉP NHẢY TIẾN LÊN
         st.session_state.session_added_games += 1  
         st.rerun()
 
@@ -417,7 +407,6 @@ else:
     else:
         st.markdown("### 🔮 KẾT QUẢ & KHUYẾN NGHỊ ĐỒNG BỘ")
         
-        # NẠP HÀM TƯ DUY NÂNG CẤP V2 GIẢI QUYẾT XUNG ĐỘT TOÁN HỌC VS THỰC TẾ
         rec_text, rec_bg, rec_border = get_ai_recommendation_v2(res, st.session_state.outcome_history, st.session_state.round_detailed_log)
         st.markdown(f'<div class="ai-decision-box" style="background-color: {rec_bg}; border: 2px solid {rec_border}; color: {rec_border};">{rec_text}</div>', unsafe_allow_html=True)
         
