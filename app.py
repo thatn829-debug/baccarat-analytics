@@ -4,7 +4,7 @@ import numpy as np
 # =========================================================================
 # MODULE 1: ĐỘNG CƠ TỔ HỢP LÁ BÀI & ĐO LƯỜNG ĐỘ BIẾN THIÊN LƯỢNG TỬ
 # =========================================================================
-def calculate_v47_engine(all_rounds_log, shoe_decks, side_p_wins, side_b_wins):
+def calculate_v47_1_engine(all_rounds_log, shoe_decks, side_p_wins, side_b_wins, side_t_wins):
     """
     Lấy quân bài làm gốc, phóng đại biên độ chênh lệch, 
     đồng thời tính toán chính xác độ biến thiên (Volatility) thực thời của bàn chơi.
@@ -46,12 +46,10 @@ def calculate_v47_engine(all_rounds_log, shoe_decks, side_p_wins, side_b_wins):
     # Tính độ biến thiên toán học (Volatility Index) dựa trên độ lệch chuẩn của điểm số
     volatility_index = 0.0
     if len(margins_list) >= 2:
-        # Độ lệch chuẩn của biên độ điểm thắng qua các ván
         std_deviation = float(np.std(margins_list))
-        # Quy đổi ra tỷ lệ phần trăm biến thiên (Max khống chế khoảng 50% để hiển thị trực quan)
         volatility_index = min(50.0, (std_deviation / 4.5) * 100.0)
     elif len(margins_list) == 1:
-        volatility_index = 12.5 # Mức nền mặc định cho ván đầu tiên
+        volatility_index = 12.5 
 
     # Khung toán học gốc của khay bài
     math_bias = (p_low * 0.12) - (p_high * 0.09) + (p_0 * 0.04)
@@ -89,11 +87,10 @@ def calculate_v47_engine(all_rounds_log, shoe_decks, side_p_wins, side_b_wins):
 # =========================================================================
 # AI STRATEGIC FILTER WITH VOLATILITY GUARDRESIST
 # =========================================================================
-def get_ai_recommendation_v47(p_val, b_val, t_val, log, vol_val):
+def get_ai_recommendation_v47_1(p_val, b_val, t_val, log, vol_val):
     if not log:
         return "📊 Vui lòng nhập quân bài thực tế để kích hoạt máy đo biến thiên khay bài.", "rgba(164, 176, 190, 0.1)", "#a4b0be"
     
-    # CHẶN LỆNH NẾU ĐỘ BIẾN THIÊN QUÁ CAO (SÒNG ĐANG QUÉT HOẶC XÁO TRỘN BÀI DỊ)
     if vol_val > 30.0:
          return f"🚨 ĐỘ BIẾN THIÊN CỰC ĐẠI ({vol_val:.1f}%): Bàn chơi đang rơi vào vùng nhiễu động dị biệt (Quét tài khoản). TUYỆT ĐỐI DỪNG LỆNH!", "rgba(235, 94, 40, 0.2)", "#eb5e28"
          
@@ -114,7 +111,7 @@ def get_ai_recommendation_v47(p_val, b_val, t_val, log, vol_val):
         
     return "📊 THẾ BÀI TRUNG TÍNH: Biên độ giằng co chưa đạt điểm bứt phá. Bỏ ván!", "rgba(164, 176, 190, 0.1)", "#a4b0be"
 
-def parse_baccarat_input_v47(raw_str):
+def parse_baccarat_input_v47_1(raw_str):
     if not raw_str: return []
     normalized = raw_str.upper().strip().replace(",", " ").replace(";", " ")
     temp_tokens = []
@@ -141,7 +138,7 @@ def parse_baccarat_input_v47(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v47.0 Real-Time Variance", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v47.1 Hotfix", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -194,12 +191,13 @@ st.sidebar.header("⚙️ THÔNG SỐ KHAY BÀI THẬT")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
-st.sidebar.header("### 📊 DỮ LIỆU PHỤ (TRỌNG SỐ SỐ VÁN)")
+st.sidebar.header("### 📊 DỮ LIỆU PHỤ (CẤU HÌNH SỐ VÁN)")
 p_wins_input = st.sidebar.number_input("🔵 Số ván PLAYER thắng bổ sung:", min_value=0, max_value=100, value=0)
 b_wins_input = st.sidebar.number_input("🔴 Số ván BANKER thắng bổ sung:", min_value=0, max_value=100, value=0)
+tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) bổ sung:", min_value=0, max_value=100, value=0) # ĐÃ SỬA LỖI TẠI ĐÂY
 
 total_log_games = len(st.session_state.round_detailed_log)
-global_total_games = p_wins_input + b_wins_input + total_log_games
+global_total_games = p_wins_input + b_wins_input + tie_wins_input + total_log_games
 
 st.markdown("### 🃏 ĐỘNG CƠ ĐO ĐỘ BIẾN THIÊN VÁN ĐẤU")
 next_game_number = global_total_games + 1
@@ -223,8 +221,8 @@ if calc_triggered:
     if not p_clean and not b_clean:
         st.warning("⚠️ Vui lòng cung cấp quân bài thực tế để phân tích biến thiên!")
     else:
-        p_list = parse_baccarat_input_v47(p_clean)
-        b_list = parse_baccarat_input_v47(b_clean)
+        p_list = parse_baccarat_input_v47_1(p_clean)
+        b_list = parse_baccarat_input_v47_1(b_clean)
         
         p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10 if p_list else 0
         b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10 if b_list else 0
@@ -245,31 +243,30 @@ if calc_triggered:
 
 st.markdown("---")
 
-# KIỂM TRA ĐIỀU KIỆN KHÓA HIỂN THỊ
 if global_total_games == 0 and len(st.session_state.round_detailed_log) == 0:
     st.markdown(
         '<div class="logic-lock">'
         '🔒 <b>MÁY ĐO BIẾN THIÊN ĐANG KHÓA (CHỜ LÁ BÀI LẬT)</b><br>'
         '<span style="font-size:13.5px; font-weight:normal; opacity:0.85;">'
-        'Hệ thống v47.0 từ chối chạy dữ liệu ảo. Hãy nhập kết quả quân bài của ván đấu thực tế vừa diễn ra '
+        'Hệ thống v47.1 từ chối chạy dữ liệu ảo. Hãy nhập kết quả quân bài của ván đấu thực tế vừa diễn ra '
         'để kích hoạt biểu đồ và thanh đo độ ổn định khay bài.</span>'
         '</div>', 
         unsafe_allow_html=True
     )
 else:
-    # Chạy thuật toán lõi tích hợp biến thiên lượng tử
-    final_p, final_b, final_t, cards_left, volatility = calculate_v47_engine(
+    # Chạy thuật toán lõi tích hợp biến thiên lượng tử với ô nhập Hòa bổ sung
+    final_p, final_b, final_t, cards_left, volatility = calculate_v47_1_engine(
         st.session_state.round_detailed_log, 
         shoe_decks=decks, 
         side_p_wins=p_wins_input, 
-        side_b_wins=b_wins_input
+        side_b_wins=b_wins_input,
+        side_t_wins=tie_wins_input
     )
     
     final_p = round(final_p, 2)
     final_b = round(final_b, 2)
     final_t = round(100.0 - final_p - final_b, 2)
 
-    # Đánh giá cấp độ biến thiên ván bài để định dạng HUD
     vol_css_class = "vol-low"
     vol_status_text = "ỔN ĐỊNH (AN TOÀN)"
     if volatility > 30.0:
@@ -281,11 +278,9 @@ else:
 
     st.markdown("### 🔮 XÁC SUẤT KHUẾCH ĐẠI BIÊN ĐỘ THỰC TẾ")
     
-    # Xuất khuyến nghị hành động dứt khoát có màng bọc rủi ro biến thiên
-    rec_text, rec_bg, rec_border = get_ai_recommendation_v47(final_p, final_b, final_t, st.session_state.round_detailed_log, volatility)
+    rec_text, rec_bg, rec_border = get_ai_recommendation_v47_1(final_p, final_b, final_t, st.session_state.round_detailed_log, volatility)
     st.markdown(f'<div class="ai-decision-box" style="background-color: {rec_bg}; border: 2px solid {rec_border}; color: {rec_border};">{rec_text}</div>', unsafe_allow_html=True)
     
-    # Hộp màu ưu thế Neon
     p_box_css, b_box_css = "hud-box", "hud-box"
     if final_p > final_b + 4.0: p_box_css = "hud-box neon-player-advantage"
     elif final_b > final_p + 4.0: b_box_css = "hud-box neon-banker-advantage"
@@ -300,13 +295,11 @@ else:
         
     st.write("")
     
-    # Nhật ký thế trận và hiển thị độ biến thiên từng ván đấu cụ thể
     if st.session_state.round_detailed_log:
         st.markdown('<div class="score-log-hud"><b>📊 THẾ TRẬN CHI TIẾT & CHỈ SỐ BIẾN ĐỘNG TỪNG VÁN:</b><br>', unsafe_allow_html=True)
         cumulative_margins = []
         for idx, r in enumerate(st.session_state.round_detailed_log):
             cumulative_margins.append(abs(r['p_score'] - r['b_score']))
-            # Tính toán biến thiên cục bộ tích lũy đến ván hiện tại
             v_local = (float(np.std(cumulative_margins)) / 4.5) * 100.0 if len(cumulative_margins) >= 2 else 12.5
             st.markdown(f"• Ván {idx+1}: [P] {r['p_score']}đ vs {r['b_score']}đ [B] ➡️ Cách biệt: **{abs(r['p_score'] - r['b_score'])}đ** ➡️ Thắng: **{r['outcome'].upper()}** (Độ biến thiên: `{v_local:.1f}%`)")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -314,7 +307,7 @@ else:
     st.markdown("---")
     total_shoe_cards = decks * 52
     penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-    st.caption(f"**Engine:** `REAL-TIME VARIANCE ADAPTIVE v47.0` | **Trạng thái biến thiên:** `{vol_status_text}` | **Bài còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
+    st.caption(f"**Engine:** `REAL-TIME VARIANCE ADAPTIVE v47.1` | **Trạng thái biến thiên:** `{vol_status_text}` | **Bài còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
     st.progress(penetration_rate / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
