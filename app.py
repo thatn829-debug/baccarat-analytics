@@ -1,35 +1,75 @@
 import streamlit as st
 
 # =========================================================================
-# SYSTEM CORE v37.5 (COMPLETELY SEPARATED LOGIC FILTER)
+# SYSTEM CORE v37.6 (ISOLATED RULES ENGINE: QUANTITY, FLOW & OUTCOME VALIDATION)
 # =========================================================================
-def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8, 
+def calculate_baccarat_v18_ultimate(shoe_history, round_detailed_log, shoe_decks=8, 
                                     manual_cards_used=0, manual_games_played=0,
                                     p_wins=0, b_wins=0, tie_wins=0, total_real_games=0):
     total_initial_cards = shoe_decks * 52
     
-    # 1. BỘ XÉT LOGIC ĐỘC LẬP (Không can thiệp thuật toán xác suất)
+    # ---------------------------------------------------------------------
+    # 1. BỘ XẾT LOGIC ĐỘC LẬP VÀ TOÀN DIỆN (Không ảnh hưởng thuật toán xác suất)
+    # ---------------------------------------------------------------------
+    invalid_logic_messages = []
+    
+    # Quy luật 1: Kiểm tra số lượng giới hạn của từng quân bài (A-K)
     logic_deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-    for card_val in shoe_history:
-        if card_val in logic_deck_structure:
-            logic_deck_structure[card_val] -= 1.0
-            
-    invalid_cards_list = []
+    for round_data in round_detailed_log:
+        for card_val in (round_data['p_cards'] + round_data['b_cards']):
+            if card_val in logic_deck_structure:
+                logic_deck_structure[card_val] -= 1.0
+                
     card_labels = {1: "A", 10: "10", 11: "J", 12: "Q", 13: "K"}
     for card_num in range(1, 14):
         count = logic_deck_structure[card_num]
         if count < 0:
             label = card_labels.get(card_num, f"Số {card_num}")
-            invalid_cards_list.append(f"{label} (Âm {abs(int(count))} lá)")
-            
-    is_shoe_logical = (len(invalid_cards_list) == 0)
+            invalid_logic_messages.append(f"❌ {label} vượt giới hạn (Âm {abs(int(count))} lá trong kho bài)")
 
-    # 2. THUẬT TOÁN TOÁN HỌC XÁC SUẤT (Chạy độc lập trên cấu trúc mô phỏng phân rã)
+    # Quy luật 2: Kiểm tra tính hợp lệ giữa các quân bài lật ra và kết quả ghi nhận
+    for idx, round_data in enumerate(round_detailed_log):
+        p_cards = round_data['p_cards']
+        b_cards = round_data['b_cards']
+        recorded_outcome = round_data['outcome']
+        
+        # Chỉ kiểm tra quy luật ván nếu người dùng thực sự nhập chuỗi bài cụ thể
+        if len(p_cards) > 0 or len(b_cards) > 0:
+            total_cards_this_round = len(p_cards) + len(b_cards)
+            
+            # Kiểm tra số lượng lá bài tối đa/tối thiểu của một ván Baccarat chuẩn (4 đến 6 lá)
+            if total_cards_this_round < 4 or total_cards_this_round > 6:
+                invalid_logic_messages.append(f"⚠️ Ván {idx+1}: Số lượng bài không hợp lệ ({total_cards_this_round} lá). Luật sòng chỉ cho phép 4-6 lá/ván.")
+            
+            # Tính toán điểm thực tế từ các lá bài đã nhập
+            p_score = sum([0 if c >= 10 else c for c in p_cards]) % 10
+            b_score = sum([0 if c >= 10 else c for c in b_cards]) % 10
+            
+            # Tìm kết quả đúng dựa trên điểm số thực tế của bài
+            actual_calculated_outcome = "Tie"
+            if p_score > b_score: actual_calculated_outcome = "Player"
+            elif b_score > p_score: actual_calculated_outcome = "Banker"
+            
+            # Đối chiếu kết quả thực tế từ lá bài với kết quả ghi nhận trên hệ thống xu hướng
+            if recorded_outcome != actual_calculated_outcome:
+                invalid_logic_messages.append(
+                    f"⚠️ Ván {idx+1}: Sai quy luật kết quả! Bài lật ra là P:{p_score} điểm - B:{b_score} điểm (Cửa {actual_calculated_outcome.upper()} thắng) nhưng dữ liệu ghi nhận lại là {recorded_outcome.upper()}."
+                )
+
+    is_shoe_logical = (len(invalid_logic_messages) == 0)
+
+    # ---------------------------------------------------------------------
+    # 2. THUẬT TOÁN TOÁN HỌC XÁC SUẤT TRUYỀN THỐNG (Vận hành độc lập)
+    # ---------------------------------------------------------------------
     deck_structure = {i: float(4 * shoe_decks) for i in range(1, 14)}
-    detailed_cards_count = len(shoe_history)
+    all_flat_cards = []
+    for r in round_detailed_log:
+        all_flat_cards.extend(r['p_cards'] + r['b_cards'])
+        
+    detailed_cards_count = len(all_flat_cards)
     
     if detailed_cards_count > 0:
-        for card_val in shoe_history:
+        for card_val in all_flat_cards:
             if card_val in deck_structure:
                 deck_structure[card_val] = max(0.1, deck_structure[card_val] - 1)
         cards_left = total_initial_cards - detailed_cards_count
@@ -54,9 +94,8 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
     N_total = float(sum(score_deck))
     if N_total <= 6:
         odds_res = {"Player": 44.62, "Banker": 45.86, "Tie": 9.52}
-        return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_cards_list
+        return odds_res, deck_structure, 0.0, 0.0, mode, cards_left, is_shoe_logical, invalid_logic_messages
 
-    # Ma trận đếm bài Griffin Quốc tế tính toán tỷ lệ lợi thế
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -77,7 +116,7 @@ def calculate_baccarat_v18_ultimate(shoe_history, shoe_decks=8,
     b_pair_odds = round(p_pair_odds * 1.015, 2)
 
     odds_res = {"Player": round(p_prob, 2), "Banker": round(b_prob, 2), "Tie": round(t_prob, 2)}
-    return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_cards_list
+    return odds_res, deck_structure, p_pair_odds, b_pair_odds, mode, cards_left, is_shoe_logical, invalid_logic_messages
 
 def detect_baccarat_pattern(outcome_list):
     clean_list = [x for x in outcome_list if x in ["Player", "Banker"]]
@@ -155,7 +194,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # V37.0 ORIGINAL INTERFACE SPECIFICATION
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v37.5 Isolated Logic", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v37.6 Advanced Logic", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -170,9 +209,9 @@ st.markdown(
     .hud-value { font-size: 24px; font-weight: 800; font-family: monospace; margin-top: 2px; }
     .neon-player-advantage { background-color: #005573 !important; border: 2px solid #00afb9 !important; }
     .neon-banker-advantage { background-color: #1e2b38 !important; border: 2px solid #57606f !important; }
-    .validation-hud { padding: 10px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; font-family: monospace; margin-bottom: 10px; line-height: 1.3;}
-    .logic-pass { background-color: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; color: #2ed573; }
-    .logic-fail { background-color: rgba(235, 94, 40, 0.25); border: 2px solid #eb5e28; color: #ff6b6b; }
+    .validation-hud { padding: 10px; border-radius: 6px; text-align: left; font-weight: 700; font-size: 11px; font-family: monospace; margin-bottom: 10px; line-height: 1.4; max-height: 180px; overflow-y: auto;}
+    .logic-pass { background-color: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; color: #2ed573; text-align: center;}
+    .logic-fail { background-color: rgba(235, 94, 40, 0.2); border: 2px solid #eb5e28; color: #ff7675; }
     .trend-hud { padding: 12px; border-radius: 8px; background-color: rgba(5, 15, 20, 0.9); border: 1px dashed #00afb9; margin-top: 5px; }
     .trend-title { font-size: 11px; font-weight: bold; color: #00afb9; text-transform: uppercase; margin-bottom: 4px;}
     .trend-string { font-size: 16px; font-family: monospace; letter-spacing: 4px; font-weight: 800; }
@@ -185,9 +224,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-if 'shoe_history' not in st.session_state: st.session_state.shoe_history = []
+# Cấu trúc lưu trữ lịch sử phiên nâng cao để lưu chi tiết các lá bài theo ván phục vụ kiểm tra quy luật
+if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
 if 'outcome_history' not in st.session_state: st.session_state.outcome_history = []
-if 'cards_per_round_history' not in st.session_state: st.session_state.cards_per_round_history = []
 if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
 
 st.sidebar.header("⚙️ CẤU HÌNH KHAY BÀI")
@@ -228,34 +267,38 @@ if calc_triggered:
         p_list = parse_baccarat_input_v37(p_clean)
         b_list = parse_baccarat_input_v37(b_clean)
         
-        actual_round_cards = []
-        if p_list: actual_round_cards.extend(p_list)
-        if b_list: actual_round_cards.extend(b_list)
-        
-        # Nhập điểm số đơn lẻ hay chuỗi lá bài thì thuật toán vẫn quy ra điểm ván đấu để chạy xu hướng
+        # Đọc điểm số độc lập để phân loại kết quả xu hướng
         p_score_eval = sum([0 if c >= 10 else c for c in p_list]) % 10 if p_list else 0
         b_score_eval = sum([0 if c >= 10 else c for c in b_list]) % 10 if b_list else 0
         
-        # Nếu chỉ nhập một chữ số đơn lẻ (ví dụ: 7 hoặc 5)
+        # Nếu nhập điểm số đơn lẻ (ví dụ: 7 hoặc 5)
         if len(p_clean) == 1 and p_clean.isdigit() and len(b_clean) == 1 and b_clean.isdigit():
             p_score_eval = int(p_clean)
             b_score_eval = int(b_clean)
             
-        st.session_state.cards_per_round_history.append(len(actual_round_cards))
-        st.session_state.shoe_history.extend(actual_round_cards)
-            
-        if p_score_eval > b_score_eval:
-            st.session_state.outcome_history.append("Player")
-        elif b_score_eval > p_score_eval:
-            st.session_state.outcome_history.append("Banker")
-        else:
-            st.session_state.outcome_history.append("Tie")
+        # Xác định kết quả ghi nhận lên bảng xu hướng
+        current_outcome = "Tie"
+        if p_score_eval > b_score_eval: current_outcome = "Player"
+        elif b_score_eval > p_score_eval: current_outcome = "Banker"
+        
+        # Lưu trữ cấu trúc log chi tiết để Trọng tài Logic làm việc riêng biệt
+        st.session_state.round_detailed_log.append({
+            'p_cards': p_list,
+            'b_cards': b_list,
+            'outcome': current_outcome
+        })
+        st.session_state.outcome_history.append(current_outcome)
             
         st.session_state.form_counter += 1
         st.rerun()
 
-res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_cards = calculate_baccarat_v18_ultimate(
-    st.session_state.shoe_history, shoe_decks=decks,
+# Trích xuất mảng lịch sử bài phẳng từ bộ log chi tiết để phục vụ thuật toán xác suất độc lập
+all_flat_history = []
+for r in st.session_state.round_detailed_log:
+    all_flat_history.extend(r['p_cards'] + r['b_cards'])
+
+res, remaining_deck, p_pair, b_pair, mode, cards_left, is_shoe_logical, invalid_messages = calculate_baccarat_v18_ultimate(
+    all_flat_history, st.session_state.round_detailed_log, shoe_decks=decks,
     manual_cards_used=manual_cards, manual_games_played=manual_games,
     p_wins=p_wins_input, b_wins=b_wins_input, tie_wins=tie_wins_input,
     total_real_games=len(st.session_state.outcome_history)
@@ -286,12 +329,12 @@ else:
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔵 P-PAIR</div><div class="hud-value" style="color:#00afb9; font-size:20px;">{p_pair}%</div></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="hud-box"><div class="hud-title">🔴 B-PAIR</div><div class="hud-value" style="color:#fed9ff; font-size:20px;">{b_pair}%</div></div>', unsafe_allow_html=True)
         
-        # BỘ XÉT LOGIC ĐỘC LẬP BÁO CÁO TẠI ĐÂY (Không bóp nghẹt mảng tính toán xác suất)
+        # BÁO CÁO CỦA TRỌNG TÀI LOGIC: Liệt kê toàn bộ lỗi dòng chảy bài và lỗi kết quả không hợp lệ
         if is_shoe_logical: 
             st.markdown('<div class="validation-hud logic-pass">✔ KHAY BÀI HỢP LỆ</div>', unsafe_allow_html=True)
         else: 
-            error_msg = "⚠️ ÂM KHAY BÀI:<br>" + "<br>".join(invalid_cards)
-            st.markdown(f'<div class="validation-hud logic-fail">{error_msg}</div>', unsafe_allow_html=True)
+            error_html = "⚠️ PHÁT HIỆN LỖI LOGIC BÀI:<br>" + "<br>".join(invalid_messages)
+            st.markdown(f'<div class="validation-hud logic-fail">{error_html}</div>', unsafe_allow_html=True)
         
     if st.session_state.outcome_history:
         trend_letters = [f'<span class="char-p">P</span>' if x == "Player" else (f'<span class="char-b">B</span>' if x == "Banker" else '<span class="char-t">T</span>') for x in st.session_state.outcome_history]
@@ -310,15 +353,12 @@ with util_col_1:
     if st.button("⏪ HOÀN TÁC (UNDO)", use_container_width=True, key="btn_undo_final"):
         if st.session_state.outcome_history:
             st.session_state.outcome_history.pop()
-            if st.session_state.cards_per_round_history:
-                last_cnt = st.session_state.cards_per_round_history.pop()
-                if last_cnt > 0: 
-                    st.session_state.shoe_history = st.session_state.shoe_history[:-last_cnt]
+            if st.session_state.round_detailed_log:
+                st.session_state.round_detailed_log.pop()
             st.rerun()
 with util_col_2:
     if st.button("🔄 LÀM TRỐNG KHAY", use_container_width=True, key="btn_reset_final"):
-        st.session_state.shoe_history = []
+        st.session_state.round_detailed_log = []
         st.session_state.outcome_history = []
-        st.session_state.cards_per_round_history = []
         st.session_state.form_counter = 0
         st.rerun()
