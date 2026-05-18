@@ -139,9 +139,9 @@ def get_current_shoe_state(all_cards_stream, shoe_decks, manual_cards_used, manu
 # MODULE 2: TÁCH ĐỘC LẬP TÍNH XÁC SUẤT (PLAYER - BANKER - TIE)
 # =========================================================================
 
-def calculate_player_probability(score_deck, N_total):
+def calculate_player_probability(score_deck, N_total, global_games):
     """Module độc lập tính toán xác suất Player thắng dựa trên mật độ bài"""
-    if N_total <= 6: return 44.62
+    if global_games == 0 or N_total <= 6: return 44.62
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -152,9 +152,9 @@ def calculate_player_probability(score_deck, N_total):
     return 44.62 + (shift_ratio * 13.5)
 
 
-def calculate_banker_probability(score_deck, N_total):
+def calculate_banker_probability(score_deck, N_total, global_games):
     """Module độc lập tính toán xác suất Banker thắng dựa trên mật độ bài"""
-    if N_total <= 6: return 45.86
+    if global_games == 0 or N_total <= 6: return 45.86
     card_counting_effect = (
         (-0.85 * score_deck[1]) + (-1.05 * score_deck[2]) + (-1.32 * score_deck[3]) +
         (-1.75 * score_deck[4]) + (0.48 * score_deck[5]) + (1.25 * score_deck[6]) +
@@ -167,12 +167,11 @@ def calculate_banker_probability(score_deck, N_total):
 
 def calculate_tie_probability(score_deck, N_total, t_wins, global_games):
     """Module độc lập tính toán xác suất Hòa thích ứng sâu với thực tế sảnh"""
-    if N_total <= 6: return 9.52
+    if global_games == 0 or N_total <= 6: return 9.52
     base_t_prob = 9.52 + (score_deck[0] / N_total * 5.0)
     
     if global_games > 5:
         actual_tie_weight = t_wins / global_games
-        # Trộn công thức toán tổ hợp ẩn và tần suất nổ Hòa thực tế tỷ lệ 60-40
         return (base_t_prob * 0.6) + (actual_tie_weight * 100.0 * 0.4)
     return base_t_prob
 
@@ -266,7 +265,7 @@ def parse_baccarat_input_v37(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Engine v40.0 Pure Logic", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Engine v40.1 Pure Balance", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -402,9 +401,9 @@ score_deck, N_total, cards_left = get_current_shoe_state(
     t_wins=total_t_wins, p_wins=total_p_wins, b_wins=total_b_wins
 )
 
-# BƯỚC GỌI CÁC MODULE TOÁN HỌC ĐỘC LẬP THEO YÊU CẦU
-raw_p = calculate_player_probability(score_deck, N_total)
-raw_b = calculate_banker_probability(score_deck, N_total)
+# BƯỚC GỌI CÁC MODULE TOÁN HỌC ĐỘC LẬP
+raw_p = calculate_player_probability(score_deck, N_total, global_total_games)
+raw_b = calculate_banker_probability(score_deck, N_total, global_total_games)
 raw_t = calculate_tie_probability(score_deck, N_total, total_t_wins, global_total_games)
 
 # Đồng bộ hóa tổng biên để phân phối xác suất luôn chuẩn 100%
@@ -445,7 +444,6 @@ else:
         if final_p > final_b: p_box_css = "hud-box neon-player-advantage"
         elif final_b > final_p: b_box_css = "hud-box neon-banker-advantage"
         
-        # Thiết kế lại giao diện nằm ngang sang xịn mịn, lược bỏ hoàn toàn Pair Odds
         col_p, col_b, col_t = st.columns(3, gap="small")
         with col_p:
             st.markdown(f'<div class="{p_box_css}"><div class="hud-title">🔵 PLAYER</div><div class="hud-value" style="color:#00afb9;">{final_p}%</div></div>', unsafe_allow_html=True)
@@ -472,7 +470,7 @@ else:
     st.markdown("---")
     total_shoe_cards = decks * 52
     penetration_rate = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
-    st.caption(f"**Chế độ:** `MODULE LÕI PHÂN RÃ TOÁN HỌC ĐỘC LẬP (V40.0)` | **Còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
+    st.caption(f"**Chế độ:** `ANTI-BIAS ENGINE (V40.1)` | **Còn lại:** {int(cards_left)}/{total_shoe_cards} lá")
     st.progress(penetration_rate / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
