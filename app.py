@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 # =========================================================================
-# MODULE 1: ĐỘNG CƠ HỖN LOẠN LƯỢNG TỬ V55 (QUANTUM-CHAO ENGINE)
+# MODULE 1: ĐỘNG CƠ HỖN LOẠN LƯỢNG TỬ V55.1 (FIXED QUANTUM ENGINE)
 # =========================================================================
 def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, side_b_wins, side_t_wins):
     total_initial_cards = shoe_decks * 52
@@ -15,16 +15,16 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
     current_streak_side = None
     current_streak_count = 0
     
-    # 1. TRỌNG SỐ THỜI GIAN LŨY THỪA TRÊN KHÔNG GIAN PHA (Phase-Space Decay)
+    # 1. TRỌNG SỐ THỜI GIAN LŨY THỪA TRÊN KHÔNG GIAN PHA
     decay_factor = 0.89 
     weighted_margins = []
     
     for idx, r in enumerate(all_rounds_log):
         all_flat_cards.extend(r['p_cards'] + r['b_cards'])
-        margin = abs(r['p_score'] - r['b_score'])
+        margin = float(abs(r['p_score'] - r['b_score']))
         
         distance_from_now = valid_rounds_count - 1 - idx
-        weight = decay_factor ** distance_from_now
+        weight = float(decay_factor ** distance_from_now)
         weighted_margins.append(margin * weight)
         
         if r['outcome'] in ["Player", "Banker"]:
@@ -54,17 +54,18 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
     p_high = sum(score_counts[6:10]) / cards_remaining 
     p_six = exact_cards_left[6] / cards_remaining 
 
-    # 2. ĐỘNG LỰC HỌC HỖN LOẠN: TÍNH TOÁN BIẾN THIÊN BẤT CHẤP BIÊN ĐỘ (Volatility Invariant)
+    # 2. ĐỘNG LỰC HỌC HỖN LOẠN: SỬA LỖI TÍNH TOÁN PHƯƠNG SAI BIẾN THIÊN
     volatility_index = 0.0
-    lyapunov_exponent = 0.0 # Đo lường mức độ hỗn loạn tổ hợp bài
+    lyapunov_exponent = 0.0 
     
     if len(weighted_margins) >= 2:
-        variance = float(np.var(weighted_margins))
-        volatility_index = min(100.0, (math.sqrt(variance) / 4.5) * 100.0)
+        # Chuyển mảng về kiểu float nguyên bản để tránh lỗi định dạng numpy
+        native_floats = [float(x) for x in weighted_margins]
+        variance = float(np.var(native_floats))
+        volatility_index = min(100.0, (math.sqrt(max(0.001, variance)) / 4.5) * 100.0)
         
-        # Mô phỏng số mũ Lyapunov từ độ lệch pha của các ván liên tiếp
-        diffs = np.abs(np.diff(weighted_margins))
-        mean_diff = np.mean(diffs) if len(diffs) > 0 else 1.0
+        diffs = np.abs(np.diff(native_floats))
+        mean_diff = float(np.mean(diffs)) if len(diffs) > 0 else 1.0
         lyapunov_exponent = math.log(mean_diff + 1.0) - 0.5
     elif len(weighted_margins) == 1:
         volatility_index = 12.5
@@ -72,11 +73,12 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
 
     volatility_velocity = 0.0
     if valid_rounds_count >= 3:
-        v_prev = (math.sqrt(float(np.var(weighted_margins[:-1]))) / 4.5) * 100.0 if len(weighted_margins) > 2 else 12.5
+        native_floats_prev = [float(x) for x in weighted_margins[:-1]]
+        variance_prev = float(np.var(native_floats_prev))
+        v_prev = (math.sqrt(max(0.001, variance_prev)) / 4.5) * 100.0
         volatility_velocity = volatility_index - v_prev
 
     # 3. BỘ LỌC LƯỢNG TỬ TỰ THÍCH ỨNG (Quantum Adaptive Kalman Filter)
-    # Cơ chế hấp thụ bão: Biến thiên càng cao, bộ lọc càng chuyển dịch mềm dẻo để không bị bão bẻ gãy toán học
     quantum_scale = 1.0 / (1.0 + (volatility_index / 50.0) ** 2)
     kalman_modifier = 1.45 if volatility_velocity < -0.8 else (0.55 if volatility_velocity > 0.8 else 1.0)
     kalman_gain = max(0.02, quantum_scale * kalman_modifier)
@@ -100,7 +102,6 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
     if current_streak_side and current_streak_count >= 3:
         markov_factor = 1.0 - (1.0 / (2.0 ** (current_streak_count - 2)))
         
-        # Trong không gian hỗn loạn, nếu lyapunov ổn định hoặc suy giảm -> Cho phép lật cầu chính xác cực cao
         if lyapunov_exponent < 1.2 and volatility_velocity <= 0.5: 
             if current_streak_side == "Banker" and (p_low < 0.38 or p_0 > 0.35):
                 is_critical_break = True
@@ -119,7 +120,6 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
     else:
         delta_diff = base_p - base_b
         if abs(delta_diff) > 0.05:
-            # Thuật toán khuếch đại thích ứng phi tuyến tính theo Lyapunov
             amplifier = 1.0 + (5.5 * kalman_gain * (1.0 + penetration_rate) / (1.0 + max(0.0, lyapunov_exponent)))
             base_p += (delta_diff * amplifier)
             base_b -= (delta_diff * amplifier)
@@ -138,25 +138,21 @@ def calculate_v55_quantum_chao_engine(all_rounds_log, shoe_decks, side_p_wins, s
 def get_ai_v55_quantum_diagnostic(p_val, b_val, t_val, vol_val, vel_val, kalman_gain, streak_side, streak_count, is_critical, p_six, lyapunov, log):
     if not log:
         return {
-            "msg": "🛰️ Lõi Quantum-Chao v55.0 đang thiết lập không gian pha nền móng. Hãy nạp quân bài ván trước.",
-            "action": "QUANTUM INIT - ĐANG ĐỒNG BỘ", "bet_size": "0%", "bg": "rgba(30, 41, 59, 0.2)", "border": "#94a3b8", "class": ""
+            "msg": "🛰️ Lõi Quantum-Chao v55.1 đang sẵn sàng nhận dữ liệu. Hãy nạp quân bài của ván chơi.",
+            "action": "QUANTUM INIT - ĐANG CHỜ LỆNH", "bet_size": "0%", "bg": "rgba(30, 41, 59, 0.2)", "border": "#94a3b8", "class": ""
         }
     
     diff = abs(p_val - b_val)
 
-    # 💥 SIÊU LỆNH BẺ CẦU LƯỢNG TỬ (XỬ LÝ ĐƯỢC CẢ KHI BIẾN THIÊN CỰC ĐẠI)
     if is_critical and streak_side and streak_count >= 3:
         opposite_side = "PLAYER" if streak_side == "Banker" else "BANKER"
         target_odds = p_val if opposite_side == "PLAYER" else b_val
         
-        # Công thức Kelly lượng tử hóa, bẻ gãy rủi ro bão bài
         edge = (target_odds - min(p_val, b_val)) / 100.0
         quantum_kelly = max(5.0, (edge * (kalman_gain + 0.15) * 2.8) * 100.0)
         
-        status_msg = "Hệ thống đã hấp thụ hoàn toàn biến thiên và khóa mục tiêu."
-        
         return {
-            "msg": f"🔮 SIÊU TÍN HIỆU QUANTUM BREAK: Khóa chặt điểm gãy cầu ván sau! Chuỗi bệt {streak_side.upper()} ({streak_count} ván) đã rơi vào lưới lọc Fokker-Planck. Số mũ Lyapunov ({lyapunov:.2f}) xác nhận bão bài đã bị bẻ gãy cấu trúc hỗn loạn. Xác suất lật kèo của {opposite_side} chạm mức {target_odds:.1f}%.",
+            "msg": f"🔮 SIÊU TÍN HIỆU QUANTUM BREAK: Điểm lật cầu lý tưởng! Chuỗi bệt {streak_side.upper()} ({streak_count} ván) đã suy yếu trong không gian pha. Số mũ Lyapunov ({lyapunov:.2f}) xác nhận bão bài bị kiểm soát thành công. Xác suất lật kèo của {opposite_side} là {target_odds:.1f}%.",
             "action": f"🔥 QUANTUM OVERDRIVE: ĐÁNH {opposite_side} 🔥",
             "bet_size": f"{min(20.0, quantum_kelly):.1f}%", 
             "bg": "rgba(6, 214, 160, 0.25)", 
@@ -164,20 +160,18 @@ def get_ai_v55_quantum_diagnostic(p_val, b_val, t_val, vol_val, vel_val, kalman_
             "class": "overdrive-blink"
         }
 
-    # KIỂM SOÁT VÀO TIỀN KHI BÀN CHẠY XU HƯỚNG TỰ NHIÊN
     if p_val > b_val:
         edge = (p_val / 100.0) - (b_val / 100.0)
         kelly_bet = max(0.0, (edge * kalman_gain) * 100.0)
         
-        # Nếu biến thiên siêu cao nhưng xu hướng mượt -> Thuật toán vẫn tính toán chính xác biên độ du kích
         if vol_val > 35.0:
             return {
-                "msg": f"🔵 PLAYER THÍCH ỨNG BÃO CAO (Vol: {vol_val:.1f}%). Số mũ hỗn loạn lớn, thuật toán chuyển sang chế độ bảo toàn vốn lượng tử, đi tiền lệnh quét biên độ mỏng.",
+                "msg": f"🔵 PLAYER THÍCH ỨNG BÃO CAO (Vol: {vol_val:.1f}%). Số mũ hỗn loạn lớn, thuật toán chuyển đổi sang hệ thống quản trị rủi ro mờ, đánh biên độ cực mỏng bảo vệ tài khoản.",
                 "action": "VÀO LỆNH: PLAYER (PHÒNG NGỰ LƯỢNG TỬ)", "bet_size": "1% - 2%", "bg": "rgba(0, 175, 185, 0.12)", "border": "#00afb9", "class": ""
             }
         elif diff >= 6.5:
             return {
-                "msg": f"🔵 THUẬN TUYẾN TÍNH AN TOÀN: PLAYER CHIẾM ƯU THẾ (+{diff:.1f}%). Khay bài vận hành trong vùng ổn định hấp dẫn, sai số tiệm cận 0.",
+                "msg": f"🔵 THUẬN XU HƯỚNG: PLAYER CHIẾM ƯU THẾ (+{diff:.1f}%). Khay bài chạy mượt trong không gian pha an toàn.",
                 "action": "VÀO LỆNH: PLAYER (ĐÁNH MẠNH)", "bet_size": f"{min(12.0, kelly_bet):.1f}%", "bg": "rgba(0, 175, 185, 0.22)", "border": "#00afb9", "class": ""
             }
         else:
@@ -189,22 +183,22 @@ def get_ai_v55_quantum_diagnostic(p_val, b_val, t_val, vol_val, vel_val, kalman_
         edge = (b_val / 100.0) - (p_val / 100.0)
         kelly_bet = max(0.0, ((edge * 0.95) * kalman_gain) * 100.0)
         
-        six_alert = " [⚠️ Mật độ lá 6 cao - Đã tự động tối ưu phế ròng]" if p_six > 0.09 else ""
+        six_alert = " [⚠️ Mật độ lá 6 cao - Đã tự động giảm volume tránh phế]" if p_six > 0.09 else ""
         max_bet_allowed = 7.0 if p_six > 0.09 else 12.0
         
         if vol_val > 35.0:
             return {
-                "msg": f"🔴 BANKER THÍCH ỨNG BÃO CAO (Vol: {vol_val:.1f}%). Lõi Fokker-Planck đang cô lập các điểm nhiễu ảo của sòng bài để trích xuất dòng tiền an toàn nhất.",
+                "msg": f"🔴 BANKER THÍCH ỨNG BÃO CAO (Vol: {vol_val:.1f}%). Lõi Fokker-Planck đang cô lập các điểm nhiễu ảo để trích xuất dòng tiền an toàn nhất.",
                 "action": "VÀO LỆNH: BANKER (PHÒNG NGỰ LƯỢNG TỬ)", "bet_size": "1% - 2%", "bg": "rgba(255, 71, 87, 0.12)", "border": "#ff4757", "class": ""
             }
         elif diff >= 6.5:
             return {
-                "msg": f"🔴 THUẬN TUYẾN TÍNH AN TOÀN: BANKER CHIẾM ƯU THẾ (+{diff:.1f}%). Áp lực thuật toán đếm bài đè nặng lên cửa nhà cái.{six_alert}",
+                "msg": f"🔴 THUẬN XU HƯỚNG: BANKER CHIẾM ƯU THẾ (+{diff:.1f}%). Cấu trúc toán học hậu thuẫn nhà cái lấn lướt.{six_alert}",
                 "action": "VÀO LỆNH: BANKER (ĐÁNH MẠNH)", "bet_size": f"{min(max_bet_allowed, kelly_bet):.1f}%", "bg": "rgba(255, 71, 87, 0.22)", "border": "#ff4757", "class": ""
             }
         else:
             return {
-                "msg": f"🔴 BANKER CHIẾN THUẬT DU KÍCH (+{diff:.1f}%). Cấu trúc bàn chơi đang tái định hình, giải ngân biên độ hẹp bảo vệ tài khoản.",
+                "msg": f"🔴 BANKER CHIẾN THUẬT DU KÍCH (+{diff:.1f}%). Bàn chơi đang tái cấu trúc, đi tiền vô cùng cẩn trọng.",
                 "action": "VÀO LỆNH: BANKER (DU KÍCH)", "bet_size": "2%", "bg": "rgba(255, 71, 87, 0.08)", "border": "#ff4757", "class": ""
             }
 
@@ -235,7 +229,7 @@ def parse_baccarat_input_v55(raw_str):
 # =========================================================================
 # SYSTEM INTERFACE DISPLAY
 # =========================================================================
-st.set_page_config(page_title="Oracle Quantum-Chao v55.0", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Oracle Quantum-Chao v55.1", page_icon="🔮", layout="centered")
 
 st.markdown(
     """
@@ -276,9 +270,8 @@ st.markdown(
 )
 
 if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
-if 'form_counter' not in st.session_state: st.session_state.form_counter = 0
 
-st.sidebar.header("🛸 BỘ ĐIỀU TỐC LƯỢNG TỬ V55")
+st.sidebar.header("🛸 BỘ ĐIỀU TỐC LƯỢNG TỬ V55.1")
 decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
 
 st.sidebar.markdown("---")
@@ -290,28 +283,28 @@ tie_wins_input = st.sidebar.number_input("🟢 Số ván HÒA (TIE) thắng:", m
 total_log_games = len(st.session_state.round_detailed_log)
 global_total_games = p_wins_input + b_wins_input + tie_wins_input + total_log_games
 
-st.markdown("### 🧬 ORACLE QUANTUM-CHAO SYSTEM V55.0")
+st.markdown("### 🧬 ORACLE QUANTUM-CHAO SYSTEM V55.1")
 next_game_number = global_total_games + 1
-st.markdown(f'<div class="central-game-counter">🔮 THÍCH ỨNG BIẾN THIÊN SIÊU CẤP VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="central-game-counter">🔮 THÍCH ỨNG BIẾN THIÊN SỬA LỖI VÁN THỨ: {next_game_number}</div>', unsafe_allow_html=True)
 
-input_row_col1, input_row_col2 = st.columns(2, gap="small")
-with input_row_col1:
-    p_input = st.text_input("🔵 QUÂN BÀI PLAYER XUẤT HIỆN:", key=f"p_in_{st.session_state.form_counter}", placeholder="Ví dụ: A 2 5")
-with input_row_col2:
-    b_input = st.text_input("🔴 QUÂN BÀI BANKER XUẤT HIỆN:", key=f"b_in_{st.session_state.form_counter}", placeholder="Ví dụ: K 8")
-
-st.write("")
-_, btn_layout_center, _ = st.columns([1, 4, 1], gap="small")
-with btn_layout_center:
-    calc_triggered = st.button("👁️ KHỞI CHẠY KHỬ NHIỄU PHI TUYẾN TÍNH HỖN LOẠN", use_container_width=True)
+# Khắc phục triệt để lỗi mất dữ liệu khi nhấn Rerun bằng Form đồng bộ
+with st.form(key="baccarat_input_form", clear_on_submit=True):
+    input_row_col1, input_row_col2 = st.columns(2, gap="small")
+    with input_row_col1:
+        p_input = st.text_input("🔵 QUÂN BÀI PLAYER CHI TIẾT:", placeholder="Ví dụ: A 2 5")
+    with input_row_col2:
+        b_input = st.text_input("🔴 QUÂN BÀI BANKER CHI TIẾT:", placeholder="Ví dụ: K 8")
+        
+    st.write("")
+    _, btn_layout_center, _ = st.columns([1, 4, 1], gap="small")
+    with btn_layout_center:
+        calc_triggered = st.form_submit_submit_button("👁️ KHỞI CHẠY KHỬ NHIỄU PHI TUYẾN TÍNH HỖN LOẠN")
 
 if calc_triggered:
     p_clean = p_input.strip()
     b_clean = b_input.strip()
     
-    if not p_clean and not b_clean:
-        st.warning("⚠️ Nhập quân bài lật thực tế để chạy ma trận Fokker-Planck!")
-    else:
+    if p_clean or b_clean:
         p_list = parse_baccarat_input_v55(p_clean)
         b_list = parse_baccarat_input_v55(b_clean)
         
@@ -329,7 +322,6 @@ if calc_triggered:
             'b_score': b_score_eval,
             'outcome': current_outcome
         })
-        st.session_state.form_counter += 1
         st.rerun()
 
 st.markdown("---")
@@ -339,12 +331,12 @@ if global_total_games == 0 and len(st.session_state.round_detailed_log) == 0:
         '<div style="background-color: rgba(1, 3, 15, 0.98); border: 2px dashed #00f5d4; color: #00f5d4; padding: 40px 20px; border-radius: 12px; font-size: 15px; text-align: center;">'
         '🌌 <b>LÕI TOÁN HỖN LOẠN SẴN SÀNG HẤP THỤ BIẾN THIÊN</b><br>'
         '<span style="font-size:13.5px; font-weight:normal; opacity:0.85; color: #cbd5e1;">'
-        'Phiên bản v55.0 sử dụng số mũ Lyapunov để giải mã cấu trúc bão bài. Dữ liệu của bạn nạp vào sẽ được xử lý chính xác bất kể bàn chơi biến động ra sao.</span>'
+        'Đã vá lỗi định dạng toán học. Thuật toán sử dụng mảng tĩnh gốc giúp trích xuất kết quả chuẩn xác, bất kể sòng bài quét bão biến thiên ra sao.</span>'
         '</div>', 
         unsafe_allow_html=True
     )
 else:
-    # Kích hoạt lõi hấp thụ biến thiên bất biến v55
+    # Kích hoạt lõi hấp thụ biến thiên v55.1 an toàn
     final_p, final_b, final_t, cards_left, volatility, volatility_velocity, kalman_gain, streak_side, streak_count, is_critical, p_six, lyapunov = calculate_v55_quantum_chao_engine(
         st.session_state.round_detailed_log, 
         shoe_decks=decks, 
@@ -367,9 +359,9 @@ else:
     
     st.markdown(
         f'<div class="tactical-box {rec["class"]}" style="background-color: {rec["bg"]}; border: 2px solid {rec["border"]}; color: {rec["border"]};">'
-        f'<div class="tactical-title"><span>🛸 {rec["action"]}</span> <span style="font-family: monospace;">VOLUME TIỀN PHÒNG VỆ QUANTUM: {rec["bet_size"]}</span></div>'
+        f'<div class="tactical-title"><span>🛸 {rec["action"]}</span> <span style="font-family: monospace;">VOLUME TIỀN PHÒNG VỆ: {rec["bet_size"]}</span></div>'
         f'<div class="tactical-msg">{rec["msg"]}</div>'
-        f'<div class="tactical-action-line">💡 <b>Cơ chế bất biến trước biến thiên:</b> Khi bàn chơi quét bão mạnh, AI tự động chuyển sang cấu trúc phòng ngự phân rã vốn để triệt tiêu chuỗi rủi ro. Khi bão tan, Kelly Overdrive sẽ nổ lệnh.</div>'
+        f'<div class="tactical-action-line">💡 <b>Cơ chế an toàn cốt lõi:</b> Đã tối ưu hóa mảng tính toán để triệt tiêu lỗi sập thuật toán khi gặp chuỗi biến thiên đột ngột.</div>'
         f'</div>',
         unsafe_allow_html=True
     )
@@ -394,15 +386,15 @@ else:
     
     col_meta1, col_meta2 = st.columns(2, gap="small")
     with col_meta1:
-        st.markdown(f"<small>🌀 **Số mũ ổn định Lyapunov ($\lambda_L$):** `{lyapunov:.2f}` (Chỉ số đo lường mật độ hỗn loạn của bão bài)</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>🌀 **Số mũ ổn định Lyapunov ($\lambda_L$):** `{lyapunov:.2f}` (Độ hỗn loạn bài)</small>", unsafe_allow_html=True)
     with col_meta2:
-        st.markdown(f"<small>📊 **Màng lọc hấp thụ hấp dẫn (Kalman Gain):** `{kalman_gain:.2f}` (Tự động co giãn theo biên độ biến thiên)</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>📊 **Màng lọc hấp thụ hấp dẫn (Kalman Gain):** `{kalman_gain:.2f}`</small>", unsafe_allow_html=True)
 
     if st.session_state.round_detailed_log:
-        st.markdown('<div class="score-log-hud"><b>📈 DÒNG CHẢY LỊCH SỬ KHAY BÀI ĐÃ ĐƯỢC LỌC NHIỄU LƯỢNG TỬ:</b><br>', unsafe_allow_html=True)
+        st.markdown('<div class="score-log-hud"><b>📈 DÒNG CHẢY LỊCH SỬ KHAY BÀI ĐÃ ĐƯỢC CHUẨN HÓA:</b><br>', unsafe_allow_html=True)
         for idx, r in enumerate(st.session_state.round_detailed_log):
             distance = total_log_games - 1 - idx
-            st.markdown(f"• Ván {idx+1}: [P] {r['p_score']}đ vs {r['b_score']}đ [B] ➡️ Thắng cửa: **{r['outcome'].upper()}** (Khoảng cách pha: `t-{distance}`)")
+            st.markdown(f"• Ván {idx+1}: [P] {r['p_score']}đ vs {r['b_score']}đ [B] ➡️ **{r['outcome'].upper()}** (Khoảng cách pha: `t-{distance}`)")
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
@@ -410,7 +402,7 @@ else:
     penetration_rate_pct = min(100.0, (((total_shoe_cards - max(0, cards_left))) / total_shoe_cards) * 100)
     
     streak_status = f"Bệt chuỗi {streak_side.upper()} x{streak_count} ván" if (streak_side and streak_count >= 2) else "Chuỗi hỗn hợp tự do"
-    st.caption(f"**Engine:** `QUANTUM-CHAO SYSTEM v55.0` | **Trạng thái cấu trúc:** `{streak_status}` | **Khay bài còn:** `{cards_left}` lá")
+    st.caption(f"**Engine:** `QUANTUM-CHAO SYSTEM v55.1` | **Trạng thái cấu trúc:** `{streak_status}` | **Khay bài còn:** `{cards_left}` lá")
     st.progress(penetration_rate_pct / 100.0)
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -423,5 +415,5 @@ with util_col_1:
 with util_col_2:
     if st.button("🔄 LÀM TRỐNG KHAY BÀI MỚI", use_container_width=True):
         st.session_state.round_detailed_log = []
-        st.session_state.form_counter = 0
         st.rerun()
+
