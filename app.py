@@ -223,7 +223,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
 
 
 # =========================================================================
-# 🧠 MODULE 7: AI THẦN BÀI - BỘ NHỚ VÔ HẠN & THÍCH ỨNG KHÔNG GIAN MẠNG (FIXED HTML)
+# 🧠 MODULE 7: AI THẦN BÀI - BỘ NHỚ VÔ HẠN & THÍCH ỨNG KHÔNG GIAN MẠNG
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -268,7 +268,6 @@ class AISovereignOracle:
         cards_played = int((shoe_decks * 52) - total_cards_remaining)
         shoe_progress = cards_played / (shoe_decks * 52)
 
-        # Định dạng chuỗi không sử dụng ký tự xuống dòng xuống trực tiếp HTML thô
         memory_hud = f"📉 Đã quét: {cards_played} quân | Còn lại: {int(total_cards_remaining)} quân — 🔹 Thấp (A-5): {int(low_cards)} q | 🔸 Trung (6-9): {int(mid_cards)} q | 🔺 Tây (10-K): {int(high_cards)} q"
 
         cyber_knowledge = AISovereignOracle.simulate_cyber_knowledge_ingestion(total_rounds)
@@ -350,7 +349,7 @@ def parse_baccarat_input_v67_8(raw_str):
 
 
 # =========================================================================
-# 📱 MODULE 6: GIAO DIỆN MOBILE-GRID ĐỘC LẬP TÁCH BIỆT COMPLETELY (FIXED)
+# 📱 MODULE 6: GIAO DIỆN MOBILE-GRID ĐỘC LẬP TÁCH BIỆT COMPLETELY
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -432,49 +431,23 @@ class BaccaratInterfaceSystem:
             st.info(ai_cmd['ai_insight'])
             return
 
-        # Render chuẩn hóa dạng chuỗi tinh gọn giúp trình duyệt di động đọc HTML chính xác
-        st.markdown(
-            f"""
-            <div style="background: linear-gradient(135deg, #0d1527 0%, #070a14 100%); 
-                        border: 2px dashed {ai_cmd['color']}; border-radius: 14px; 
-                        padding: 20px; margin: 15px 0px; box-shadow: 0px 8px 32px rgba(0,0,0,0.5);">
-                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;">🧠 AI THẦN BÀI - BỘ NHỚ VÔ HẠN & THÍCH ỨNG KHÔNG GIAN MẠNG</div>
-                <div style="font-size: 22px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 12px;">{ai_cmd['decision']}</div>
-                
-                <div style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: system-ui; font-size: 12px; color: #c084fc;">
-                    🌐 <b>KIẾN THỨC MẠNG ĐỒNG BỘ THỜI GIAN THỰC (2026):</b><br>
-                    <i>"{ai_cmd['cyber_knowledge']}"</i>
-                </div>
-
-                <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px; margin-bottom: 15px; font-family: monospace; font-size: 11.5px; color: #38bdf8; line-height: 1.5;">
-                    🖥️ <b>TRẠNG THÁI BỘ NHỚ VÔ HẠN (SHOE MEMORY):</b><br>{ai_cmd['memory_hud']}
-                </div>
-
-                <table style="width:100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; background: transparent;">
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 6px 0; color: #64748b; text-align: left;">Mục tiêu xuống tiền:</td>
-                        <td style="padding: 6px 0; font-weight:700; color: {ai_cmd['color']}; text-align:right;">{ai_cmd['target']}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 6px 0; color: #64748b; text-align: left;">Quản lý vốn đề xuất:</td>
-                        <td style="padding: 6px 0; font-weight:700; color: #f8fafc; text-align:right;">{ai_cmd['capital_allocation']}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 6px 0; color: #64748b; text-align: left;">Kiến trúc chiến thuật:</td>
-                        <td style="padding: 6px 0; font-weight:700; color: #38bdf8; text-align:right;">{ai_cmd['strategy_type']}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 6px 0; color: #64748b; text-align: left;">Mức độ rủi ro sàn:</td>
-                        <td style="padding: 6px 0; font-weight:700; color: #ff4757; text-align:right;">{ai_cmd['risk_level']}</td>
-                    </tr>
-                </table>
-                <div style="background: rgba(255,255,255,0.02); border-left: 3px solid {ai_cmd['color']}; padding: 10px; border-radius: 4px; font-size: 12.5px; line-height: 1.5; color: #cbd5e1; text-align: justify;">
-                    <b>💡 Nhận định thực chiến phức hợp:</b> {ai_cmd['ai_insight']}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
+        # KHẮC PHỤC LỖI TRIỆT ĐỂ: Ghép toàn bộ chuỗi HTML trên một dòng để ngăn chặn việc Streamlit tự dịch ngược sang văn bản Markdown thô
+        html_string = (
+            f"<div style='background: linear-gradient(135deg, #0d1527 0%, #070a14 100%); border: 2px dashed {ai_cmd['color']}; border-radius: 14px; padding: 20px; margin: 15px 0px; box-shadow: 0px 8px 32px rgba(0,0,0,0.5);'>"
+            f"<div style='font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;'>🧠 AI THẦN BÀI - BỘ NHỚ VÔ HẠN & THÍCH ỨNG KHÔNG GIAN MẠNG</div>"
+            f"<div style='font-size: 22px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 12px;'>{ai_cmd['decision']}</div>"
+            f"<div style='background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: system-ui; font-size: 12px; color: #c084fc;'>🌐 <b>KIẾN THỨC MẠNG ĐỒNG BỘ THỜI GIAN THỰC (2026):</b><br><i>\"{ai_cmd['cyber_knowledge']}\"</i></div>"
+            f"<div style='background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px; margin-bottom: 15px; font-family: monospace; font-size: 11.5px; color: #38bdf8; line-height: 1.5;'>🖥️ <b>TRẠNG THÁI BỘ NHỚ VÔ HẠN (SHOE MEMORY):</b><br>{ai_cmd['memory_hud']}</div>"
+            f"<table style='width:100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; background: transparent;'>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #64748b; text-align: left;'>Mục tiêu xuống tiền:</td><td style='padding: 6px 0; font-weight:700; color: {ai_cmd['color']}; text-align:right;'>{ai_cmd['target']}</td></tr>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #64748b; text-align: left;'>Quản lý vốn đề xuất:</td><td style='padding: 6px 0; font-weight:700; color: #f8fafc; text-align:right;'>{ai_cmd['capital_allocation']}</td></tr>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #64748b; text-align: left;'>Kiến trúc chiến thuật:</td><td style='padding: 6px 0; font-weight:700; color: #38bdf8; text-align:right;'>{ai_cmd['strategy_type']}</td></tr>"
+            f"<tr><td style='padding: 6px 0; color: #64748b; text-align: left;'>Mức độ rủi ro sàn:</td><td style='padding: 6px 0; font-weight:700; color: #ff4757; text-align:right;'>{ai_cmd['risk_level']}</td></tr>"
+            f"</table>"
+            f"<div style='background: rgba(255,255,255,0.02); border-left: 3px solid {ai_cmd['color']}; padding: 10px; border-radius: 4px; font-size: 12.5px; line-height: 1.5; color: #cbd5e1; text-align: justify;'><b>💡 Nhận định thực chiến phức hợp:</b> {ai_cmd['ai_insight']}</div>"
+            f"</div>"
         )
+        st.markdown(html_string, unsafe_allow_html=True)
 
     @staticmethod
     def render_probabilities_grid(p_pct, b_pct, t_pct, p_cnt, b_cnt, t_cnt):
@@ -539,7 +512,7 @@ st.markdown("---")
 # 1. Hiển thị bảng tín hiệu kỹ thuật cốt lõi
 BaccaratInterfaceSystem.render_directive_panel(cmd)
 
-# 2. Hiển thị đề xuất quản trị thực chiến từ AI THẦN BÀI (Bộ Nhớ Vô Hạn + Thích Ứng Mạng)
+# 2. Hiển thị đề xuất quản trị thực chiến từ AI THẦN BÀI (Đã dọn sạch lỗi vỡ giao diện)
 ai_cmd = AISovereignOracle.analyze_and_suggest(
     all_rounds_log=st.session_state.round_detailed_log, 
     shoe_decks=decks,
