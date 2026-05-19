@@ -128,7 +128,7 @@ class BankerMarkovAgent:
 
 
 # =========================================================================
-# 🟢 AI AGENT 3: TIE COGNITIVE - RIEMANN ZETA & BEKENSTEIN-HAWKING ENTROPY
+# 🟢 AI AGENT 3: TIE COGNITIVE - UPGRADED RIEMANN ZETA & STREAK ENTROPY GAP
 # =========================================================================
 class TieHypergeometricAgent:
     @staticmethod
@@ -151,6 +151,7 @@ class TieHypergeometricAgent:
         zero_cards = int(sum([exact_cards_left[i] for i in [10, 11, 12, 13]]))
         non_zero_cards = cards_remaining - zero_cards
         
+        # 1. Thuật toán gốc: Xác suất tổ hợp hình học siêu cấp từ khay bài
         if cards_remaining >= 6:
             c1 = MathQuantumUniverse.lgamma_comb(zero_cards, 3)
             c2 = MathQuantumUniverse.lgamma_comb(non_zero_cards, 3)
@@ -164,9 +165,53 @@ class TieHypergeometricAgent:
         density_deviation = actual_density - standard_density
         
         riemann_zeta_factor = 1.64493 
-        hyper_cosmo_force = density_deviation * 45.0 + (prob_zero_tie * 150.0 * riemann_zeta_factor)
+        base_probability = 9.52 + (density_deviation * 45.0) + (prob_zero_tie * 150.0 * riemann_zeta_factor)
+
+        # 2. BỘ NÂNG CẤP ĐỘNG: QUÉT ĐIỂM RƠI CHUỖI VÀ KHOẢNG CÁCH (STREAK & GAP ANALYSIS)
+        streak_multiplier = 1.0
+        gap_bonus = 0.0
         
-        return max(0.1, min(49.5, 9.52 + hyper_cosmo_force))
+        if all_rounds_log:
+            # Đo khoảng cách từ ván Hòa cuối cùng (Vùng tích tụ năng lượng)
+            gap_since_last_tie = 0
+            for r in reversed(all_rounds_log):
+                if r['outcome'] == "Tie":
+                    break
+                gap_since_last_tie += 1
+            
+            # Nếu đã quá 8 ván chưa ra Hòa, kích hoạt gia tốc lực hút lượng tử
+            if gap_since_last_tie > 8:
+                gap_bonus += min(12.5, (gap_since_last_tie - 8) * 1.15)
+
+            # Quét xu hướng bệt của ván gần nhất để bắt điểm gãy/đảo chiều
+            decisive_outcomes = [r['outcome'] for r in all_rounds_log if r['outcome'] in ["Player", "Banker"]]
+            if len(decisive_outcomes) >= 3:
+                current_streak_side = decisive_outcomes[-1]
+                streak_count = 0
+                for outcome in reversed(decisive_outcomes):
+                    if outcome == current_streak_side:
+                        streak_count += 1
+                    else:
+                        break
+                
+                # Điểm rơi lý tưởng: Bệt đạt độ dài từ 3 ván trở lên có xu hướng xả cấu trúc bằng một ván Hòa
+                if streak_count >= 3:
+                    streak_multiplier += (streak_count * 0.18)
+                
+                # Kịch bản đặc biệt: Vừa gãy bệt ở ván trước, cửa Hòa rất dễ nhảy vào làm vùng đệm
+                if len(decisive_outcomes) >= 4 and decisive_outcomes[-2] != decisive_outcomes[-1]:
+                    prev_streak_side = decisive_outcomes[-2]
+                    prev_streak_count = 0
+                    for outcome in reversed(decisive_outcomes[:-1]):
+                        if outcome == prev_streak_side:
+                            prev_streak_count += 1
+                        else:
+                            break
+                    if prev_streak_count >= 3:
+                        gap_bonus += 5.5
+
+        final_tie_prob = (base_probability * streak_multiplier) + gap_bonus
+        return max(0.5, min(55.0, final_tie_prob))
 
 
 # =========================================================================
@@ -365,19 +410,18 @@ class AISovereignOracle:
 
 
 # =========================================================================
-# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (BỘ LỌC XUNG ĐỘT TỐI CAO)
+# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (BỘ LỌC XUNG ĐỘT TỐI CAO - ĐÃ LÀM NỔI BẬT)
 # =========================================================================
 class QuantumArbitrationMatrix:
     @staticmethod
     def render_arbitration_logic(multi_cmd, oracle_cmd, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
         if not all_rounds_log and (manual_p == 0 and manual_b == 0):
-            return # Khung rỗng không kích hoạt
+            return 
 
-        m_target = multi_cmd['raw_target']    # "PLAYER", "BANKER", "WAIT"
-        o_target = oracle_cmd['target']        # "PLAYER", "BANKER", "WAIT"
-        o_code = oracle_cmd['raw_code']        # "SHIELD_SHANNON", "FORCE_COUNTER_STREAK", "FLOW_STREAK", etc.
+        m_target = multi_cmd['raw_target']    
+        o_target = oracle_cmd['target']        
+        o_code = oracle_cmd['raw_code']        
 
-        # Trích xuất dữ liệu phân phối hạt bài từ Hilbert Space để làm tham chiếu trọng tài tối cao
         initial_cards = float(4 * shoe_decks)
         exact_cards_left = {i: initial_cards for i in range(1, 14)}
         sidebar_rounds = manual_p + manual_b + manual_t
@@ -399,26 +443,26 @@ class QuantumArbitrationMatrix:
         panel_color = "#f1c40f"
         panel_bg = "rgba(241, 196, 15, 0.08)"
 
-        # -----------------------------------------------------------------
-        # QUY TẮC 1: Module 7 kích hoạt lá chắn bảo vệ (SHIELD_SHANNON) chặn tuyệt đối
-        # -----------------------------------------------------------------
+        def target_badge(target_str):
+            if target_str == "PLAYER":
+                return '<span style="background: rgba(0, 175, 185, 0.25); color: #00afb9; border: 1px solid #00afb9; padding: 2px 8px; border-radius: 6px; font-weight: 900; box-shadow: 0 0 8px rgba(0, 175, 185, 0.5);">🔵 PLAYER</span>'
+            elif target_str == "BANKER":
+                return '<span style="background: rgba(255, 71, 87, 0.25); color: #ff4757; border: 1px solid #ff4757; padding: 2px 8px; border-radius: 6px; font-weight: 900; box-shadow: 0 0 8px rgba(255, 71, 87, 0.5);">🔴 BANKER</span>'
+            return f'<b>{target_str}</b>'
+
         if o_code == "SHIELD_SHANNON" and m_target != "WAIT":
             has_conflict = True
             rule_title = "🛑 TRỌNG TÀI TỐI CAO - QUY TẮC 1: KÍCH HOẠT LÁ CHẮN ENTROPY (CHẶN TUYỆT ĐỐI)"
-            rule_desc = f"Hệ thống Độc Lập đang kiến nghị nạp tiền vào <b>{m_target}</b> dựa trên biến thế ngắn hạn. Tuy nhiên, <b>MODULE 7</b> đã phát hiện bẫy ngẫu nhiên động của sảnh (Độ lệch sóng hẹp, Shannon Entropy chạm ngưỡng nhiễu). <br><b>HÀNH ĐỘNG THỰC CHIẾN: KHÓA VỐN LẬP TỨC. Tuyệt đối không vào tiền ván này!</b>"
+            rule_desc = f"Hệ thống Độc Lập đang kiến nghị nạp tiền vào {target_badge(m_target)} dựa trên biến thế ngắn hạn. Tuy nhiên, <b>MODULE 7</b> đã phát hiện bẫy ngẫu nhiên động của sảnh (Độ lệch sóng hẹp, Shannon Entropy chạm ngưỡng nhiễu). <br><b>HÀNH ĐỘNG THỰC CHIẾN: KHÓA VỐN LẬP TỨC. Tuyệt đối không vào tiền ván này!</b>"
             panel_color = "#ff4757"
             panel_bg = "rgba(255, 71, 87, 0.12)"
 
-        # -----------------------------------------------------------------
-        # QUY TẮC 2: Đối nghịch trực tiếp mục tiêu (Lệnh bẻ cầu siêu cấp từ Module 7)
-        # -----------------------------------------------------------------
         elif m_target != "WAIT" and o_target != "WAIT" and m_target != o_target:
             has_conflict = True
             if o_code == "FORCE_COUNTER_STREAK":
                 rule_title = "💥 TRỌNG TÀI TỐI CAO - QUY TẮC 2: GIAO THOA ĐẢO NGHỊCH (KHỚP LỆNH BẺ CẦU)"
-                rule_desc = f"Hệ thống Độc Lập bị hút theo quán tính dòng chảy ngắn hạn hướng về <b>{m_target}</b>. Nhưng <b>MODULE 7 (Oracle)</b> quét thấy hằng số Riemann Zeta báo điểm gãy của chuỗi, bắt buộc ép lệnh sang <b>{o_target}</b>. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Khớp lệnh theo MODULE 7 ({o_target}) nhưng HẠ LỆNH XUỐNG 50% khối lượng để phòng thủ túi tiền.</b>"
+                rule_desc = f"Hệ thống Độc Lập bị hút theo quán tính dòng chảy ngắn hạn hướng về {target_badge(m_target)}. Nhưng <b>MODULE 7 (Oracle)</b> quét thấy hằng số Riemann Zeta báo điểm gãy của chuỗi, bắt buộc ép lệnh sang {target_badge(o_target)}. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Khớp lệnh theo MODULE 7 ({target_badge(o_target)}) nhưng HẠ LỆNH XUỐNG 50% khối lượng để phòng thủ túi tiền.</b>"
             else:
-                # Xung đột toán học thuần túy: Tra cứu mật độ Hilbert để ra phán quyết
                 if high_cards > low_cards * 1.15:
                     decision_override = "BANKER"
                     reason = f"Mật độ hạt Tây (10-K) còn lại vượt trội ({int(high_cards)} q vs {int(low_cards)} q) $\rightarrow$ Ép dòng tiền về cửa Lợi thế Nhà Cái."
@@ -431,28 +475,24 @@ class QuantumArbitrationMatrix:
 
                 rule_title = "⚠️ TRỌNG TÀI TỐI CAO - QUY TẮC 4: GIẢI PHƯƠNG TRÌNH KHÔNG GIAN HILBERT"
                 if decision_override != "WAIT":
-                    rule_desc = f"Hai module nhìn lệch quỹ đạo ({m_target} vs {o_target}). Trọng tài quét sâu vào khay bài: {reason} <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đè lệnh, vào tiền cửa {decision_override} với 2% vốn tối thiểu.</b>"
+                    rule_desc = f"Hai module nhìn lệch quỹ đạo ({target_badge(m_target)} vs {target_badge(o_target)}). Trọng tài quét sâu vào khay bài: {reason} <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đè lệnh, vào tiền cửa {target_badge(decision_override)} với 2% vốn tối thiểu.</b>"
                 else:
-                    rule_desc = f"Hai bên xung đột trực diện vô căn cứ. Không gian Hilbert báo trường hạt cân bằng. <br><b>HÀNH ĐỘNG THỰC CHIẾN: BỎ QUA HOÀN TOÀN, không đặt cược vào vùng chiến sự của thuật toán.</b>"
+                    rule_desc = f"Hai bên xung đột trực diện vô căn cứ ({target_badge(m_target)} vs {target_badge(o_target)}). Không gian Hilbert báo trường hạt cân bằng. <br><b>HÀNH ĐỘNG THỰC CHIẾN: BỎ QUA HOÀN TOÀN, không đặt cược vào vùng chiến sự của thuật toán.</b>"
             panel_color = "#00f5d4"
             panel_bg = "rgba(0, 245, 212, 0.1)"
 
-        # -----------------------------------------------------------------
-        # QUY TẮC 3: Độc lập dừng (WAIT), nhưng Module 7 kích hoạt Đu cầu siêu cấp
-        # -----------------------------------------------------------------
         elif m_target == "WAIT" and o_code == "FLOW_STREAK":
             has_conflict = True
             rule_title = "🌊 TRỌNG TÀI TỐI CAO - QUY TẮC 3: ĐU DÒNG CHẢY LƯỢNG TỬ (HUBBLE EXPANSION)"
-            rule_desc = f"Biến thế vi phân ngắn hạn quá hẹp khiến Độc Lập báo Chờ (WAIT). Tuy nhiên, bộ nhớ tích lũy chuỗi của <b>MODULE 7</b> xác nhận thuật toán bệt sâu <b>{o_target}</b> vẫn giữ nguyên cấu trúc màng lọc. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đi thuận dòng theo MODULE 7 ({o_target}), khớp lệnh ở mức quản lý vốn an toàn tối thiểu (1% vốn).</b>"
+            rule_desc = f"Biến thế vi phân ngắn hạn quá hẹp khiến Độc Lập báo Chờ (WAIT). Tuy nhiên, bộ nhớ tích lũy chuỗi của <b>MODULE 7</b> xác nhận thuật toán bệt sâu {target_badge(o_target)} vẫn giữ nguyên cấu trúc màng lọc. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đi thuận dòng theo MODULE 7 ({target_badge(o_target)}), khớp lệnh ở mức quản lý vốn an toàn tối thiểu (1% vốn).</b>"
             panel_color = "#a855f7"
             panel_bg = "rgba(168, 85, 247, 0.12)"
 
-        # NẾU CÓ BẤT KỲ XUNG ĐỘT NÀO PHÍA TRÊN -> XUẤT PANEL RA GIAO DIỆN
         if has_conflict:
             st.markdown(
                 f'<div style="background: {panel_bg}; border: 2px solid {panel_color}; border-radius: 12px; padding: 15px; margin: 15px 0px 5px 0px; box-shadow: 0 0 18px {panel_color}4D;">'
                 f'<div style="font-size: 13px; font-weight: 900; color: {panel_color}; letter-spacing: 0.5px; margin-bottom: 6px;">{rule_title}</div>'
-                f'<div style="font-size: 12.5px; color: #f8fafc; line-height: 1.5; text-align: justify;">{rule_desc}</div>'
+                f'<div style="font-size: 12.5px; color: #f8fafc; line-height: 1.7; text-align: justify;">{rule_desc}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -720,7 +760,7 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
 
 st.markdown("---")
 
-# 🔥 KÍCH HOẠT MÔ-ĐUN TRỌNG TÀI TỐI CAO ĐÃ ĐƯỢC TÍCH HỢP BỘ QUI TẮC ĐỘ CHÍNH XÁC CAO
+# Mô-đun trọng tài làm nổi bật Badge Player/Banker phát sáng
 QuantumArbitrationMatrix.render_arbitration_logic(
     multi_cmd=cmd, 
     oracle_cmd=current_ai_oracle, 
@@ -733,7 +773,6 @@ BaccaratInterfaceSystem.render_directive_panel(cmd)
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_ai_oracle)
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, total_p, total_b, total_t)
 
-# Bảng đối chiếu kiểm toán lượng tử độc lập hoàn toàn
 QuantumAuditMatrixController.render_audit_table(
     log=st.session_state.round_detailed_log, 
     start_round_index=(hist_p + hist_b + hist_t)
