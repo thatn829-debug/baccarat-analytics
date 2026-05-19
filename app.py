@@ -6,28 +6,26 @@ import io
 from ai_vision_engine import AIVisionScannerEngine
 
 # =========================================================================
-# 📸 MODULE 1: INDEPENDENT VISION SCANNER ENGINE 
+# 📸 MODULE 1: INDEPENDENT VISION SCANNER CONTROLLER v48.0
 # =========================================================================
 class VisionScannerEngine:
     @staticmethod
     def process_image_via_ai(image_bytes):
         if image_bytes is None:
-            return [], None
+            return []
         try:
             img = AIVisionScannerEngine.bytes_to_cv2(image_bytes)
             if img is None:
-                return [], None
-            # Kích hoạt đồng thời 2 nhân AI v48.1 độc lập
+                return []
             roadmap = AIVisionScannerEngine.extract_roadmap_matrix(img)
-            scores = AIVisionScannerEngine.extract_scoreboard_data(img)
-            return roadmap, scores
+            return roadmap
         except Exception as e:
-            st.error(f"Lỗi AI Vision Engine: {str(e)}")
-            return [], None
+            st.error(f"Lỗi phân tích hình ảnh: {str(e)}")
+            return []
 
     @staticmethod
     def render_camera_hud():
-        st.markdown('<p class="section-title">👁️ AI VISION SCANNER (TỰ ĐỘNG QUÉT BÀN v48.1)</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-title">👁️ AI VISION SCANNER (MÔ-ĐUN QUÉT HẠT v48.0)</p>', unsafe_allow_html=True)
         with st.expander("📸 BẤM ĐỂ MỞ CAMERA QUÉT BẢNG ĐIỂM", expanded=False):
             img_file = st.camera_input("Hướng ống kính thẳng vào bảng kết quả Road Map")
             return img_file
@@ -127,7 +125,7 @@ class TieUltimateEngine:
 # =========================================================================
 # 🧠 MODULE 5: FUSION DISTRIBUTOR
 # =========================================================================
-def calculate_v68_1_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
+def calculate_v48_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
     total_p_wins = manual_p + sum(1 for r in all_rounds_log if r['outcome'] == "Player")
     total_b_wins = manual_b + sum(1 for r in all_rounds_log if r['outcome'] == "Banker")
     total_ties = manual_t + sum(1 for r in all_rounds_log if r['outcome'] == "Tie")
@@ -169,7 +167,7 @@ def calculate_v68_1_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manua
 
 def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, log, m_p, m_b):
     if not log and (m_p == 0 and m_b == 0):
-        return {"status": "🛰️ ISOLATED ENGINES ONLINE", "msg": "Mô-đun AI Vision và 3 Lõi Tính Toán đã sẵn sàng hoạt động.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.08)", "size": "0%"}
+        return {"status": "🛰️ ISOLATED ENGINE ONLINE", "msg": "Mô-đun AI Vision và 3 Lõi Tính Toán đã sẵn sàng hoạt động.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.08)", "size": "0%"}
     diff = abs(p_val - b_val)
     if streak_side and streak_count >= 3:
         target = "PLAYER" if streak_side == "Banker" else "BANKER"
@@ -201,7 +199,7 @@ def parse_baccarat_input(raw_str):
 
 
 # =========================================================================
-# 📱 MODULE 6: 100% HARDCORE MOBILE INJECTION CSS
+# 📱 MODULE 6: HARDCORE MOBILE INTERFACE INJECTION
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -212,19 +210,8 @@ class BaccaratInterfaceSystem:
             .stApp { background: #030611 !important; color: #f8fafc !important; }
             .block-container { padding: 0.8rem 0.6rem !important; max-width: 100% !important; }
             
-            div[data-testid="stHorizontalBlock"] { 
-                display: flex !important; 
-                flex-direction: row !important; 
-                flex-wrap: nowrap !important; 
-                width: 100% !important; 
-                gap: 6px !important; 
-                padding: 0px !important;
-            }
-            div[data-testid="stHorizontalBlock"] > div { 
-                flex: 1 1 0% !important; 
-                min-width: 0px !important; 
-                padding: 0px !important;
-            }
+            div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 6px !important; padding: 0px !important; }
+            div[data-testid="stHorizontalBlock"] > div { flex: 1 1 0% !important; min-width: 0px !important; padding: 0px !important; }
 
             .section-title { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
             .header-hud-bar { background: linear-gradient(90deg, #0f172a, #1e293b); border: 1px solid #334155; border-radius: 8px; padding: 8px; margin-bottom: 12px; text-align: center; font-family: monospace; font-size: 11px; color: #cbd5e1; }
@@ -257,22 +244,16 @@ class BaccaratInterfaceSystem:
         decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
         st.sidebar.markdown("---")
         st.sidebar.markdown("### 📊 LỊCH SỬ SÀN TÍCH LŨY")
-        
-        # Khởi tạo giá trị đồng bộ tự động từ AI trong Session State
-        if "hist_p_ai" not in st.session_state: st.session_state.hist_p_ai = 0
-        if "hist_b_ai" not in st.session_state: st.session_state.hist_b_ai = 0
-        if "hist_t_ai" not in st.session_state: st.session_state.hist_t_ai = 0
-
-        hist_p = st.sidebar.number_input("🔵 PLAYER WINS:", min_value=0, value=st.session_state.hist_p_ai, step=1)
-        hist_b = st.sidebar.number_input("🔴 BANKER WINS:", min_value=0, value=st.session_state.hist_b_ai, step=1)
-        hist_t = st.sidebar.number_input("🟢 TIE WINS:", min_value=0, value=st.session_state.hist_t_ai, step=1)
+        hist_p = st.sidebar.number_input("🔵 PLAYER WINS:", min_value=0, value=0, step=1)
+        hist_b = st.sidebar.number_input("🔴 BANKER WINS:", min_value=0, value=0, step=1)
+        hist_t = st.sidebar.number_input("🟢 TIE WINS:", min_value=0, value=0, step=1)
         return decks, hist_p, hist_b, hist_t
 
 
 # =========================================================================
-# 🎮 RUNTIME EXECUTION CONTROLLER
+# 🎮 RUNTIME CONTROLLER EXECUTION
 # =========================================================================
-st.set_page_config(page_title="Oracle Mobile UI v68.1", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="Oracle Mobile UI v48.0", page_icon="⚡", layout="centered")
 BaccaratInterfaceSystem.inject_mobile_css()
 
 if 'round_detailed_log' not in st.session_state:
@@ -282,10 +263,10 @@ if 'last_processed_image' not in st.session_state:
 
 decks, hist_p, hist_b, hist_t = BaccaratInterfaceSystem.render_sidebar()
 
-st.markdown("### ⚡ ORACLE TREND TRACKING v68.1")
-st.caption("Giao diện lưới siêu nén tích hợp Lõi AI Vision v48.1 Độc lập")
+st.markdown("### ⚡ ORACLE TREND TRACKING v48.0")
+st.caption("Giao diện lưới siêu nén tích hợp Mô-đun AI Vision v48.0 độc lập")
 
-# 1. KÍCH HOẠT CAMERA VÀ ĐỒNG BỘ MẠNG NƠ-RON AI v48.1
+# 1. CAMERA INPUT & ĐỒNG BỘ AI HÌNH HỌC THUẦN TÚY
 img_file = VisionScannerEngine.render_camera_hud()
 
 if img_file is not None:
@@ -296,30 +277,23 @@ if img_file is not None:
         
         if vision_triggered:
             image_bytes = img_file.getvalue()
-            detected_roadmap, live_scores = VisionScannerEngine.process_image_via_ai(image_bytes)
+            detected_roadmap = VisionScannerEngine.process_image_via_ai(image_bytes)
             
-            # Đồng bộ ma trận hạt cầu vào lịch sử trừ bài bài chi tiết
             if detected_roadmap:
-                st.session_state.round_detailed_log = [] # Reset lại log cũ để nạp ma trận mới từ ảnh
+                st.session_state.round_detailed_log = [] # Reset log cũ để đồng bộ chuỗi hạt mới từ ảnh
                 for outcome in detected_roadmap:
                     st.session_state.round_detailed_log.append({
                         'p_cards': [], 'b_cards': [], 'p_score': 0, 'b_score': 0, 'outcome': outcome
                     })
-            
-            # Đồng bộ số liệu tổng từ bảng OCR lên Sidebar
-            if live_scores and live_scores["total_rounds"] > 0:
-                st.session_state.hist_p_ai = live_scores["player_wins"]
-                st.session_state.hist_b_ai = live_scores["banker_wins"]
-                st.session_state.hist_t_ai = live_scores["tie_wins"]
-                st.toast(f"🎰 AI Quét Thành Công: Tổng {live_scores['total_rounds']} Ván!", icon="🚀")
+                st.toast(f"🎰 Quét thành công ma trận {len(detected_roadmap)} ván đấu từ ảnh!", icon="🚀")
             
             st.session_state.last_processed_image = img_file.id
             st.rerun()
 
 st.markdown("---")
 
-# 2. KHỞI CHẠY 3 LÕI TOÁN HỌC TÍNH XÁC SUẤT
-final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v68_1_fusion(
+# 2. KHỞI CHẠY 3 LÕI TOÁN HỌC TÍNH XÁC SUẤT XU HƯỚNG
+final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v48_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
 )
 cmd = get_ultimate_directive(final_p, final_b, trend_desc, streak_side, streak_count, st.session_state.round_detailed_log, hist_p, hist_b)
@@ -328,7 +302,7 @@ st.markdown(f'<div class="header-hud-bar">🎰 VÁN ĐÃ QUÉT: <b>{total_p + to
 
 # 3. KHỐI FORM NHẬP LIỆU THỦ CÔNG
 st.markdown('<p class="section-title">🎴 NHẬP QUÂN BÀI THỦ CÔNG</p>', unsafe_allow_html=True)
-with st.form(key="manual_mobile_isolated_form", clear_on_submit=True):
+with st.form(key="manual_mobile_form", clear_on_submit=True):
     input_grid = st.columns(2)
     p_str = input_grid[0].text_input("🔵 PLAYER CARD:", placeholder="Ví dụ: 8 K")
     b_str = input_grid[1].text_input("🔴 BANKER CARD:", placeholder="Ví dụ: 7")
@@ -355,7 +329,7 @@ prob_grid[0].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">
 prob_grid[1].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔴 BANKER SOV</span><span class="metric-num" style="color:#ff4757;">{final_b:.1f}%</span><span class="metric-sub">Sl: {total_b}</span></div>', unsafe_allow_html=True)
 prob_grid[2].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE HYPER</span><span class="metric-num" style="color:#2ecc71;">{final_t:.1f}%</span><span class="metric-sub">Sl: {total_t}</span></div>', unsafe_allow_html=True)
 
-# 6. NHẬT KÝ KHẤU TRỪ BÀI TIẾN TRÌNH
+# 6. NHẬT KÝ TIẾN TRÌNH KHẤU TRỪ BÀI VÀ ROADMAP CHI TIẾT
 if st.session_state.round_detailed_log:
     st.markdown('<div class="score-log-hud"><b>📊 TIẾN TRÌNH KHẤU TRỪ BÀI VÀ ROADMAP:</b><br>', unsafe_allow_html=True)
     for idx, r in enumerate(st.session_state.round_detailed_log):
@@ -369,7 +343,4 @@ if util_grid[0].button("⏪ HOÀN TÁC CŨ") and st.session_state.round_detailed
 if util_grid[1].button("🔄 LÀM TRỐNG"):
     st.session_state.round_detailed_log = []
     st.session_state.last_processed_image = None
-    st.session_state.hist_p_ai = 0
-    st.session_state.hist_b_ai = 0
-    st.session_state.hist_t_ai = 0
     st.rerun()
