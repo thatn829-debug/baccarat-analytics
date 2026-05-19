@@ -1,12 +1,58 @@
 import streamlit as st
 import numpy as np
 import math
+import cv2
 from PIL import Image
 import io
-from ai_vision_engine import AIVisionScannerEngine
 
 # =========================================================================
-# 📸 MODULE 1: INDEPENDENT VISION SCANNER CONTROLLER v48.0
+# 🧠 CẤU TRÚC 1: LÕI AI VISION ENGINE v48.0 (ĐÃ GỘP TÍCH HỢP)
+# =========================================================================
+class AIVisionScannerEngine:
+    @staticmethod
+    def bytes_to_cv2(image_bytes):
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        return cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    @classmethod
+    def extract_roadmap_matrix(cls, img):
+        h, w, _ = img.shape
+        # Cắt khu vực chứa ma trận hạt Bead Plate theo tỷ lệ chuẩn
+        roi_y1, roi_y2 = int(h * 0.70), int(h * 0.88)
+        roi_x1, roi_x2 = 0, int(w * 0.25)
+        bead_plate_roi = img[roi_y1:roi_y2, roi_x1:roi_x2]
+
+        blurred = cv2.GaussianBlur(bead_plate_roi, (3, 3), 0)
+        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+        # Định ngưỡng dải màu không gian HSV
+        mask_blue = cv2.inRange(hsv, np.array([95, 150, 60]), np.array([130, 255, 255]))
+        mask_green = cv2.inRange(hsv, np.array([40, 100, 50]), np.array([80, 255, 255]))
+        mask_red = cv2.inRange(hsv, np.array([0, 150, 60]), np.array([10, 255, 255])) + \
+                   cv2.inRange(hsv, np.array([170, 150, 60]), np.array([180, 255, 255]))
+
+        detected_dots = []
+        def find_dots(mask, label_name):
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for c in contours:
+                if cv2.contourArea(c) > 80:
+                    M = cv2.moments(c)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        detected_dots.append({"label": label_name, "x": cx, "y": cy})
+
+        find_dots(mask_blue, "Player")
+        find_dots(mask_red, "Banker")
+        find_dots(mask_green, "Tie")
+
+        # Thuật toán phân bổ dòng thời gian Baccarat (theo cột X -> dòng Y)
+        detected_dots.sort(key=lambda item: (item["x"] // 35, item["y"]))
+        return [item["label"] for item in detected_dots]
+
+
+# =========================================================================
+# 📸 MODULE 1: VISION CONTROLLER BRIDGE
 # =========================================================================
 class VisionScannerEngine:
     @staticmethod
@@ -209,29 +255,22 @@ class BaccaratInterfaceSystem:
             <style>
             .stApp { background: #030611 !important; color: #f8fafc !important; }
             .block-container { padding: 0.8rem 0.6rem !important; max-width: 100% !important; }
-            
             div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 6px !important; padding: 0px !important; }
             div[data-testid="stHorizontalBlock"] > div { flex: 1 1 0% !important; min-width: 0px !important; padding: 0px !important; }
-
             .section-title { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
             .header-hud-bar { background: linear-gradient(90deg, #0f172a, #1e293b); border: 1px solid #334155; border-radius: 8px; padding: 8px; margin-bottom: 12px; text-align: center; font-family: monospace; font-size: 11px; color: #cbd5e1; }
-            
             .action-panel { border-radius: 10px; padding: 14px; margin: 10px 0px; text-align: center; box-shadow: 0px 4px 20px rgba(0,0,0,0.5); }
             .action-status { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
             .action-msg { font-size: 12px; margin-bottom: 10px; text-align: justify; line-height: 1.3; }
             .action-vol { font-size: 13px; font-weight: 900; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 8px; }
-            
             .mobile-metric-box { background: #0b132b; border: 1px solid #1c2541; border-radius: 8px; padding: 8px 4px; display: flex; flex-direction: column; text-align: center; }
             .metric-tag { font-size: 8px; font-weight: 800; color: #64748b; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
             .metric-num { font-size: 16px; font-weight: 900; font-family: monospace; }
             .metric-sub { font-size: 9px; opacity: 0.5; }
-
             .score-log-hud { padding: 10px; border-radius: 8px; background-color: #0b132b; border: 1px dashed #3a506b; font-family: monospace; font-size: 11px; margin-top: 12px; color: #cbd5e1; height: 120px; overflow-y: auto; }
-            
             div.stButton > button { background-color: #1c2541 !important; color: #cbd5e1 !important; border: 1px solid #3a506b !important; border-radius: 8px; font-weight: 700; width: 100% !important; padding: 6px 0px !important; font-size: 12px !important; }
             .submit-btn-box div.stButton > button { background-color: #00f5d4 !important; color: #010206 !important; border: none !important; font-weight: 800; box-shadow: 0 0 10px rgba(0,245,212,0.3); }
             .vision-btn-box div.stButton > button { background-color: #a855f7 !important; color: #ffffff !important; border: none !important; box-shadow: 0 0 10px rgba(168,85,247,0.3); }
-            
             div[data-testid="stWidgetLabel"] p { font-size: 11px !important; color: #94a3b8 !important; font-weight: 700; }
             div[data-testid="stTextInput"] input { padding: 6px 10px !important; font-size: 13px !important; background-color: #090d16 !important; color: #fff !important; border: 1px solid #1e293b !important; }
             </style>
@@ -251,7 +290,7 @@ class BaccaratInterfaceSystem:
 
 
 # =========================================================================
-# 🎮 RUNTIME CONTROLLER EXECUTION
+# 🎮 SYSTEM RUNTIME CONTROLLER
 # =========================================================================
 st.set_page_config(page_title="Oracle Mobile UI v48.0", page_icon="⚡", layout="centered")
 BaccaratInterfaceSystem.inject_mobile_css()
@@ -264,9 +303,9 @@ if 'last_processed_image' not in st.session_state:
 decks, hist_p, hist_b, hist_t = BaccaratInterfaceSystem.render_sidebar()
 
 st.markdown("### ⚡ ORACLE TREND TRACKING v48.0")
-st.caption("Giao diện lưới siêu nén tích hợp Mô-đun AI Vision v48.0 độc lập")
+st.caption("Giao diện lưới siêu nén tích hợp Lõi AI Vision v48.0 Đã tối ưu hóa")
 
-# 1. CAMERA INPUT & ĐỒNG BỘ AI HÌNH HỌC THUẦN TÚY
+# 1. CAMERA HUDS
 img_file = VisionScannerEngine.render_camera_hud()
 
 if img_file is not None:
@@ -280,7 +319,7 @@ if img_file is not None:
             detected_roadmap = VisionScannerEngine.process_image_via_ai(image_bytes)
             
             if detected_roadmap:
-                st.session_state.round_detailed_log = [] # Reset log cũ để đồng bộ chuỗi hạt mới từ ảnh
+                st.session_state.round_detailed_log = [] 
                 for outcome in detected_roadmap:
                     st.session_state.round_detailed_log.append({
                         'p_cards': [], 'b_cards': [], 'p_score': 0, 'b_score': 0, 'outcome': outcome
@@ -292,7 +331,7 @@ if img_file is not None:
 
 st.markdown("---")
 
-# 2. KHỞI CHẠY 3 LÕI TOÁN HỌC TÍNH XÁC SUẤT XU HƯỚNG
+# 2. PROBABILITY CALCULATION
 final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v48_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
 )
@@ -300,7 +339,7 @@ cmd = get_ultimate_directive(final_p, final_b, trend_desc, streak_side, streak_c
 
 st.markdown(f'<div class="header-hud-bar">🎰 VÁN ĐÃ QUÉT: <b>{total_p + total_b + total_t}</b> | 🎴 CÒN LẠI: <b>{cards_left}</b> / {decks * 52}</div>', unsafe_allow_html=True)
 
-# 3. KHỐI FORM NHẬP LIỆU THỦ CÔNG
+# 3. MANUAL INPUT FORM
 st.markdown('<p class="section-title">🎴 NHẬP QUÂN BÀI THỦ CÔNG</p>', unsafe_allow_html=True)
 with st.form(key="manual_mobile_form", clear_on_submit=True):
     input_grid = st.columns(2)
@@ -320,16 +359,16 @@ if calc_triggered and (p_str.strip() or b_str.strip()):
 
 st.markdown("---")
 
-# 4. KHỐI HIỂN THỊ CHỈ THỊ VÀO LỆNH TỐI HẬU
+# 4. DIRECTIVE UI
 st.markdown(f'<div class="action-panel" style="background-color: {cmd["bg"]}; border: 1px solid {cmd["color"]}; color: {cmd["color"]};"><div class="action-status">{cmd["status"]}</div><div class="action-msg" style="color: #f1f5f9;">{cmd["msg"]}</div><div class="action-vol">MỨC CƯỢC: {cmd["size"]}</div></div>', unsafe_allow_html=True)
 
-# 5. KHỐI 3 CỘT KHÔNG VỠ TRÊN MOBILE HIỂN THỊ XÁC SUẤT TUYỆT ĐỐI
+# 5. METRICS BOXES
 prob_grid = st.columns(3)
 prob_grid[0].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔵 PLAYER SOV</span><span class="metric-num" style="color:#00afb9;">{final_p:.1f}%</span><span class="metric-sub">Sl: {total_p}</span></div>', unsafe_allow_html=True)
 prob_grid[1].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔴 BANKER SOV</span><span class="metric-num" style="color:#ff4757;">{final_b:.1f}%</span><span class="metric-sub">Sl: {total_b}</span></div>', unsafe_allow_html=True)
 prob_grid[2].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE HYPER</span><span class="metric-num" style="color:#2ecc71;">{final_t:.1f}%</span><span class="metric-sub">Sl: {total_t}</span></div>', unsafe_allow_html=True)
 
-# 6. NHẬT KÝ TIẾN TRÌNH KHẤU TRỪ BÀI VÀ ROADMAP CHI TIẾT
+# 6. HISTORIC LOGS
 if st.session_state.round_detailed_log:
     st.markdown('<div class="score-log-hud"><b>📊 TIẾN TRÌNH KHẤU TRỪ BÀI VÀ ROADMAP:</b><br>', unsafe_allow_html=True)
     for idx, r in enumerate(st.session_state.round_detailed_log):
