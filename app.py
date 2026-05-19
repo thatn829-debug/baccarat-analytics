@@ -7,12 +7,14 @@ import math
 # =========================================================================
 class PlayerQuantumAgent:
     @staticmethod
-    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive):
+    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive, burn_cards):
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
         
+        # Khấu trừ bài từ số ván nhập tay ở Sidebar + Số lá bài rút bỏ (Burn Cards)
         sidebar_total_rounds = manual_p + manual_b + manual_t
-        if sidebar_total_rounds > 0:
-            estimated_cards_removed = sidebar_total_rounds * 4.9452
+        estimated_cards_removed = (sidebar_total_rounds * 4.9452) + burn_cards
+        
+        if estimated_cards_removed > 0:
             cards_per_rank_removed = estimated_cards_removed / 13.0
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - cards_per_rank_removed)
@@ -68,12 +70,13 @@ class PlayerQuantumAgent:
 # =========================================================================
 class BankerMarkovAgent:
     @staticmethod
-    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive):
+    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive, burn_cards):
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
         
         sidebar_total_rounds = manual_p + manual_b + manual_t
-        if sidebar_total_rounds > 0:
-            estimated_cards_removed = sidebar_total_rounds * 4.9452
+        estimated_cards_removed = (sidebar_total_rounds * 4.9452) + burn_cards
+        
+        if estimated_cards_removed > 0:
             cards_per_rank_removed = estimated_cards_removed / 13.0
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - cards_per_rank_removed)
@@ -132,12 +135,13 @@ class BankerMarkovAgent:
 # =========================================================================
 class TieHypergeometricAgent:
     @staticmethod
-    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
+    def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
         
         sidebar_total_rounds = manual_p + manual_b + manual_t
-        if sidebar_total_rounds > 0:
-            estimated_cards_removed = sidebar_total_rounds * 4.9452
+        estimated_cards_removed = (sidebar_total_rounds * 4.9452) + burn_cards
+        
+        if estimated_cards_removed > 0:
             cards_per_rank_removed = estimated_cards_removed / 13.0
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - cards_per_rank_removed)
@@ -225,18 +229,18 @@ class MathQuantumUniverse:
 # =========================================================================
 # 💡 MODULE 4: FUSION DISTRIBUTOR & SIMULATOR
 # =========================================================================
-def calculate_v67_8_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
+def calculate_v67_8_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
     total_p_wins = manual_p + sum(1 for r in all_rounds_log if r['outcome'] == "Player")
     total_b_wins = manual_b + sum(1 for r in all_rounds_log if r['outcome'] == "Banker")
     total_ties = manual_t + sum(1 for r in all_rounds_log if r['outcome'] == "Tie")
     total_decisive = total_p_wins + total_b_wins
     
     if not all_rounds_log and (manual_p == 0 and manual_b == 0 and manual_t == 0):
-        return 0.0, 0.0, 0.0, shoe_decks * 52, 0, 0, 0, "KHÔNG GIAN TRỐNG", None, 0
+        return 0.0, 0.0, 0.0, (shoe_decks * 52) - burn_cards, 0, 0, 0, "KHÔNG GIAN TRỐNG", None, 0
 
-    raw_p = PlayerQuantumAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive)
-    raw_b = BankerMarkovAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive)
-    raw_t = TieHypergeometricAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t)
+    raw_p = PlayerQuantumAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive, burn_cards)
+    raw_b = BankerMarkovAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive, burn_cards)
+    raw_t = TieHypergeometricAgent.compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
     
     raw_p = max(0.5, min(99.5, raw_p))
     raw_b = max(0.5, min(99.5, raw_b))
@@ -249,7 +253,7 @@ def calculate_v67_8_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual
     
     total_initial_cards = shoe_decks * 52
     sidebar_rounds = manual_p + manual_b + manual_t
-    cards_spent_estimated = sidebar_rounds * 4.9452
+    cards_spent_estimated = (sidebar_rounds * 4.9452) + burn_cards
     cards_spent_actual = sum(len(r['p_cards'] + r['b_cards']) for r in all_rounds_log)
     
     cards_remaining = max(0, int(total_initial_cards - (cards_spent_estimated + cards_spent_actual)))
@@ -301,7 +305,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
 
 
 # =========================================================================
-# 🔴 MODULE 7: AI SOVEREIGN ORACLE - COSMOLOGICAL SUPERINTELLIGENCE
+# 🌌 MODULE 7: AI SOVEREIGN ORACLE - COSMOLOGICAL SUPERINTELLIGENCE
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -316,8 +320,8 @@ class AISovereignOracle:
         return entropy
 
     @staticmethod
-    def analyze_and_suggest(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds):
-        if total_rounds == 0:
+    def analyze_and_suggest(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds, burn_cards):
+        if total_rounds == 0 and burn_cards == 0:
             return {
                 "decision": "👁️ ORACLE SẴN SÀNG", "target": "QUÉT KHÔNG GIAN...", "capital_allocation": "0%", "strategy_type": "Cosmological Array 2026",
                 "ai_insight": "Siêu máy tính tối cao đã liên kết trường dữ liệu sảnh bài.",
@@ -329,8 +333,8 @@ class AISovereignOracle:
         exact_cards_left = {i: initial_cards for i in range(1, 14)}
         
         sidebar_rounds = manual_p + manual_b + manual_t
-        if sidebar_rounds > 0:
-            estimated_removed = sidebar_rounds * 4.9452
+        estimated_removed = (sidebar_rounds * 4.9452) + burn_cards
+        if estimated_removed > 0:
             rank_removed = estimated_removed / 13.0
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - rank_removed)
@@ -372,7 +376,7 @@ class AISovereignOracle:
                 final_alloc = max(6.0, min(28.0, dynamic_alloc * 1.95))
                 return {
                     "decision": f"💥 FORCE: BẺ CẦU TỐI CAO ➡️ {intrinsic_target}", "target": intrinsic_target,
-                    "capital_allocation": f"🔥 KỲ DỊ: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING OVERRIDE",
+                    "capital_allocation": f"🔥 KÝ DỊ: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING OVERRIDE",
                     "ai_insight": f"Chuỗi bệt {current_streak_upper} đạt giới hạn Entropy. Ép đảo chiều về {intrinsic_target}.",
                     "risk_level": "Cực thấp (Lợi thế)", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
                     "raw_code": "FORCE_COUNTER_STREAK"
@@ -407,7 +411,7 @@ class AISovereignOracle:
 # =========================================================================
 class QuantumArbitrationMatrix:
     @staticmethod
-    def render_arbitration_logic(multi_cmd, oracle_cmd, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
+    def render_arbitration_logic(multi_cmd, oracle_cmd, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
         if not all_rounds_log and (manual_p == 0 and manual_b == 0):
             return "WAIT"
 
@@ -418,8 +422,8 @@ class QuantumArbitrationMatrix:
         initial_cards = float(4 * shoe_decks)
         exact_cards_left = {i: initial_cards for i in range(1, 14)}
         sidebar_rounds = manual_p + manual_b + manual_t
-        if sidebar_rounds > 0:
-            estimated_removed = sidebar_rounds * 4.9452
+        estimated_removed = (sidebar_rounds * 4.9452) + burn_cards
+        if estimated_removed > 0:
             rank_removed = estimated_removed / 13.0
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - rank_removed)
@@ -632,7 +636,7 @@ class BaccaratInterfaceSystem:
             .audit-table th:nth-child(4), .audit-table td:nth-child(4) { width: 10%; }
             .audit-table th:nth-child(5), .audit-table td:nth-child(5) { width: 17%; font-size: 10px; white-space: normal; }
             
-            .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+            .status-dot { inline-block; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
             
             div.stButton > button { background-color: #0f172a !important; color: #cbd5e1 !important; border: 1px solid #1e293b !important; border-radius: 8px; font-weight: 800; width: 100% !important; padding: 10px 0px !important; }
             .submit-btn-box div.stButton > button { background-color: #38bdf8 !important; color: #010206 !important; border: none !important; box-shadow: 0 0 12px rgba(56,189,248,0.3); }
@@ -647,12 +651,22 @@ class BaccaratInterfaceSystem:
     def render_sidebar():
         st.sidebar.markdown("### ⚙️ CẤU HÌNH KHAY BÀI VŨ TRỤ")
         decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
+        
+        # ĐẶT MẶC ĐỊNH LÀ 7 LÁ NẾU KHÔNG BIẾT SỐ LÁ RÚT BỎ (KỲ VỌNG TOÁN HỌC TRUNG BÌNH)
+        burn_cards = st.sidebar.number_input(
+            "🎴 SỐ LÁ RÚT BỎ (BURN CARDS):", 
+            min_value=0, max_value=50, 
+            value=7, 
+            step=1, 
+            help="Nếu không biết sòng rút bao nhiêu lá, hãy giữ nguyên số 7 (Kỳ vọng toán học trung bình của sòng bài)."
+        )
+        
         st.sidebar.markdown("---")
         st.sidebar.markdown("### 📊 SỐ LIỆU QUỸ ĐẠO NỀN")
         hist_p = st.sidebar.number_input("🔵 PLAYER WINS:", min_value=0, value=0, step=1)
         hist_b = st.sidebar.number_input("🔴 BANKER WINS:", min_value=0, value=0, step=1)
         hist_t = st.sidebar.number_input("🟢 TIE WINS:", min_value=0, value=0, step=1)
-        return decks, hist_p, hist_b, hist_t
+        return decks, hist_p, hist_b, hist_t, burn_cards
 
     @staticmethod
     def render_header_hud(total_rounds, cards_left, decks_count):
@@ -740,12 +754,12 @@ BaccaratInterfaceSystem.inject_custom_css()
 if 'round_detailed_log' not in st.session_state: 
     st.session_state.round_detailed_log = []
 
-decks, hist_p, hist_b, hist_t = BaccaratInterfaceSystem.render_sidebar()
+decks, hist_p, hist_b, hist_t, burn_cards = BaccaratInterfaceSystem.render_sidebar()
 
 st.markdown("### 🌌 ORACLE MULTI-AGENT QUANTUM DECENTRALIZED v67.8")
 
 final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v67_8_ultimate_fusion(
-    st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
+    st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t, burn_cards=burn_cards
 )
 cmd = get_ultimate_directive(final_p, final_b, trend_desc, streak_side, streak_count, st.session_state.round_detailed_log, hist_p, hist_b)
 
@@ -759,7 +773,8 @@ current_ai_oracle = AISovereignOracle.analyze_and_suggest(
     p_val=final_p, b_val=final_b, t_val=final_t, 
     cards_left=cards_left, 
     trend_desc=trend_desc, streak_side=streak_side, streak_count=streak_count, 
-    total_rounds=total_all_rounds
+    total_rounds=total_all_rounds,
+    burn_cards=burn_cards
 )
 
 calc_triggered, p_input, b_input = BaccaratInterfaceSystem.render_input_form()
@@ -769,7 +784,8 @@ current_arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(
     oracle_cmd=current_ai_oracle, 
     all_rounds_log=st.session_state.round_detailed_log,
     shoe_decks=decks,
-    manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
+    manual_p=hist_p, manual_b=hist_b, manual_t=hist_t,
+    burn_cards=burn_cards
 )
 
 if calc_triggered and (p_input.strip() or b_input.strip()):
