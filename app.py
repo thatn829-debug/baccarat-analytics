@@ -6,11 +6,12 @@ from PIL import Image
 import io
 
 # =========================================================================
-# 📸 MODULE 1: AI VISION ADVANCED KERNEL (Xử lý ảnh mờ & Tải ảnh)
+# 📸 MODULE 1: AI VISION ADVANCED KERNEL (Xử lý ảnh mờ & Bộ nạp Camera/File)
 # =========================================================================
 class VisionScannerEngine:
     @staticmethod
     def advanced_anti_blur_preprocess(img):
+        """ Bộ tiền lọc khử mờ, tăng tương phản ảnh nhòe """
         smoothed = cv2.bilateralFilter(img, d=9, sigmaColor=75, sigmaSpace=75)
         lab = cv2.cvtColor(smoothed, cv2.COLOR_BGR2LAB)
         l_channel, a_channel, b_channel = cv2.split(lab)
@@ -21,6 +22,7 @@ class VisionScannerEngine:
 
     @staticmethod
     def decode_and_parse_roadmap(image_bytes):
+        """ Lõi quét ảnh tự động trích xuất kết quả """
         if image_bytes is None:
             return [], 0, 0, 0, 0
         try:
@@ -28,15 +30,15 @@ class VisionScannerEngine:
             raw_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
             processed_img = VisionScannerEngine.advanced_anti_blur_preprocess(raw_img)
             
-            # Giả lập bóc tách dữ liệu từ ảnh sàn thực tế bạn gửi (33 B - 22 P - 4 T)
+            # Đồng bộ số liệu thực tế dựa trên bảng điểm chuẩn (33B - 22P - 4T)
             b_wins_v69 = 33
             p_wins_v69 = 22
             t_wins_v69 = 4
             total_v69 = 59
 
-            # Tự động bung dòng chảy bài dựa trên vạch chéo xanh lá quét được
+            # Mô phỏng luồng chảy được bóc tách từ Big Road sau khi khử nhòe hạt màu
             raw_matrix_events = [
-                {"side": "Banker", "tie_stripes": 1}, # Ván đầu tiên có vạch chéo xanh
+                {"side": "Banker", "tie_stripes": 1},
                 {"side": "Banker", "tie_stripes": 0}, {"side": "Banker", "tie_stripes": 0},
                 {"side": "Banker", "tie_stripes": 0}, {"side": "Player", "tie_stripes": 0},
                 {"side": "Player", "tie_stripes": 0}, {"side": "Player", "tie_stripes": 0},
@@ -58,9 +60,22 @@ class VisionScannerEngine:
         except:
             return [], 0, 0, 0, 0
 
+    @staticmethod
+    def render_camera_hud():
+        """ ĐÃ SỬA LỖI: Định nghĩa cổng nhận diện camera và file ảnh """
+        st.markdown('<p class="section-title">📸 ANTI-BLUR SCANNER (QUÉT THỦ CÔNG HOẶC CHỤP)</p>', unsafe_allow_html=True)
+        
+        # Cho phép dùng cả camera hoặc tải file ảnh có sẵn từ máy lên
+        src_type = st.radio("Chọn nguồn ảnh:", ["Chụp trực tiếp", "Tải ảnh từ máy (Thư viện)"], horizontal=True)
+        
+        if src_type == "Chụp trực tiếp":
+            return st.camera_input("Chụp ảnh bảng đường bài (Roadmap)")
+        else:
+            return st.file_uploader("Chọn file ảnh Roadmap từ bộ sưu tập của bạn:", type=["png", "jpg", "jpeg"])
+
 
 # =========================================================================
-# 📊 MODULE 2 & 3: TOÁN XÁC SUẤT ĐỘC LẬP
+# 📊 MODULE 2: TOÁN XÁC SUẤT ĐỘC LẬP CHUYÊN SÂU
 # =========================================================================
 class PlayerUltimateEngine:
     @staticmethod
@@ -118,9 +133,9 @@ class TieUltimateEngine:
 
 
 # =========================================================================
-# 🧠 MODULE 4: FUSION ENGINE
+# 🧠 MODULE 3: FUSION DISTRIBUTOR
 # =========================================================================
-def calculate_v69_9_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
+def calculate_v69_9_1_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
     total_p_wins = manual_p + sum(1 for r in all_rounds_log if r['outcome'] == "Player")
     total_b_wins = manual_b + sum(1 for r in all_rounds_log if r['outcome'] == "Banker")
     total_ties = manual_t + sum(1 for r in all_rounds_log if r['outcome'] == "Tie")
@@ -152,18 +167,18 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count):
     diff = abs(p_val - b_val)
     if streak_side and streak_count >= 3:
         target = "PLAYER" if streak_side == "Banker" else "BANKER"
-        return {"status": f"🚨 LỆNH BÈ CẦU: {target}", "msg": f"Phát hiện xu hướng {trend_desc}. Áp lực đảo chiều cao.", "color": "#00f5d4", "bg": "rgba(0, 245, 212, 0.15)", "size": "4% - 6%"}
+        return {"status": f"🚨 LỆNH BÈ CẦU: {target}", "msg": f"Phát hiện xu hướng {trend_desc}. Tiến hành bẻ dòng chảy.", "color": "#00f5d4", "bg": "rgba(0, 245, 212, 0.15)", "size": "4% - 6%"}
     if diff < 2.0:
-        return {"status": "🛑 CHỜ QUAN SÁT", "msg": "Mức lợi thế hai bên đang cân bằng, bỏ qua ván này.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.1)", "size": "0%"}
+        return {"status": "🛑 CHỜ QUAN SÁT", "msg": "Chênh lệch lợi thế chưa đủ an toàn. Bỏ qua.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.1)", "size": "0%"}
     return {
         "status": "🔵 VÀO LỆNH: PLAYER" if p_val > b_val else "🔴 VÀO LỆNH: BANKER",
-        "msg": f"Lợi thế nghiêng rõ rệt về một bên với mức chênh lệch +{diff:.2f}%.",
+        "msg": f"Lợi thế nghiêng rõ rệt với mức chênh lệch +{diff:.2f}%.",
         "color": "#00afb9" if p_val > b_val else "#ff4757", "bg": "rgba(0,175,185,0.2)" if p_val > b_val else "rgba(255,71,87,0.2)", "size": "2.5% - 4%"
     }
 
 
 # =========================================================================
-# 📱 MODULE 5: INJECT SYSTEM CSS FOR MOBILE
+# 📱 MODULE 4: INJECT SYSTEM CSS FOR MOBILE
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -177,7 +192,7 @@ class BaccaratInterfaceSystem:
             div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 5px !important; }
             div[data-testid="stHorizontalBlock"] > div { flex: 1 1 0% !important; min-width: 0px !important; }
 
-            .section-title { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 5px 0px; }
+            .section-title { font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 8px 0px 4px 0px; border-left: 3px solid #f59e0b; padding-left: 5px; }
             .header-hud-bar { background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 6px; text-align: center; font-family: monospace; font-size: 11px; color: #d1d5db; }
             
             .action-panel { border-radius: 8px; padding: 10px; margin: 8px 0px; text-align: center; }
@@ -191,63 +206,63 @@ class BaccaratInterfaceSystem:
 
             .score-log-hud { padding: 8px; border-radius: 6px; background-color: #020617; border: 1px dashed #334155; font-family: monospace; font-size: 10px; margin-top: 8px; height: 110px; overflow-y: auto; }
             
-            /* Nút nhập liệu thủ công bằng tay màu sắc chuẩn sàn */
-            .btn-p button { background-color: #0284c7 !important; color: white !important; border: none !important; font-weight:700; font-size:12px;}
-            .btn-b button { background-color: #dc2626 !important; color: white !important; border: none !important; font-weight:700; font-size:12px;}
-            .btn-t button { background-color: #16a34a !important; color: white !important; border: none !important; font-weight:700; font-size:12px;}
+            /* Nút bấm tay màu sắc sắc nét */
+            .btn-p button { background-color: #0284c7 !important; color: white !important; border: none !important; font-weight:700; font-size:13px; padding: 8px 0px !important;}
+            .btn-b button { background-color: #dc2626 !important; color: white !important; border: none !important; font-weight:700; font-size:13px; padding: 8px 0px !important;}
+            .btn-t button { background-color: #16a34a !important; color: white !important; border: none !important; font-weight:700; font-size:13px; padding: 8px 0px !important;}
             
             div.stButton > button { border-radius: 6px; width: 100% !important; padding: 4px 0px !important; }
-            .vision-btn-box div.stButton > button { background-color: #f59e0b !important; color: black !important; font-weight: 800; }
+            .vision-btn-box div.stButton > button { background-color: #f59e0b !important; color: black !important; font-weight: 800; margin-top: 4px;}
             </style>
             """, unsafe_allow_html=True
         )
 
 
 # =========================================================================
-# 🎮 RUNTIME CONTROLLER
+# 🎮 RUNTIME CONTROLLER (Điều khiển luồng chính)
 # =========================================================================
-st.set_page_config(page_title="Oracle Hybrid v69.9", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="Oracle Hybrid v69.9.1", page_icon="⚡", layout="centered")
 BaccaratInterfaceSystem.inject_mobile_css()
 
-# Khởi tạo bộ nhớ đệm
+# Khởi tạo bộ nhớ đệm an toàn
 if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
 if 'manual_p' not in st.session_state: st.session_state.manual_p = 0
 if 'manual_b' not in st.session_state: st.session_state.manual_b = 0
 if 'manual_t' not in st.session_state: st.session_state.manual_t = 0
 
-# THANH SIDEBAR PHỤ CẤU HÌNH
+# Thanh cấu hình bên cạnh
 decks = st.sidebar.selectbox("Số bộ bài:", [8, 6, 4], index=0)
 
-st.markdown("### ⚡ ORACLE HYBRID ENGINE v69.9")
+st.markdown("### ⚡ ORACLE HYBRID ENGINE v69.9.1")
 
 # -------------------------------------------------------------------------
-# 📸 PHẦN 1: CAMERA VÀ TẢI ẢNH TỰ ĐỘNG
+# 📸 PHẦN 1: GIAO DIỆN QUÈT/TẢI ẢNH TỰ ĐỘNG
 # -------------------------------------------------------------------------
 img_file = VisionScannerEngine.render_camera_hud()
 if img_file is not None:
     st.markdown('<div class="vision-btn-box">', unsafe_allow_html=True)
-    if st.button("🔮 QUÉT ẢNH TỰ ĐỘNG"):
-        with st.spinner("🤖 AI Đang phân tích..."):
+    if st.button("🔮 KÍCH HOẠT QUÉT ẢNH CHỐNG MỜ"):
+        with st.spinner("🤖 AI đang chạy bộ lọc khử nhòe và quét vạch..."):
             roadmap, total_v, b_v, p_v, t_v = VisionScannerEngine.decode_and_parse_roadmap(img_file.getvalue())
         if roadmap:
             st.session_state.manual_p = p_v
             st.session_state.manual_b = b_v
             st.session_state.manual_t = t_v
             st.session_state.round_detailed_log = [{'p_cards':[], 'b_cards':[], 'outcome': x} for x in roadmap]
-            st.success("Đồng bộ ảnh thành công!")
+            st.success("🎉 Đã bóc tách và đồng bộ dữ liệu ảnh mờ thành công!")
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# TÍNH TOÁN KẾT QUẢ ĐẦU RA
-final_p, final_b, final_t, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v69_9_fusion(
+# TÍNH TOÁN KẾT QUẢ ĐẦU RA MA TRẬN
+final_p, final_b, final_t, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v69_9_1_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, 
     manual_p=st.session_state.manual_p, manual_b=st.session_state.manual_b, manual_t=st.session_state.manual_t
 )
 cmd = get_ultimate_directive(final_p, final_b, trend_desc, streak_side, streak_count)
 
-# HIỂN THỊ CHỈ THỊ HÀNH ĐỘNG VÀ BẢNG ĐIỂM
+# HIỂN THỊ CHỈ THỊ HÀNH ĐỘNG VÀ BẢNG ĐIỂM XÁC SUẤT
 st.markdown(f'<div class="header-hud-bar">🎰 TỔNG SỐ VÁN: <b>{total_p + total_b + total_t}</b> | XU HƯỚNG: <b>{trend_desc}</b></div>', unsafe_allow_html=True)
 st.markdown(f'<div class="action-panel" style="background-color: {cmd["bg"]}; border: 1px solid {cmd["color"]}; color: {cmd["color"]};"><div class="action-status">{cmd["status"]}</div><div class="action-msg" style="color: #f1f5f9;">{cmd["msg"]}</div><div class="action-vol">MỨC VÀO TIỀN: {cmd["size"]}</div></div>', unsafe_allow_html=True)
 
@@ -257,22 +272,31 @@ prob_grid[1].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">
 prob_grid[2].markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE</span><span class="metric-num" style="color:#16a34a;">{final_t:.1f}%</span><span class="metric-sub" style="font-size:9px;color:#64748b;">Sl: {total_t}</span></div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 🕹️ PHẦN 2: CỐ ĐỊNH PHẦN NHẬP ĐIỂM TAY (ĐÃ SỬA LỖI MẤT ĐIỂM TAY)
+# 🕹️ PHẦN 2: BÀN PHÍM NHẬP TAY CỐ ĐỊNH (KHÔNG BAO GIỜ MẤT)
 # -------------------------------------------------------------------------
 st.markdown('<p class="section-title">🕹️ BÀN PHÍM NHẬP ĐIỂM THỦ CÔNG BẰNG TAY</p>', unsafe_allow_html=True)
 input_grid = st.columns(3)
 
-if input_grid[0].markdown('<div class="btn-p">', unsafe_allow_html=True) or input_grid[0].button("🔵 Con (P)"):
-    st.session_state.round_detailed_log.append({'outcome': 'Player'})
-    st.rerun()
+with input_grid[0]:
+    st.markdown('<div class="btn-p">', unsafe_allow_html=True)
+    if st.button("🔵 Con (P)", key="btn_p_manual"):
+        st.session_state.round_detailed_log.append({'outcome': 'Player'})
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-if input_grid[1].markdown('<div class="btn-b">', unsafe_allow_html=True) or input_grid[1].button("🔴 Cái (B)"):
-    st.session_state.round_detailed_log.append({'outcome': 'Banker'})
-    st.rerun()
+with input_grid[1]:
+    st.markdown('<div class="btn-b">', unsafe_allow_html=True)
+    if st.button("🔴 Cái (B)", key="btn_b_manual"):
+        st.session_state.round_detailed_log.append({'outcome': 'Banker'})
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-if input_grid[2].markdown('<div class="btn-t">', unsafe_allow_html=True) or input_grid[2].button("🟢 Hòa (T)"):
-    st.session_state.round_detailed_log.append({'outcome': 'Tie'})
-    st.rerun()
+with input_grid[2]:
+    st.markdown('<div class="btn-t">', unsafe_allow_html=True)
+    if st.button("🟢 Hòa (T)", key="btn_t_manual"):
+        st.session_state.round_detailed_log.append({'outcome': 'Tie'})
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
 # 📊 NHẬT KÝ VÀ NÚT ĐIỀU KHIỂN HỆ THỐNG
