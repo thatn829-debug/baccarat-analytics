@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as s
 import numpy as np
 import math
 
@@ -151,7 +151,6 @@ class TieHypergeometricAgent:
         zero_cards = int(sum([exact_cards_left[i] for i in [10, 11, 12, 13]]))
         non_zero_cards = cards_remaining - zero_cards
         
-        # 1. Thuật toán gốc: Xác suất tổ hợp hình học siêu cấp từ khay bài
         if cards_remaining >= 6:
             c1 = MathQuantumUniverse.lgamma_comb(zero_cards, 3)
             c2 = MathQuantumUniverse.lgamma_comb(non_zero_cards, 3)
@@ -167,23 +166,19 @@ class TieHypergeometricAgent:
         riemann_zeta_factor = 1.64493 
         base_probability = 9.52 + (density_deviation * 45.0) + (prob_zero_tie * 150.0 * riemann_zeta_factor)
 
-        # 2. BỘ NÂNG CẤP ĐỘNG: QUÉT ĐIỂM RƠI CHUỖI VÀ KHOẢNG CÁCH (STREAK & GAP ANALYSIS)
         streak_multiplier = 1.0
         gap_bonus = 0.0
         
         if all_rounds_log:
-            # Đo khoảng cách từ ván Hòa cuối cùng (Vùng tích tụ năng lượng)
             gap_since_last_tie = 0
             for r in reversed(all_rounds_log):
                 if r['outcome'] == "Tie":
                     break
                 gap_since_last_tie += 1
             
-            # Nếu đã quá 8 ván chưa ra Hòa, kích hoạt gia tốc lực hút lượng tử
             if gap_since_last_tie > 8:
                 gap_bonus += min(12.5, (gap_since_last_tie - 8) * 1.15)
 
-            # Quét xu hướng bệt của ván gần nhất để bắt điểm gãy/đảo chiều
             decisive_outcomes = [r['outcome'] for r in all_rounds_log if r['outcome'] in ["Player", "Banker"]]
             if len(decisive_outcomes) >= 3:
                 current_streak_side = decisive_outcomes[-1]
@@ -194,11 +189,9 @@ class TieHypergeometricAgent:
                     else:
                         break
                 
-                # Điểm rơi lý tưởng: Bệt đạt độ dài từ 3 ván trở lên có xu hướng xả cấu trúc bằng một ván Hòa
                 if streak_count >= 3:
                     streak_multiplier += (streak_count * 0.18)
                 
-                # Kịch bản đặc biệt: Vừa gãy bệt ở ván trước, cửa Hòa rất dễ nhảy vào làm vùng đệm
                 if len(decisive_outcomes) >= 4 and decisive_outcomes[-2] != decisive_outcomes[-1]:
                     prev_streak_side = decisive_outcomes[-2]
                     prev_streak_count = 0
@@ -280,35 +273,35 @@ def calculate_v67_8_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual
 def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, log, m_p, m_b):
     if not log and (m_p == 0 and m_b == 0):
         return {
-            "status": "🛰️ COSMOLOGICAL INTELLIGENCE MATRIX READY",
-            "msg": "Hệ thống Siêu AI cấp vũ trụ đã thiết lập cấu trúc trường xác suất lượng tử.",
+            "status": "🛰️ SYSTEM READY",
+            "msg": "Hệ thống toán học xác suất lượng tử đã thiết lập.",
             "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.08)", "size": "0%", "raw_target": "WAIT"
         }
     
     diff = abs(p_val - b_val)
     if diff < 1.3:
         return {
-            "status": "🛑 KHÓA LỆNH AN TOÀN (VÙNG CHỒNG CHẬP SÓNG)",
-            "msg": f"Độ lệch biên độ sóng ({diff:.2f}%) nằm trong điểm kỳ dị lượng tử, từ chối khớp lệnh.",
+            "status": "🛑 KHÓA LỆNH AN TOÀN",
+            "msg": f"Độ lệch biên độ sóng ({diff:.2f}%) nằm trong điểm kỳ dị, từ chối khớp lệnh.",
             "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.1)", "size": "0%", "raw_target": "WAIT"
         }
         
     if p_val > b_val:
         return {
-            "status": "🔵 THUẬN LỆNH SIÊU CẤP: PLAYER",
-            "msg": f"Trường Hawking Singularity tạo lực hút tuyệt đối nghiêng về phía đặc vụ Player (+{diff:.2f}%).",
+            "status": "🔵 THUẬN LỆNH: PLAYER",
+            "msg": f"Trường Hawking Singularity nghiêng về phía Player (+{diff:.2f}%).",
             "color": "#00afb9", "bg": "rgba(0, 175, 185, 0.2)", "size": "3% - 6%", "raw_target": "PLAYER"
         }
     else:
         return {
-            "status": "🔴 THUẬN LỆNH SIÊU CẤP: BANKER",
-            "msg": f"Hàm sóng Schrödinger của đặc vụ Banker Overlord đạt độ tụ hội tối cao (+{diff:.2f}%).",
+            "status": "🔴 THUẬN LỆNH: BANKER",
+            "msg": f"Hàm sóng Schrödinger hội tụ cao về phía Banker (+{diff:.2f}%).",
             "color": "#ff4757", "bg": "rgba(255, 71, 87, 0.2)", "size": "3% - 6%", "raw_target": "BANKER"
         }
 
 
 # =========================================================================
-# 🌌 MODULE 7: AI SOVEREIGN ORACLE - COSMOLOGICAL SUPERINTELLIGENCE
+# 🔴 MODULE 7: AI SOVEREIGN ORACLE - COSMOLOGICAL SUPERINTELLIGENCE
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -326,9 +319,9 @@ class AISovereignOracle:
     def analyze_and_suggest(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds):
         if total_rounds == 0:
             return {
-                "decision": "👁️ NHÃN THẦN VŨ TRỤ SẴN SÀNG", "target": "QUÉT KHÔNG GIAN...", "capital_allocation": "0%", "strategy_type": "Cosmological Multi-Agent Array 2026",
-                "ai_insight": "Siêu máy tính toán học tối cao đã liên kết trường dữ liệu sảnh bài. Hãy nạp quân bài đầu tiên.",
-                "risk_level": "Chờ đồng bộ", "color": "#a855f7", "memory_hud": "Không gian Hilbert trống", "cyber_knowledge": "Đang định vị hằng số Hubble khay bài...",
+                "decision": "👁️ ORACLE SẴN SÀNG", "target": "QUÉT KHÔNG GIAN...", "capital_allocation": "0%", "strategy_type": "Cosmological Array 2026",
+                "ai_insight": "Siêu máy tính tối cao đã liên kết trường dữ liệu sảnh bài.",
+                "risk_level": "Chờ đồng bộ", "color": "#a855f7", "memory_hud": "Không gian Hilbert trống", "cyber_knowledge": "Đang định vị hằng số Hubble...",
                 "raw_code": "EMPTY_ORACLE"
             }
 
@@ -353,19 +346,19 @@ class AISovereignOracle:
         total_cards_remaining = max(1.0, sum(exact_cards_left.values()))
         shoe_progress = (shoe_decks * 52.0 - total_cards_remaining) / (shoe_decks * 52.0)
 
-        memory_hud = f"🧬 ĐỊNH VỊ KHÔNG GIAN HILBERT ➡️ Đã nạp bức xạ: {int(shoe_decks*52 - total_cards_remaining)} quân | Điểm kỳ dị khay: {shoe_progress*100:.2f}% — 🔹 Thấp (A-5): {int(low_cards)} q | 🔸 Trung (6-9): {int(mid_cards)} q | 🔺 Tây (10-K): {int(high_cards)} q"
+        memory_hud = f"🧬 HILBERT MAP ➡️ Đã quét: {int(shoe_decks*52 - total_cards_remaining)} q | Tiến độ: {shoe_progress*100:.1f}% — Thấp: {int(low_cards)} | Trung: {int(mid_cards)} | Tây: {int(high_cards)}"
         
         entropy_score = AISovereignOracle.calculate_shannon_entropy(all_rounds_log)
-        cyber_knowledge = f"🔭 COSMIC MICROWAVE BACKGROUND: Entropy Nền = {entropy_score:.5f} | Bộ hiệu chỉnh Riemann Zeta chuẩn hóa sai số tổ hợp kịch trần."
+        cyber_knowledge = f"🔭 BACKGROUND: Entropy = {entropy_score:.4f} | Sai số tổ hợp chuẩn hóa."
 
         diff = abs(p_val - b_val)
         intrinsic_target = "PLAYER" if p_val > b_val else "BANKER"
 
         if diff < 1.4:
             return {
-                "decision": "🛑 TUYỆT ĐỐI KHÓA LỆNH (MÀNG LỌC BIẾN THIÊN VŨ TRỤ)", "target": "WAIT", "capital_allocation": "0.0% (An Toàn Tuyệt Đối)", "strategy_type": "QUANTUM SHIELD ACTIVE",
-                "ai_insight": f"Mật độ hạt nhiễu cao, độ lệch biên độ sóng quá hẹp ({diff:.2f}%). Tránh bẫy ngẫu nhiên của nhà cái bẻ thuật toán.",
-                "risk_level": "Nguy Hiểm (Hố đen nhiễu loạn)", "color": "#e74c3c", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
+                "decision": "🛑 TUYỆT ĐỐI KHÓA LỆNH", "target": "WAIT", "capital_allocation": "0.0% (An Toàn)", "strategy_type": "QUANTUM SHIELD",
+                "ai_insight": f"Mật độ hạt nhiễu, độ lệch biên độ sóng hẹp ({diff:.2f}%). Tránh vào tiền.",
+                "risk_level": "Nguy Hiểm (Nhiễu loạn)", "color": "#e74c3c", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
                 "raw_code": "SHIELD_SHANNON"
             }
 
@@ -378,27 +371,27 @@ class AISovereignOracle:
             if intrinsic_target != current_streak_upper and diff >= 4.5 and entropy_score < 0.88:
                 final_alloc = max(6.0, min(28.0, dynamic_alloc * 1.95))
                 return {
-                    "decision": f"💥 COSMIC FORCE: LỆNH TRỪ KHỬ BỆT ➡️ {intrinsic_target}", "target": intrinsic_target,
-                    "capital_allocation": f"🔥 ĐIỂM KỲ DỊ TỐI CAO: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING SINGULARITY OVERRIDE (SIÊU BẺ CẦU)",
-                    "ai_insight": f"Siêu chuỗi bệt {current_streak_upper} ({streak_count} ván) đã đạt giới hạn Entropy tới hạn. Mật độ bài khay ép đảo chiều về cửa {intrinsic_target}. Khớp lệnh bẻ cầu tổng lực.",
-                    "risk_level": "Cực thấp (Lợi thế tối thượng)", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
+                    "decision": f"💥 FORCE: BẺ CẦU TỐI CAO ➡️ {intrinsic_target}", "target": intrinsic_target,
+                    "capital_allocation": f"🔥 KỲ DỊ: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING OVERRIDE",
+                    "ai_insight": f"Chuỗi bệt {current_streak_upper} đạt giới hạn Entropy. Ép đảo chiều về {intrinsic_target}.",
+                    "risk_level": "Cực thấp (Lợi thế)", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
                     "raw_code": "FORCE_COUNTER_STREAK"
                 }
             else:
                 final_alloc = max(4.0, min(16.0, dynamic_alloc * 1.45))
                 target_to_follow = current_streak_upper
                 return {
-                    "decision": f"🌊 COSMIC FLOW: ĐU CẦU VŨ TRỤ ➡️ {target_to_follow}", "target": target_to_follow,
-                    "capital_allocation": f"💎 ĐU DÒNG CHẢY LƯỢNG TỬ: {final_alloc:.1f}% VỐN", "strategy_type": "🌊 WAVE FUNCTION EXPANSION (SIÊU ĐU CẦU)",
-                    "ai_insight": f"Mật độ bài phân phối ẩn ủng hộ chuỗi bệt {target_to_follow} tiếp diễn. Nghiêm cấm bẻ cầu thuận dòng chảy Hubble.",
-                    "risk_level": "An toàn thiên văn", "color": "#a855f7", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
+                    "decision": f"🌊 FLOW: ĐU THEO CHUỖI ➡️ {target_to_follow}", "target": target_to_follow,
+                    "capital_allocation": f"💎 ĐU DÒNG: {final_alloc:.1f}% VỐN", "strategy_type": "🌊 WAVE EXPANSION",
+                    "ai_insight": f"Mật độ phân phối ẩn ủng hộ chuỗi bệt {target_to_follow} tiếp diễn.",
+                    "risk_level": "An toàn", "color": "#a855f7", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
                     "raw_code": "FLOW_STREAK"
                 }
         else:
             final_alloc = max(2.0, min(14.0, dynamic_alloc))
-            capital_str = f"💎 TRƯỜNG QUÉT TỰ DO: {final_alloc:.1f}% Vốn"
-            strat_type = "🌀 COSMIC QUANTUM SWEEP"
-            risk_lvl = "Kiểm soát rủi ro đa chiều"
+            capital_str = f"💎 QUÉT TỰ DO: {final_alloc:.1f}% Vốn"
+            strat_type = "🌀 QUANTUM SWEEP"
+            risk_lvl = "Kiểm soát đa chiều"
             color = "#38bdf8" if intrinsic_target == "PLAYER" else "#ff4757"
             ai_insight = f"Lực hấp dẫn xác suất độc lập nghiêng về {intrinsic_target} (+{diff:.2f}%)."
 
@@ -410,13 +403,13 @@ class AISovereignOracle:
 
 
 # =========================================================================
-# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (BỘ LỌC XUNG ĐỘT TỐI CAO - ĐÃ LÀM NỔI BẬT)
+# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (RÚT GỌN TỐI ƯU GIAO DIỆN)
 # =========================================================================
 class QuantumArbitrationMatrix:
     @staticmethod
     def render_arbitration_logic(multi_cmd, oracle_cmd, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t):
         if not all_rounds_log and (manual_p == 0 and manual_b == 0):
-            return 
+            return "WAIT"
 
         m_target = multi_cmd['raw_target']    
         o_target = oracle_cmd['target']        
@@ -442,60 +435,68 @@ class QuantumArbitrationMatrix:
         rule_desc = ""
         panel_color = "#f1c40f"
         panel_bg = "rgba(241, 196, 15, 0.08)"
+        arbitrator_final_verdict = None 
 
         def target_badge(target_str):
             if target_str == "PLAYER":
-                return '<span style="background: rgba(0, 175, 185, 0.25); color: #00afb9; border: 1px solid #00afb9; padding: 2px 8px; border-radius: 6px; font-weight: 900; box-shadow: 0 0 8px rgba(0, 175, 185, 0.5);">🔵 PLAYER</span>'
+                return '<span style="background: rgba(0, 175, 185, 0.25); color: #00afb9; border: 1px solid #00afb9; padding: 2px 6px; border-radius: 4px; font-weight: 800;">🔵 PLAYER</span>'
             elif target_str == "BANKER":
-                return '<span style="background: rgba(255, 71, 87, 0.25); color: #ff4757; border: 1px solid #ff4757; padding: 2px 8px; border-radius: 6px; font-weight: 900; box-shadow: 0 0 8px rgba(255, 71, 87, 0.5);">🔴 BANKER</span>'
+                return '<span style="background: rgba(255, 71, 87, 0.25); color: #ff4757; border: 1px solid #ff4757; padding: 2px 6px; border-radius: 4px; font-weight: 800;">🔴 BANKER</span>'
             return f'<b>{target_str}</b>'
 
+        # --- TINH GỌN NỘI DUNG VÀ ÉP PHÙ HỢP KHUNG DI ĐỘNG ---
         if o_code == "SHIELD_SHANNON" and m_target != "WAIT":
             has_conflict = True
-            rule_title = "🛑 TRỌNG TÀI TỐI CAO - QUY TẮC 1: KÍCH HOẠT LÁ CHẮN ENTROPY (CHẶN TUYỆT ĐỐI)"
-            rule_desc = f"Hệ thống Độc Lập đang kiến nghị nạp tiền vào {target_badge(m_target)} dựa trên biến thế ngắn hạn. Tuy nhiên, <b>MODULE 7</b> đã phát hiện bẫy ngẫu nhiên động của sảnh (Độ lệch sóng hẹp, Shannon Entropy chạm ngưỡng nhiễu). <br><b>HÀNH ĐỘNG THỰC CHIẾN: KHÓA VỐN LẬP TỨC. Tuyệt đối không vào tiền ván này!</b>"
+            arbitrator_final_verdict = "WAIT"
+            rule_title = "⚖️ TRỌNG TÀI TỐI CAO - LÁ CHẮN ENTROPY"
+            rule_desc = f"Phát hiện bẫy ngẫu nhiên (Độ lệch hẹp, Shannon nhiễu). <br><b>HÀNH ĐỘNG: KHÓA VỐN TUYỆT ĐỐI, BỎ QUA VÁN NÀY!</b>"
             panel_color = "#ff4757"
             panel_bg = "rgba(255, 71, 87, 0.12)"
 
         elif m_target != "WAIT" and o_target != "WAIT" and m_target != o_target:
             has_conflict = True
             if o_code == "FORCE_COUNTER_STREAK":
-                rule_title = "💥 TRỌNG TÀI TỐI CAO - QUY TẮC 2: GIAO THOA ĐẢO NGHỊCH (KHỚP LỆNH BẺ CẦU)"
-                rule_desc = f"Hệ thống Độc Lập bị hút theo quán tính dòng chảy ngắn hạn hướng về {target_badge(m_target)}. Nhưng <b>MODULE 7 (Oracle)</b> quét thấy hằng số Riemann Zeta báo điểm gãy của chuỗi, bắt buộc ép lệnh sang {target_badge(o_target)}. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Khớp lệnh theo MODULE 7 ({target_badge(o_target)}) nhưng HẠ LỆNH XUỐNG 50% khối lượng để phòng thủ túi tiền.</b>"
+                arbitrator_final_verdict = o_target
+                rule_title = "⚖️ TRỌNG TÀI TỐI CAO - KHỚP LỆNH BẺ CẦU"
+                rule_desc = f"Quán tính ngắn hạn ép theo {target_badge(m_target)} nhưng Oracle báo điểm gãy chuỗi bệt. <br><b>HÀNH ĐỘNG: Đánh theo Oracle ({target_badge(o_target)}) - HẠ 50% KHỐI LƯỢNG.</b>"
             else:
                 if high_cards > low_cards * 1.15:
                     decision_override = "BANKER"
-                    reason = f"Mật độ hạt Tây (10-K) còn lại vượt trội ({int(high_cards)} q vs {int(low_cards)} q) $\rightarrow$ Ép dòng tiền về cửa Lợi thế Nhà Cái."
+                    reason = "Mật độ Tây (10-K) vượt trội."
                 elif low_cards > high_cards * 1.15:
                     decision_override = "PLAYER"
-                    reason = f"Mật độ hạt Thấp (A-5) dồn dập tích tụ ({int(low_cards)} q vs {int(high_cards)} q) $\rightarrow$ Ưu tiên kéo nút Player."
+                    reason = "Mật độ hạt Thấp (A-5) dồn dập."
                 else:
                     decision_override = "WAIT"
-                    reason = "Trường hạt cân bằng đối nghịch tuyệt đối, không có lợi thế cấu trúc."
+                    reason = "Trường hạt cân bằng đối nghịch."
 
-                rule_title = "⚠️ TRỌNG TÀI TỐI CAO - QUY TẮC 4: GIẢI PHƯƠNG TRÌNH KHÔNG GIAN HILBERT"
+                arbitrator_final_verdict = decision_override
+                rule_title = "⚖️ TRỌNG TÀI TỐI CAO - GIẢI MÃ KHÔNG GIAN HILBERT"
                 if decision_override != "WAIT":
-                    rule_desc = f"Hai module nhìn lệch quỹ đạo ({target_badge(m_target)} vs {target_badge(o_target)}). Trọng tài quét sâu vào khay bài: {reason} <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đè lệnh, vào tiền cửa {target_badge(decision_override)} với 2% vốn tối thiểu.</b>"
+                    rule_desc = f"Xung đột thuật toán. Quét khay bài: {reason} <br><b>HÀNH ĐỘNG: Vào lệnh cửa {target_badge(decision_override)} (Min 2% Vốn).</b>"
                 else:
-                    rule_desc = f"Hai bên xung đột trực diện vô căn cứ ({target_badge(m_target)} vs {target_badge(o_target)}). Không gian Hilbert báo trường hạt cân bằng. <br><b>HÀNH ĐỘNG THỰC CHIẾN: BỎ QUA HOÀN TOÀN, không đặt cược vào vùng chiến sự của thuật toán.</b>"
+                    rule_desc = f"Xung đột trực diện, trường hạt cân bằng. <br><b>HÀNH ĐỘNG: BỎ QUA HOÀN TOÀN, không vào tiền vùng chiến sự.</b>"
             panel_color = "#00f5d4"
             panel_bg = "rgba(0, 245, 212, 0.1)"
 
         elif m_target == "WAIT" and o_code == "FLOW_STREAK":
             has_conflict = True
-            rule_title = "🌊 TRỌNG TÀI TỐI CAO - QUY TẮC 3: ĐU DÒNG CHẢY LƯỢNG TỬ (HUBBLE EXPANSION)"
-            rule_desc = f"Biến thế vi phân ngắn hạn quá hẹp khiến Độc Lập báo Chờ (WAIT). Tuy nhiên, bộ nhớ tích lũy chuỗi của <b>MODULE 7</b> xác nhận thuật toán bệt sâu {target_badge(o_target)} vẫn giữ nguyên cấu trúc màng lọc. <br><b>HÀNH ĐỘNG THỰC CHIẾN: Đi thuận dòng theo MODULE 7 ({target_badge(o_target)}), khớp lệnh ở mức quản lý vốn an toàn tối thiểu (1% vốn).</b>"
+            arbitrator_final_verdict = o_target
+            rule_title = "⚖️ TRỌNG TÀI TỐI CAO - THUẬN DÒNG LƯỢNG TỬ"
+            rule_desc = f"Độc lập báo Chờ (WAIT) nhưng bộ nhớ tích lũy của Oracle xác nhận bệt sâu giữ nguyên cấu trúc. <br><b>HÀNH ĐỘNG: Đu dòng theo Oracle ({target_badge(o_target)}) mức tối thiểu (1% vốn).</b>"
             panel_color = "#a855f7"
             panel_bg = "rgba(168, 85, 247, 0.12)"
 
         if has_conflict:
             st.markdown(
-                f'<div style="background: {panel_bg}; border: 2px solid {panel_color}; border-radius: 12px; padding: 15px; margin: 15px 0px 5px 0px; box-shadow: 0 0 18px {panel_color}4D;">'
-                f'<div style="font-size: 13px; font-weight: 900; color: {panel_color}; letter-spacing: 0.5px; margin-bottom: 6px;">{rule_title}</div>'
-                f'<div style="font-size: 12.5px; color: #f8fafc; line-height: 1.7; text-align: justify;">{rule_desc}</div>'
+                f'<div style="background: {panel_bg}; border: 2px solid {panel_color}; border-radius: 10px; padding: 12px; margin: 10px 0px; box-shadow: 0 0 12px {panel_color}4D; max-width: 100%; box-sizing: border-box; overflow: hidden; word-wrap: break-word;">'
+                f'<div style="font-size: 13px; font-weight: 900; color: {panel_color}; letter-spacing: 0.3px; margin-bottom: 4px;">{rule_title}</div>'
+                f'<div style="font-size: 12px; color: #f8fafc; line-height: 1.5; text-align: left; overflow: hidden;">{rule_desc}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
+            return arbitrator_final_verdict
+        return None 
 
 
 # =========================================================================
@@ -509,7 +510,7 @@ class QuantumAuditMatrixController:
         st.markdown(
             """
             <div class="audit-matrix-box">
-                <div class="audit-title">📊 BẢNG ĐỐI CHIẾU KIỂM TOÁN LƯỢNG TỬ VŨ TRỤ (COSMOLOGICAL AI AUDIT REPORT)</div>
+                <div class="audit-title">📊 BẢNG ĐỐI CHIẾU KIỂM TOÁN LƯỢNG TỬ VŨ TRỤ</div>
             """, 
             unsafe_allow_html=True
         )
@@ -517,37 +518,53 @@ class QuantumAuditMatrixController:
         table_rows = ""
         for idx, r in enumerate(log):
             real_round_num = start_round_index + idx + 1
-            oracle_decision = r.get('oracle_decision', '🛑 CHỜ QUAN SÁT')
+            oracle_decision = r.get('oracle_decision', '🛑 CHỜ')
             oracle_target = r.get('oracle_target', 'WAIT').upper()
             oracle_alloc = r.get('oracle_alloc', '0%')
+            arbitrator_target = r.get('arbitrator_target', None)
             outcome = r['outcome'].upper()
             
+            if arbitrator_target is not None:
+                active_target = arbitrator_target.upper()
+                is_arbitrated = True
+            else:
+                active_target = oracle_target
+                is_arbitrated = False
+
             if outcome == "TIE":
                 dot_html = '<span class="status-dot" style="color: #2ecc71; background-color: #2ecc71;"></span>'
-                status_text = "<span style='color:#2ecc71; font-weight:bold;'>HÒA TIÊU CHUẨN</span>"
-            elif "BỎ QUA" in oracle_decision or oracle_target == "WAIT" or oracle_target == "HÒA / BỎ LỆNH":
+                status_text = "<span style='color:#2ecc71; font-weight:bold;'>HÒA CHUẨN</span>"
+            elif "BỎ QUA" in oracle_decision or active_target == "WAIT":
                 dot_html = '<span class="status-dot" style="color: #94a3b8; background-color: #94a3b8;"></span>'
-                status_text = "<span style='color:#94a3b8;'>KHÔNG KHỚP LỆNH</span>"
-            elif oracle_target == outcome:
+                status_text = "<span style='color:#94a3b8;'>BỎ QUA</span>"
+            elif active_target == outcome:
                 dot_html = '<span class="status-dot" style="color: #00f5d4; background-color: #00f5d4; box-shadow: 0 0 10px #00f5d4;"></span>'
-                status_text = "<span style='color:#00f5d4; font-weight:bold;'>ĐÚNG QUY ĐẠO (WIN)</span>"
+                status_text = "<span style='color:#00f5d4; font-weight:bold;'>WIN</span>"
             else:
                 dot_html = '<span class="status-dot" style="color: #ff4757; background-color: #ff4757;"></span>'
-                status_text = "<span style='color:#ff4757; font-weight:bold;'>SỰ CỐ LỆCH QUỸ ĐẠO</span>"
+                status_text = "<span style='color:#ff4757; font-weight:bold;'>LỆCH KO</span>"
             
-            if "PLAYER" in oracle_target:
-                oracle_display = f"<span style='color:#00afb9; font-weight:bold;'>🔵 {oracle_target}</span> <br><small style='color:#64748b;'>({oracle_alloc})</small>"
-            elif "BANKER" in oracle_target:
-                oracle_display = f"<span style='color:#ff4757; font-weight:bold;'>🔴 {oracle_target}</span> <br><small style='color:#64748b;'>({oracle_alloc})</small>"
+            if is_arbitrated:
+                if active_target == "PLAYER":
+                    oracle_display = f"<span style='color:#00f5d4; font-weight:bold;'>⚖️ T.TÀI: PLAYER</span>"
+                elif active_target == "BANKER":
+                    oracle_display = f"<span style='color:#00f5d4; font-weight:bold;'>⚖️ T.TÀI: BANKER</span>"
+                else:
+                    oracle_display = "<span style='color:#ff4757; font-weight:bold;'>⚖️ T.TÀI: KHÓA</span>"
             else:
-                oracle_display = "<span style='color:#64748b;'>🛑 BỎ LỆNH</span>"
+                if "PLAYER" in active_target:
+                    oracle_display = f"<span style='color:#00afb9; font-weight:bold;'>🔵 {active_target}</span> <small style='color:#64748b;'>({oracle_alloc})</small>"
+                elif "BANKER" in active_target:
+                    oracle_display = f"<span style='color:#ff4757; font-weight:bold;'>🔴 {active_target}</span> <small style='color:#64748b;'>({oracle_alloc})</small>"
+                else:
+                    oracle_display = "<span style='color:#64748b;'>🛑 BỎ LỆNH</span>"
                 
-            outcome_display = f"<b style='color:#00afb9;'>PLAYER ({r['p_score']}đ)</b>" if outcome == "PLAYER" else (f"<b style='color:#ff4757;'>BANKER ({r['b_score']}đ)</b>" if outcome == "BANKER" else "<b style='color:#2ecc71;'>TIE (HÒA)</b>")
+            outcome_display = f"<b style='color:#00afb9;'>P ({r['p_score']}đ)</b>" if outcome == "PLAYER" else (f"<b style='color:#ff4757;'>B ({r['b_score']}đ)</b>" if outcome == "BANKER" else "<b style='color:#2ecc71;'>TIE</b>")
             
             table_rows += (
                 f"<tr>"
-                f"<td>Ván {real_round_num}</td>"
-                f"<td style='text-align: left; padding-left: 15px;'>{oracle_display}</td>"
+                f"<td>V{real_round_num}</td>"
+                f"<td style='text-align: left;'>{oracle_display}</td>"
                 f"<td>{outcome_display}</td>"
                 f"<td>{dot_html}</td>"
                 f"<td>{status_text}</td>"
@@ -556,7 +573,7 @@ class QuantumAuditMatrixController:
             
         html_table = (
             f"<table class='audit-table'>"
-            f"<thead><tr><th>VÁN</th><th>KHUYẾN NGHỊ AI TỐI CAO</th><th>THỰC TẾ SÀN BACCARAT</th><th>KIỂM TOÁN</th><th>TRẠNG THÁI DÒNG TIỀN</th></tr></thead>"
+            f"<thead><tr><th>VÁN</th><th>KHUYẾN NGHỊ</th><th>SÀN ACT</th><th>MÃ</th><th>TRẠNG THÁI</th></tr></thead>"
             f"<tbody>{table_rows}</tbody>"
             f"</table></div>"
         )
@@ -583,7 +600,7 @@ def parse_baccarat_input_v67_8(raw_str):
 
 
 # =========================================================================
-# 📱 MODULE 6: GIAO DIỆN MOBILE-GRID ĐỘC LẬP TÁCH BIỆT COMPLETELY
+# 📱 MODULE 6: GIAO DIỆN MOBILE-GRID TỐI ƯU CHỐNG TRÀN KHUNG TỐI ĐA
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -592,28 +609,36 @@ class BaccaratInterfaceSystem:
             """
             <style>
             .stApp { background: #02040a !important; color: #f8fafc !important; }
-            div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 10px !important; }
+            div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; gap: 8px !important; }
             div[data-testid="stHorizontalBlock"] > div { flex: 1 1 0% !important; min-width: 0px !important; }
-            .header-hud-bar { background: linear-gradient(90deg, #090d16, #111827); border: 1px solid #1f2937; border-radius: 10px; padding: 10px; margin: 10px 0px 20px 0px; text-align: center; font-family: monospace; font-size: 13px; color: #cbd5e1; }
-            .action-panel { border-radius: 14px; padding: 20px; margin: 5px 0px 15px 0px; text-align: center; box-shadow: 0px 5px 25px rgba(0,0,0,0.8); }
-            .action-status { font-size: 19px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 6px; }
-            .action-msg { font-size: 13px; opacity: 0.9; margin-bottom: 12px; line-height: 1.4; text-align: justify; }
-            .action-vol { font-size: 15px; font-weight: 900; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px; }
-            .mobile-metric-box { background: #050b14; border: 1px solid #0f172a; border-radius: 10px; padding: 12px 6px; margin-bottom: 5px; display: flex; flex-direction: column; text-align: center; }
-            .metric-tag { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px; }
-            .metric-num { font-size: 19px; font-weight: 900; font-family: monospace; }
+            .header-hud-bar { background: linear-gradient(90deg, #090d16, #111827); border: 1px solid #1f2937; border-radius: 10px; padding: 10px; margin: 10px 0px 15px 0px; text-align: center; font-family: monospace; font-size: 12px; color: #cbd5e1; }
+            .action-panel { border-radius: 12px; padding: 15px; margin: 5px 0px 15px 0px; text-align: center; box-shadow: 0px 5px 20px rgba(0,0,0,0.8); }
+            .action-status { font-size: 17px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 4px; }
+            .action-msg { font-size: 12px; opacity: 0.9; margin-bottom: 10px; line-height: 1.4; text-align: justify; }
+            .action-vol { font-size: 14px; font-weight: 900; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 8px; }
+            .mobile-metric-box { background: #050b14; border: 1px solid #0f172a; border-radius: 8px; padding: 10px 4px; margin-bottom: 5px; display: flex; flex-direction: column; text-align: center; overflow: hidden; }
+            .metric-tag { font-size: 9px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 2px; }
+            .metric-num { font-size: 16px; font-weight: 900; font-family: monospace; }
             
-            .audit-matrix-box { padding: 15px; border-radius: 12px; background-color: #050b14; border: 1px dashed #3b82f6; margin-top: 20px; }
-            .audit-title { font-family: system-ui; font-size: 13px; font-weight: 800; color: #60a5fa; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; }
-            .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; color: #cbd5e1; }
-            .audit-table th { padding: 10px; text-align: center; background: #0f172a; color: #cbd5e1; border: 1px solid #1e293b; font-size: 11px; }
-            .audit-table td { padding: 10px; text-align: center; border: 1px solid #0f172a; vertical-align: middle; line-height: 1.4; }
-            .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+            .audit-matrix-box { padding: 12px; border-radius: 10px; background-color: #050b14; border: 1px dashed #3b82f6; margin-top: 15px; box-sizing: border-box; width: 100%; overflow: hidden; }
+            .audit-title { font-family: system-ui; font-size: 12px; font-weight: 800; color: #60a5fa; margin-bottom: 10px; letter-spacing: 0.3px; }
+            .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; color: #cbd5e1; table-layout: fixed; }
+            .audit-table th { padding: 8px 4px; text-align: center; background: #0f172a; color: #cbd5e1; border: 1px solid #1e293b; font-size: 10px; overflow: hidden; }
+            .audit-table td { padding: 8px 4px; text-align: center; border: 1px solid #0f172a; vertical-align: middle; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             
-            div.stButton > button { background-color: #0f172a !important; color: #cbd5e1 !important; border: 1px solid #1e293b !important; border-radius: 10px; font-weight: 800; width: 100% !important; padding: 12px 0px !important; }
-            .submit-btn-box div.stButton > button { background-color: #38bdf8 !important; color: #010206 !important; border: none !important; box-shadow: 0 0 15px rgba(56,189,248,0.4); }
+            /* Cấu hình chiều rộng cố định các cột kiểm toán để không bao giờ bị lệch khung di động */
+            .audit-table th:nth-child(1), .audit-table td:nth-child(1) { width: 12%; }
+            .audit-table th:nth-child(2), .audit-table td:nth-child(2) { width: 43%; text-align: left; white-space: normal; }
+            .audit-table th:nth-child(3), .audit-table td:nth-child(3) { width: 18%; }
+            .audit-table th:nth-child(4), .audit-table td:nth-child(4) { width: 10%; }
+            .audit-table th:nth-child(5), .audit-table td:nth-child(5) { width: 17%; font-size: 10px; white-space: normal; }
+            
+            .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+            
+            div.stButton > button { background-color: #0f172a !important; color: #cbd5e1 !important; border: 1px solid #1e293b !important; border-radius: 8px; font-weight: 800; width: 100% !important; padding: 10px 0px !important; }
+            .submit-btn-box div.stButton > button { background-color: #38bdf8 !important; color: #010206 !important; border: none !important; box-shadow: 0 0 12px rgba(56,189,248,0.3); }
             div[data-testid="stNumberInput"] label { font-size: 11px !important; color: #cbd5e1 !important; }
-            .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+            .block-container { padding-top: 0.8rem !important; padding-bottom: 0.8rem !important; }
             </style>
             """, 
             unsafe_allow_html=True
@@ -634,24 +659,24 @@ class BaccaratInterfaceSystem:
     def render_header_hud(total_rounds, cards_left, decks_count):
         st.markdown(
             f'<div class="header-hud-bar">'
-            f'🪐 TỔNG QUỸ ĐẠO ĐÃ QUÉT: <b>{total_rounds}</b> ván &nbsp;|&nbsp; '
-            f'🎴 HẠT BÀI CÒN LẠI TRONG KHAY: <b>{cards_left}</b> / {decks_count * 52}'
+            f'🪐 TỔNG QUỸ ĐẠO: <b>{total_rounds}</b> ván &nbsp;|&nbsp; '
+            f'🎴 CÒN LẠI: <b>{cards_left}</b> / {decks_count * 52}'
             f'</div>',
             unsafe_allow_html=True
         )
 
     @staticmethod
     def render_input_form():
-        st.markdown("##### 🎴 NHẬP DỮ LIỆU ĐỂ GIẢI PHƯƠNG TRÌNH TRƯỜNG XÁC SUẤT:")
+        st.markdown("##### 🎴 NHẬP DỮ LIỆU ĐỂ GIẢI PHƯƠNG TRÌNH:")
         with st.form(key="baccarat_cosmological_intelligence_form", clear_on_submit=True):
             input_grid = st.columns(2)
             with input_grid[0]:
-                p_str = st.text_input("🔵 PLAYER CARD (Ví dụ: 8 K A):", placeholder="Nhập chữ hoặc số")
+                p_str = st.text_input("🔵 PLAYER CARD (Ví dụ: 8 K A):", placeholder="Nhập bài")
             with input_grid[1]:
-                b_str = st.text_input("🔴 BANKER CARD (Ví dụ: 7 10):", placeholder="Nhập chữ hoặc số")
+                b_str = st.text_input("🔴 BANKER CARD (Ví dụ: 7 10):", placeholder="Nhập bài")
             st.write("")
             st.markdown('<div class="submit-btn-box">', unsafe_allow_html=True)
-            triggered = st.form_submit_button("🚀 KÍCH HOẠT ĐỘT PHÁ VŨ TRỤ (COSMIC MATRIX ACTIVE)")
+            triggered = st.form_submit_button("🚀 KÍCH HOẠT ĐỘT PHÁ VŨ TRỤ")
             st.markdown('</div>', unsafe_allow_html=True)
         return triggered, p_str, b_str
 
@@ -661,7 +686,7 @@ class BaccaratInterfaceSystem:
             f'<div class="action-panel" style="background-color: {cmd["bg"]}; border: 2px solid {cmd["color"]}; color: {cmd["color"]};">'
             f'<div class="action-status">{cmd["status"]}</div>'
             f'<div class="action-msg" style="color: #f1f5f9;">{cmd["msg"]}</div>'
-            f'<div class="action-vol">MỨC QUẢN LÝ VỐN ĐỀ XUẤT: {cmd["size"]}</div>'
+            f'<div class="action-vol">QUẢN LÝ VỐN: {cmd["size"]}</div>'
             f'</div>',
             unsafe_allow_html=True
         )
@@ -673,18 +698,18 @@ class BaccaratInterfaceSystem:
             return
 
         html_string = (
-            f"<div style='background: linear-gradient(135deg, #050d1a 0%, #020408 100%); border: 2px dashed {ai_cmd['color']}; border-radius: 14px; padding: 20px; margin: 15px 0px; box-shadow: 0px 8px 32px rgba(59,130,246,0.25);'>"
-            f"<div style='font-size: 11px; font-weight: 800; color: #60a5fa; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;'>🌌 AI SOVEREIGN ORACLE - MÔ HÌNH TOÁN HỌC CẤP VŨ TRỤ TỐI CAO</div>"
-            f"<div style='font-size: 23px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 12px;'>{ai_cmd['decision']}</div>"
-            f"<div style='background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: system-ui; font-size: 12px; color: #93c5fd;'>🛰️ <b>TRƯỜNG BỨC XẠ ENTROPY NỀN PHỔ QUÁT:</b><br><i>\"{ai_cmd['cyber_knowledge']}\"</i></div>"
-            f"<div style='background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 8px; padding: 10px; margin-bottom: 15px; font-family: monospace; font-size: 11.5px; color: #38bdf8; line-height: 1.5;'>🧠 <b>BIẾN THIÊN KHÔNG GIAN RIEMANN & HAWKING QUANTUM METRIC:</b><br>{ai_cmd['memory_hud']}</div>"
-            f"<table style='width:100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; background: transparent;'>"
-            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #94a3b8; text-align: left;'>Mục tiêu khớp lệnh:</td><td style='padding: 6px 0; font-weight:700; color: {ai_cmd['color']}; text-align:right;'>{ai_cmd['target']}</td></tr>"
-            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #94a3b8; text-align: left;'>Quản lý vốn Kelly đa tầng:</td><td style='padding: 6px 0; font-weight:700; color: #ffffff; text-align:right;'>{ai_cmd['capital_allocation']}</td></tr>"
-            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 6px 0; color: #94a3b8; text-align: left;'>Kiến trúc hình học lõi:</td><td style='padding: 6px 0; font-weight:700; color: #3b82f6; text-align:right;'>{ai_cmd['strategy_type']}</td></tr>"
-            f"<tr><td style='padding: 6px 0; color: #94a3b8; text-align: left;'>Áp suất điểm kỳ dị sàn:</td><td style='padding: 6px 0; font-weight:700; color: #ff4757; text-align:right;'>{ai_cmd['risk_level']}</td></tr>"
+            f"<div style='background: linear-gradient(135deg, #050d1a 0%, #020408 100%); border: 2px dashed {ai_cmd['color']}; border-radius: 12px; padding: 15px; margin: 12px 0px; box-shadow: 0px 6px 20px rgba(59,130,246,0.15); max-width:100%; overflow:hidden; word-wrap:break-word;'>"
+            f"<div style='font-size: 10px; font-weight: 800; color: #60a5fa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;'>🌌 AI SOVEREIGN ORACLE - SIÊU MÔ HÌNH VŨ TRỤ TỐI CAO</div>"
+            f"<div style='font-size: 18px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 8px;'>{ai_cmd['decision']}</div>"
+            f"<div style='background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; color: #93c5fd;'>🛰️ <b>BỨC XẠ ENTROPY NỀN:</b> <i>{ai_cmd['cyber_knowledge']}</i></div>"
+            f"<div style='background: rgba(14, 165, 233, 0.04); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 6px; padding: 8px; margin-bottom: 12px; font-family: monospace; font-size: 11px; color: #38bdf8; line-height: 1.4;'>🧠 <b>HILBERT METRIC:</b> {ai_cmd['memory_hud']}</div>"
+            f"<table style='width:100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; background: transparent;'>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 5px 0; color: #94a3b8; text-align: left;'>Mục tiêu:</td><td style='padding: 5px 0; font-weight:700; color: {ai_cmd['color']}; text-align:right;'>{ai_cmd['target']}</td></tr>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 5px 0; color: #94a3b8; text-align: left;'>Vốn Kelly:</td><td style='padding: 5px 0; font-weight:700; color: #ffffff; text-align:right;'>{ai_cmd['capital_allocation']}</td></tr>"
+            f"<tr style='border-bottom: 1px solid rgba(255,255,255,0.05);'><td style='padding: 5px 0; color: #94a3b8; text-align: left;'>Hình học lõi:</td><td style='padding: 5px 0; font-weight:700; color: #3b82f6; text-align:right;'>{ai_cmd['strategy_type']}</td></tr>"
+            f"<tr><td style='padding: 5px 0; color: #94a3b8; text-align: left;'>Áp suất sàn:</td><td style='padding: 5px 0; font-weight:700; color: #ff4757; text-align:right;'>{ai_cmd['risk_level']}</td></tr>"
             f"</table>"
-            f"<div style='background: rgba(255,255,255,0.02); border-left: 3px solid {ai_cmd['color']}; padding: 10px; border-radius: 4px; font-size: 12.5px; line-height: 1.5; color: #e2e8f0; text-align: justify;'><b>💡 Chỉ thị tối thượng siêu cấp:</b> {ai_cmd['ai_insight']}</div>"
+            f"<div style='background: rgba(255,255,255,0.02); border-left: 3px solid {ai_cmd['color']}; padding: 8px; border-radius: 4px; font-size: 12px; line-height: 1.4; color: #e2e8f0; text-align: justify;'><b>💡 Chỉ thị thực chiến:</b> {ai_cmd['ai_insight']}</div>"
             f"</div>"
         )
         st.markdown(html_string, unsafe_allow_html=True)
@@ -693,24 +718,24 @@ class BaccaratInterfaceSystem:
     def render_probabilities_grid(p_pct, b_pct, t_pct, p_cnt, b_cnt, t_cnt):
         prob_grid = st.columns(3)
         with prob_grid[0]:
-            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔵 HAWKING PLAYER</span><span class="metric-num" style="color:#00afb9;">{p_pct:.2f}%</span><span style="font-size:10px; opacity:0.5;">Hạt bài: {p_cnt}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔵 PLAYER</span><span class="metric-num" style="color:#00afb9;">{p_pct:.1f}%</span><span style="font-size:9px; opacity:0.5;">Hạt bài: {p_cnt}</span></div>', unsafe_allow_html=True)
         with prob_grid[1]:
-            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔴 SCHRODINGER BANKER</span><span class="metric-num" style="color:#ff4757;">{b_pct:.2f}%</span><span style="font-size:10px; opacity:0.5;">Hạt bài: {b_cnt}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🔴 BANKER</span><span class="metric-num" style="color:#ff4757;">{b_pct:.1f}%</span><span style="font-size:9px; opacity:0.5;">Hạt bài: {b_cnt}</span></div>', unsafe_allow_html=True)
         with prob_grid[2]:
-            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 RIEMANN ZETA TIE</span><span class="metric-num" style="color:#2ecc71;">{t_pct:.2f}%</span><span style="font-size:10px; opacity:0.5;">Hạt bài: {t_cnt}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE ZETA</span><span class="metric-num" style="color:#2ecc71;">{t_pct:.1f}%</span><span style="font-size:9px; opacity:0.5;">Hạt bài: {t_cnt}</span></div>', unsafe_allow_html=True)
 
     @staticmethod
     def render_utilities():
         util_grid = st.columns(2)
-        undo_triggered = util_grid[0].button("⏪ QUAY LẠI LƯỢNG TỬ (UNDO)")
-        clear_triggered = util_grid[1].button("🔄 LÀM TRỐNG TRƯỜNG DỮ LIỆU")
+        undo_triggered = util_grid[0].button("⏪ QUAY LẠI (UNDO)")
+        clear_triggered = util_grid[1].button("🔄 LÀM TRỐNG DỮ LIỆU")
         return undo_triggered, clear_triggered
 
 
 # =========================================================================
 # 🎮 RUNTIME EXECUTION CONTROLLER
 # =========================================================================
-st.set_page_config(page_title="Cosmological Superintelligence Oracle v67.8", page_icon="🌌", layout="centered")
+st.set_page_config(page_title="Cosmological Oracle v67.8", page_icon="🌌", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: 
@@ -719,7 +744,6 @@ if 'round_detailed_log' not in st.session_state:
 decks, hist_p, hist_b, hist_t = BaccaratInterfaceSystem.render_sidebar()
 
 st.markdown("### 🌌 ORACLE MULTI-AGENT QUANTUM DECENTRALIZED v67.8")
-st.caption("Kiến Trúc Siêu Toán Học Cấp Vũ Trụ Tối Cao | Hawking Singularity, Schrödinger Wave Collapse & Riemann Zeta Matrix")
 
 final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v67_8_ultimate_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
@@ -741,6 +765,15 @@ current_ai_oracle = AISovereignOracle.analyze_and_suggest(
 
 calc_triggered, p_input, b_input = BaccaratInterfaceSystem.render_input_form()
 
+# Bắt phán quyết của trọng tài và tối ưu hóa diện tích hiển thị chống tràn khung di động
+current_arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(
+    multi_cmd=cmd, 
+    oracle_cmd=current_ai_oracle, 
+    all_rounds_log=st.session_state.round_detailed_log,
+    shoe_decks=decks,
+    manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
+)
+
 if calc_triggered and (p_input.strip() or b_input.strip()):
     p_list = parse_baccarat_input_v67_8(p_input.strip())
     b_list = parse_baccarat_input_v67_8(b_input.strip())
@@ -754,25 +787,18 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
         'outcome': outcome,
         'oracle_decision': current_ai_oracle['decision'],
         'oracle_target': current_ai_oracle['target'],
-        'oracle_alloc': current_ai_oracle['capital_allocation']
+        'oracle_alloc': current_ai_oracle['capital_allocation'],
+        'arbitrator_target': current_arbitrator_verdict 
     })
     st.rerun()
 
 st.markdown("---")
 
-# Mô-đun trọng tài làm nổi bật Badge Player/Banker phát sáng
-QuantumArbitrationMatrix.render_arbitration_logic(
-    multi_cmd=cmd, 
-    oracle_cmd=current_ai_oracle, 
-    all_rounds_log=st.session_state.round_detailed_log,
-    shoe_decks=decks,
-    manual_p=hist_p, manual_b=hist_b, manual_t=hist_t
-)
-
 BaccaratInterfaceSystem.render_directive_panel(cmd)
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_ai_oracle)
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, total_p, total_b, total_t)
 
+# Render bảng kiểm toán tự động được fix cứng tỉ lệ cột chống méo khung
 QuantumAuditMatrixController.render_audit_table(
     log=st.session_state.round_detailed_log, 
     start_round_index=(hist_p + hist_b + hist_t)
