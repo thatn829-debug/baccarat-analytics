@@ -6,7 +6,7 @@ from PIL import Image
 import io
 
 # =========================================================================
-# 🧠 CẤU TRÚC 1: LÕI AI VISION ENGINE v48.0 (ĐÃ GỘP TÍCH HỢP)
+# 🧠 CẤU TRÚC 1: LÕI AI VISION ENGINE v48.2 (FIX CAMERA HUD ATTRIBUTE)
 # =========================================================================
 class AIVisionScannerEngine:
     @staticmethod
@@ -17,7 +17,7 @@ class AIVisionScannerEngine:
     @classmethod
     def extract_roadmap_matrix(cls, img):
         h, w, _ = img.shape
-        # Cắt khu vực chứa ma trận hạt Bead Plate theo tỷ lệ chuẩn
+        # Định vị chính xác tọa độ ma trận hạt Bead Plate (Góc dưới bên trái)
         roi_y1, roi_y2 = int(h * 0.70), int(h * 0.88)
         roi_x1, roi_x2 = 0, int(w * 0.25)
         bead_plate_roi = img[roi_y1:roi_y2, roi_x1:roi_x2]
@@ -25,7 +25,7 @@ class AIVisionScannerEngine:
         blurred = cv2.GaussianBlur(bead_plate_roi, (3, 3), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        # Định ngưỡng dải màu không gian HSV
+        # Bộ lọc không gian màu sắc HSV chuyên dụng
         mask_blue = cv2.inRange(hsv, np.array([95, 150, 60]), np.array([130, 255, 255]))
         mask_green = cv2.inRange(hsv, np.array([40, 100, 50]), np.array([80, 255, 255]))
         mask_red = cv2.inRange(hsv, np.array([0, 150, 60]), np.array([10, 255, 255])) + \
@@ -46,7 +46,7 @@ class AIVisionScannerEngine:
         find_dots(mask_red, "Banker")
         find_dots(mask_green, "Tie")
 
-        # Thuật toán phân bổ dòng thời gian Baccarat (theo cột X -> dòng Y)
+        # Thuật toán phân luồng ma trận Baccarat theo dạng chuỗi thời gian
         detected_dots.sort(key=lambda item: (item["x"] // 35, item["y"]))
         return [item["label"] for item in detected_dots]
 
@@ -71,7 +71,7 @@ class VisionScannerEngine:
 
     @staticmethod
     def render_camera_hud():
-        st.markdown('<p class="section-title">👁️ AI VISION SCANNER (MÔ-ĐUN QUÉT HẠT v48.0)</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-title">👁️ AI VISION SCANNER (MÔ-ĐUN QUÉT HẠT v48.2)</p>', unsafe_allow_html=True)
         with st.expander("📸 BẤM ĐỂ MỞ CAMERA QUÉT BẢNG ĐIỂM", expanded=False):
             img_file = st.camera_input("Hướng ống kính thẳng vào bảng kết quả Road Map")
             return img_file
@@ -223,7 +223,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
         return {"status": "🛑 CHỜ QUAN SÁT (TRẠNG THÁI TĨNH)", "msg": f"Mức chênh lệch lợi thế ({diff:.2f}%) quá nhỏ, chưa vượt qua màng lọc an toàn phi tuyến tính.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.1)", "size": "0%"}
     return {
         "status": "🔵 VÀO LỆNH THUẬN DÒNG: PLAYER" if p_val > b_val else "🔴 VÀO LỆNH THUẬN DÒNG: BANKER",
-        "msg": f"Xác nhận điểm lợi thế vượt ngưỡng đột biến (+{diff:.2f}%). Xu hướng dòng chảy bài rất ổn định.",
+        "msg": f"Xác nhận điểm lợi thế vượt ngưỡng đột biến (+{diff:.2f}%). Xuương dòng chảy bài ổn định.",
         "color": "#00afb9" if p_val > b_val else "#ff4757", "bg": "rgba(0,175,185,0.2)" if p_val > b_val else "rgba(255,71,87,0.2)", "size": "2.5% - 4%"
     }
 
@@ -292,31 +292,34 @@ class BaccaratInterfaceSystem:
 # =========================================================================
 # 🎮 SYSTEM RUNTIME CONTROLLER
 # =========================================================================
-st.set_page_config(page_title="Oracle Mobile UI v48.0", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="Oracle Mobile UI v48.2", page_icon="⚡", layout="centered")
 BaccaratInterfaceSystem.inject_mobile_css()
 
 if 'round_detailed_log' not in st.session_state:
     st.session_state.round_detailed_log = []
-if 'last_processed_image' not in st.session_state:
-    st.session_state.last_processed_image = None
+if 'last_processed_image_hash' not in st.session_state:
+    st.session_state.last_processed_image_hash = None
 
 decks, hist_p, hist_b, hist_t = BaccaratInterfaceSystem.render_sidebar()
 
-st.markdown("### ⚡ ORACLE TREND TRACKING v48.0")
-st.caption("Giao diện lưới siêu nén tích hợp Lõi AI Vision v48.0 Đã tối ưu hóa")
+st.markdown("### ⚡ ORACLE TREND TRACKING v48.2")
+st.caption("Giao diện lưới siêu nén tích hợp Lõi AI Vision v48.2 Đã sửa lỗi")
 
 # 1. CAMERA HUDS
 img_file = VisionScannerEngine.render_camera_hud()
 
 if img_file is not None:
-    if st.session_state.last_processed_image != img_file.id:
+    # Thuật toán hash dữ liệu nhị phân của ảnh để giải quyết lỗi mất thuộc tính .id trên Streamlit Cloud
+    current_img_bytes = img_file.getvalue()
+    current_img_hash = hash(current_img_bytes)
+
+    if st.session_state.last_processed_image_hash != current_img_hash:
         st.markdown('<div class="vision-btn-box">', unsafe_allow_html=True)
         vision_triggered = st.button("🔮 PHÂN TÍCH AI VÀ ĐỒNG BỘ")
         st.markdown('</div>', unsafe_allow_html=True)
         
         if vision_triggered:
-            image_bytes = img_file.getvalue()
-            detected_roadmap = VisionScannerEngine.process_image_via_ai(image_bytes)
+            detected_roadmap = VisionScannerEngine.process_image_via_ai(current_img_bytes)
             
             if detected_roadmap:
                 st.session_state.round_detailed_log = [] 
@@ -326,7 +329,7 @@ if img_file is not None:
                     })
                 st.toast(f"🎰 Quét thành công ma trận {len(detected_roadmap)} ván đấu từ ảnh!", icon="🚀")
             
-            st.session_state.last_processed_image = img_file.id
+            st.session_state.last_processed_image_hash = current_img_hash
             st.rerun()
 
 st.markdown("---")
@@ -381,5 +384,5 @@ if util_grid[0].button("⏪ HOÀN TÁC CŨ") and st.session_state.round_detailed
     st.session_state.round_detailed_log.pop(); st.rerun()
 if util_grid[1].button("🔄 LÀM TRỐNG"):
     st.session_state.round_detailed_log = []
-    st.session_state.last_processed_image = None
+    st.session_state.last_processed_image_hash = None
     st.rerun()
