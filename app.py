@@ -1,4 +1,4 @@
-import streamlit as s
+import streamlit as st
 import numpy as np
 import math
 
@@ -147,7 +147,7 @@ class TieHypergeometricAgent:
                 if card in exact_cards_left:
                     exact_cards_left[card] = max(0.0, exact_cards_left[card] - 1.0)
                     
-        cards_remaining = int(max(1.0, sum(exact_cards_left.values())))
+        cards_remaining = int(max(1.0, sum(exact_cards_left.values()))
         zero_cards = int(sum([exact_cards_left[i] for i in [10, 11, 12, 13]]))
         non_zero_cards = cards_remaining - zero_cards
         
@@ -444,7 +444,6 @@ class QuantumArbitrationMatrix:
                 return '<span style="background: rgba(255, 71, 87, 0.25); color: #ff4757; border: 1px solid #ff4757; padding: 2px 6px; border-radius: 4px; font-weight: 800;">🔴 BANKER</span>'
             return f'<b>{target_str}</b>'
 
-        # --- TINH GỌN NỘI DUNG VÀ ÉP PHÙ HỢP KHUNG DI ĐỘNG ---
         if o_code == "SHIELD_SHANNON" and m_target != "WAIT":
             has_conflict = True
             arbitrator_final_verdict = "WAIT"
@@ -626,7 +625,6 @@ class BaccaratInterfaceSystem:
             .audit-table th { padding: 8px 4px; text-align: center; background: #0f172a; color: #cbd5e1; border: 1px solid #1e293b; font-size: 10px; overflow: hidden; }
             .audit-table td { padding: 8px 4px; text-align: center; border: 1px solid #0f172a; vertical-align: middle; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             
-            /* Cấu hình chiều rộng cố định các cột kiểm toán để không bao giờ bị lệch khung di động */
             .audit-table th:nth-child(1), .audit-table td:nth-child(1) { width: 12%; }
             .audit-table th:nth-child(2), .audit-table td:nth-child(2) { width: 43%; text-align: left; white-space: normal; }
             .audit-table th:nth-child(3), .audit-table td:nth-child(3) { width: 18%; }
@@ -765,7 +763,6 @@ current_ai_oracle = AISovereignOracle.analyze_and_suggest(
 
 calc_triggered, p_input, b_input = BaccaratInterfaceSystem.render_input_form()
 
-# Bắt phán quyết của trọng tài và tối ưu hóa diện tích hiển thị chống tràn khung di động
 current_arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(
     multi_cmd=cmd, 
     oracle_cmd=current_ai_oracle, 
@@ -798,7 +795,6 @@ BaccaratInterfaceSystem.render_directive_panel(cmd)
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_ai_oracle)
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, total_p, total_b, total_t)
 
-# Render bảng kiểm toán tự động được fix cứng tỉ lệ cột chống méo khung
 QuantumAuditMatrixController.render_audit_table(
     log=st.session_state.round_detailed_log, 
     start_round_index=(hist_p + hist_b + hist_t)
