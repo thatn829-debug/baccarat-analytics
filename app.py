@@ -147,7 +147,7 @@ class TieHypergeometricAgent:
                 if card in exact_cards_left:
                     exact_cards_left[card] = max(0.0, exact_cards_left[card] - 1.0)
                     
-        cards_remaining = int(max(1.0, sum(exact_cards_left.values()))
+        cards_remaining = int(max(1.0, sum(exact_cards_left.values())))
         zero_cards = int(sum([exact_cards_left[i] for i in [10, 11, 12, 13]]))
         non_zero_cards = cards_remaining - zero_cards
         
@@ -617,6 +617,7 @@ class BaccaratInterfaceSystem:
             .action-vol { font-size: 14px; font-weight: 900; font-family: monospace; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 8px; }
             .mobile-metric-box { background: #050b14; border: 1px solid #0f172a; border-radius: 8px; padding: 10px 4px; margin-bottom: 5px; display: flex; flex-direction: column; text-align: center; overflow: hidden; }
             .metric-tag { font-size: 9px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 2px; }
+            .mobile-metric-box:nth-child(2) .metric-tag, .mobile-metric-box:nth-child(3) .metric-tag { color: #475569; }
             .metric-num { font-size: 16px; font-weight: 900; font-family: monospace; }
             
             .audit-matrix-box { padding: 12px; border-radius: 10px; background-color: #050b14; border: 1px dashed #3b82f6; margin-top: 15px; box-sizing: border-box; width: 100%; overflow: hidden; }
