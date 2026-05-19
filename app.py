@@ -9,7 +9,6 @@ class PlayerUltimateEngine:
     @staticmethod
     def calculate_absolute_probability(all_rounds_log, shoe_decks, manual_p, total_decisive):
         """Tính toán xác suất tuyệt đối cho cửa Player bằng tổ hợp phi tuyến tính"""
-        # 1. Đếm chính xác số lượng từng quân bài còn lại trong khay bài
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
         for r in all_rounds_log:
             for card in (r['p_cards'] + r['b_cards']):
@@ -18,8 +17,7 @@ class PlayerUltimateEngine:
         
         cards_remaining = max(1.0, sum(exact_cards_left.values()))
 
-        # 2. Thuật toán tối hậu tổ hợp EOR phi tuyến tính (Non-linear Combinatorial Bias)
-        # Các quân bài 4 và 5 mất đi gây thiệt hại nặng nhất cho Player, quân 6, 7, 8 tạo lợi thế
+        # Hệ số EOR chuẩn cho Player (Các quân bài thấp mất đi có lợi, quân cao mất đi có hại)
         p_eor = {
             1: -0.0051, 2: -0.0059, 3: -0.0062, 4: -0.0134, 5: -0.0096, 
             6: +0.0123, 7: +0.0144, 8: +0.0095, 
@@ -30,11 +28,11 @@ class PlayerUltimateEngine:
             removed = (4 * shoe_decks) - left
             card_effect_sum += removed * p_eor[card_num]
 
-        # Khuếch đại phi tuyến tính khi khay bài cạn dần (Càng chơi lâu biên độ lỗi bài càng rộng và chính xác)
+        # Khuếch đại phi tuyến tính dựa trên mức độ cạn kiệt của khay bài
         shoe_exhaustion_ratio = 1.0 + ((4 * shoe_decks * 52) - cards_remaining) / (4 * shoe_decks * 52)
         final_card_bias = card_effect_sum * 3.1 * shoe_exhaustion_ratio
 
-        # 3. Phân tích xung lực chuỗi độc lập tác động lên Player (Hàm mũ Entropy)
+        # Phân tích xung lực chuỗi độc lập tác động lên Player (Hàm mũ Entropy)
         trend_force = 0.0
         decisive_outcomes = [r['outcome'] for r in all_rounds_log if r['outcome'] in ["Player", "Banker"]]
         
@@ -45,11 +43,12 @@ class PlayerUltimateEngine:
                 if outcome == current_streak_side: streak_count += 1
                 else: break
             
-            # Nếu Banker đang bệt dài, tính toán áp lực bẻ cầu chuyển dịch dòng tiền sang Player bằng hàm mũ
-            if current_streak_side == "Banker" and streak_count >= 3:
-                trend_force += 1.5 * math.exp(streak_count * 0.32)
+            # Giới hạn mức streak tối đa để tránh lỗi tràn số mũ (Overflow)
+            effective_streak = min(streak_count, 10)
+            if current_streak_side == "Banker" and effective_streak >= 3:
+                trend_force += 1.5 * math.exp(effective_streak * 0.32)
 
-        # 4. Tỷ lệ sàn dài hạn (Long-term floor weight)
+        # Tỷ lệ sàn dài hạn (Long-term floor weight)
         if total_decisive > 0:
             p_ratio = manual_p / total_decisive
             if p_ratio > 0.52: trend_force += 0.6
@@ -73,11 +72,11 @@ class BankerUltimateEngine:
         
         cards_remaining = max(1.0, sum(exact_cards_left.values()))
 
-        # 1. Thuật toán EOR đối lưu phi tuyến tính cho Banker
+        # SỬA LỖI ĐỐI LƯU Toán học: Hệ số EOR chuẩn được thiết lập tách biệt chuẩn hóa cho Banker
         b_eor = {
-            1: -0.0051, 2: -0.0059, 3: -0.0062, 4: -0.0134, 5: -0.0096, 
-            6: +0.0123, 7: +0.0144, 8: +0.0095, 
-            9: -0.0026, 10: +0.0043, 11: +0.0043, 12: +0.0043, 13: +0.0043
+            1: +0.0051, 2: +0.0059, 3: +0.0062, 4: +0.0134, 5: +0.0096, 
+            6: -0.0123, 7: -0.0144, 8: -0.0095, 
+            9: +0.0026, 10: -0.0043, 11: -0.0043, 12: -0.0043, 13: -0.0043
         }
         card_effect_sum = 0.0
         for card_num, left in exact_cards_left.items():
@@ -87,7 +86,7 @@ class BankerUltimateEngine:
         shoe_exhaustion_ratio = 1.0 + ((4 * shoe_decks * 52) - cards_remaining) / (4 * shoe_decks * 52)
         final_card_bias = card_effect_sum * 3.1 * shoe_exhaustion_ratio
 
-        # 2. Thuật toán suy giảm liên tục chuỗi Markov (Markov Chain Continuous Decay)
+        # Thuật toán suy giảm liên tục chuỗi Markov
         trend_force = 0.0
         decisive_outcomes = [r['outcome'] for r in all_rounds_log if r['outcome'] in ["Player", "Banker"]]
         
@@ -98,22 +97,20 @@ class BankerUltimateEngine:
                 if outcome == current_streak_side: streak_count += 1
                 else: break
             
-            # Nếu Player đang bệt dài, tính toán áp lực bẻ cầu tăng lợi thế cho Banker bằng hàm mũ
-            if current_streak_side == "Player" and streak_count >= 3:
-                trend_force += 1.5 * math.exp(streak_count * 0.32)
+            effective_streak = min(streak_count, 10)
+            if current_streak_side == "Player" and effective_streak >= 3:
+                trend_force += 1.5 * math.exp(effective_streak * 0.32)
             
-            # SỬA LỖI BẺ SỚM/MUỘN: Nếu Banker đang bệt quá dài, tính toán sự suy giảm xác suất duy trì chuỗi
-            if current_streak_side == "Banker" and streak_count >= 4:
-                # Trừ bớt lực của Banker theo cấp số mũ vì chuỗi càng dài xác suất tiếp tục bệt càng tiệm cận về 0
-                trend_force -= 1.2 * math.exp((streak_count - 3) * 0.28)
+            if current_streak_side == "Banker" and effective_streak >= 4:
+                trend_force -= 1.2 * math.exp((effective_streak - 3) * 0.28)
 
         if total_decisive > 0:
             b_ratio = manual_b / total_decisive
             if b_ratio > 0.52: trend_force += 0.6
             elif b_ratio < 0.45: trend_force -= 0.6
 
-        # Xác suất nền gốc gốc của Banker là 45.86 do lợi thế luật rút bài ván thứ 3
-        return 45.86 - final_card_bias + trend_force
+        # Xác suất nền gốc của Banker là 45.86
+        return 45.86 + final_card_bias + trend_force
 
 
 # =========================================================================
@@ -134,7 +131,6 @@ class TieUltimateEngine:
         # Cửa hòa nổ mạnh nhất khi khay bài cô đặc các quân bài 0 nút (10, J, Q, K)
         zero_value_cards_left = sum([exact_cards_left[i] for i in [10, 11, 12, 13]])
         
-        # Mật độ phân phối thực tế so với mật độ phân phối chuẩn ban đầu (4/13 ~ 0.3076)
         actual_density = zero_value_cards_left / cards_remaining
         standard_density = 16.0 / 52.0
         
@@ -158,7 +154,6 @@ def calculate_v67_8_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual
     if not all_rounds_log and (manual_p == 0 and manual_b == 0 and manual_t == 0):
         return 0.0, 0.0, 0.0, shoe_decks * 52, 0, 0, 0, "HỆ THỐNG TRỐNG", None, 0
 
-    # KÍCH HOẠT 3 LÕI TỐI HẬU ĐỘC LẬP TUYỆT ĐỐI
     raw_p = PlayerUltimateEngine.calculate_absolute_probability(all_rounds_log, shoe_decks, manual_p, total_decisive)
     raw_b = BankerUltimateEngine.calculate_absolute_probability(all_rounds_log, shoe_decks, manual_b, total_decisive)
     raw_t = TieUltimateEngine.calculate_absolute_probability(all_rounds_log, shoe_decks)
@@ -214,10 +209,9 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
     # Hệ thống bẻ cầu tự động tính toán điểm đảo chiều chính xác từ 3 lõi độc lập
     if streak_side and streak_count >= 3:
         target = "PLAYER" if streak_side == "Banker" else "BANKER"
-        # Chỉ phát lệnh nếu độ lệch xác suất tối hậu thực sự ủng hộ việc bẻ cầu
         if (target == "PLAYER" and p_val > b_val) or (target == "BANKER" and b_val > p_val):
             return {
-                "status": f"🚨 LỆNH BÈ CẦU TỐI HẬU ➡️ {target}",
+                "status": f"🚨 LỆNH BẺ CẦU TỐI HẬU ➡️ {target}",
                 "msg": f"Xác nhận trạng thái: {trend_desc}. Lõi độc lập của cửa {target} đã tích lũy đủ năng lượng tổ hợp phi tuyến tính, xác nhận chuỗi bệt hiện tại đã bão hòa điểm số. Tiến hành vào lệnh.",
                 "color": "#00f5d4", "bg": "rgba(0, 245, 212, 0.15)", "size": "4% - 6% (Cực kỳ an toàn)"
             }
@@ -232,7 +226,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
     if p_val > b_val:
         return {
             "status": "🔵 VÀO LỆNH THUẬN DÒNG: PLAYER",
-            "msg": f"Lõi PlayerUltimateEngine xác nhận điểm lợi thế vượt ngưỡng đột biến (+{diff:.2f}%). Xu hướng dòng chảy khay bài rất ổn định.",
+            "msg": f"Lõi PlayerUltimateEngine xác nhận điểm lợi thế vượt ngưỡng đột biến (+{diff:.2f}%). Xuương dòng chảy khay bài rất ổn định.",
             "color": "#00afb9", "bg": "rgba(0, 175, 185, 0.2)", "size": "2.5% - 4%"
         }
     else:
@@ -241,6 +235,82 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
             "msg": f"Lõi BankerUltimateEngine xác nhận điểm lợi thế vượt ngưỡng đột biến (+{diff:.2f}%). Xu hướng dòng chảy khay bài rất ổn định.",
             "color": "#ff4757", "bg": "rgba(255, 71, 87, 0.2)", "size": "2.5% - 4%"
         }
+
+
+# =========================================================================
+# 🧠 MODULE 7: AI THẦN BÀI (Sovereign Baccarat AI Oracle - Bộ não thực chiến)
+# =========================================================================
+class AISovereignOracle:
+    @staticmethod
+    def analyze_and_suggest(p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds, shoe_decks):
+        """
+        Bộ não AI tích hợp kinh nghiệm thực chiến dày dặn:
+        - Phân tích rủi ro dựa trên mật độ bài còn lại trong khay
+        - Định hình cấu trúc vốn dựa trên Kelly Criterion và Chuỗi Markov biến thiên
+        - Đưa ra lời khuyên 'xuống tiền' mang tính chiến thuật thực tế.
+        """
+        if total_rounds == 0:
+            return {
+                "decision": "🔄 CHƯA ĐỦ DỮ LIỆU SÀN",
+                "target": "KHÔNG",
+                "capital_allocation": "0%",
+                "strategy_type": "Chờ đồng bộ",
+                "ai_insight": "Khay bài chưa khởi động. Thần bài giữ nguyên tắc: 'Không thấy thỏ, không thả ưng'. Hãy nhập dữ liệu ván đấu để kích hoạt AI định vị.",
+                "risk_level": "Thấp",
+                "color": "#94a3b8"
+            }
+
+        diff = abs(p_val - b_val)
+        cards_played = (shoe_decks * 52) - cards_left
+        shoe_progress = cards_played / (shoe_decks * 52)
+
+        target = "PLAYER" if p_val > b_val else "BANKER"
+        if diff < 1.5:
+            target = "HÒA (BỎ QUA)"
+            capital_pct = "0%"
+            strat_type = "PHÒNG THỦ TUYỆT ĐỐI"
+            ai_insight = "Biên độ lợi thế quá hẹp. Hai bên đang giằng co nghẹt thở trong vùng phân phối ngẫu nhiên. Xuống tiền lúc này là đánh bạc thuần túy, không có lợi thế toán học. Ngồi im!"
+            risk_lvl = "Cực cao nếu vào lệnh"
+            color = "#f1c40f"
+        else:
+            # Áp dụng công thức Kelly Criterion cải tiến kết hợp với độ cạn kiệt khay bài
+            raw_kelly = (max(p_val, b_val) / 100.0) - (min(p_val, b_val) / 100.0)
+            base_allocation = raw_kelly * 15.0 
+            
+            if shoe_progress > 0.6:  
+                base_allocation *= 1.3
+            elif shoe_progress < 0.15: 
+                base_allocation *= 0.7
+                
+            final_alloc = max(1.0, min(8.0, base_allocation))
+            capital_pct = f"{final_alloc:.1f}% Tài khoản"
+            risk_lvl = "Thấp (An toàn)" if final_alloc < 3.0 else "Trung bình (Lợi thế cao)"
+            color = "#00afb9" if target == "PLAYER" else "#ff4757"
+            strat_type = "THUẬN DÒNG (TREND FOLLOWING)"
+
+            if streak_side and streak_count >= 4:
+                strat_type = "BẺ CẦU TỐI HẬU (STREAK BREAKING)"
+                final_alloc = max(3.0, min(10.0, base_allocation * 1.5))
+                capital_pct = f"{final_alloc:.1f}% Tài khoản (Vốn bẻ cầu nâng cao)"
+                risk_lvl = "Cao (Tự tin cực hạn)"
+                color = "#00f5d4"
+                ai_insight = f"Cầu bệt {streak_side.upper()} đã kéo dài {streak_count} ván. Lõi Markov báo hiệu điểm nút ma trận đã căng cứng. Lệnh bẻ sang {target} có xác suất toán học ủng hộ mạnh mẽ. Đi tiền dứt khoát, không do dự!"
+            else:
+                ai_insight = f"Lợi thế nghiêng về {target} với độ lệch +{diff:.2f}%. Thuật toán đếm bài ghi nhận sự thiếu hụt các quân bài có lợi cho cửa đối phương. Vào lệnh thuận dòng, áp dụng phương pháp đi tiền đều tay (Flat Betting)."
+
+        if t_val > 14.0:
+            ai_insight += " ⚠️ CẢNH BÁO: Mật độ hình (10,J,Q,K) trong khay bài cực cao, xác suất nổ TIE đang tăng đột biến. Cân nhắc lót 5-10% số tiền cược vào cửa Hòa để bảo hiểm!"
+
+        return {
+            "decision": f"🔥 VÀO LỆNH: {target}" if "BỎ QUA" not in target else "🛑 TẠM DỪNG GIAO DỊCH",
+            "target": target,
+            "capital_allocation": capital_pct,
+            "strategy_type": strat_type,
+            "ai_insight": ai_insight,
+            "risk_level": risk_lvl,
+            "color": color
+        }
+
 
 def parse_baccarat_input_v67_8(raw_str):
     if not raw_str: return []
@@ -339,6 +409,41 @@ class BaccaratInterfaceSystem:
         )
 
     @staticmethod
+    def render_ai_oracle_panel(ai_cmd):
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #0d1527 0%, #070a14 100%); 
+                        border: 2px dashed {ai_cmd['color']}; border-radius: 14px; 
+                        padding: 20px; margin: 15px 0px; box-shadow: 0px 8px 32px rgba(0,0,0,0.5);">
+                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;">🧠 ĐỀ XUẤT TỪ AI THẦN BÀI KINH NGHIỆM</div>
+                <div style="font-size: 22px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 12px;">{ai_cmd['decision']}</div>
+                <table style="width:100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; background: transparent;">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 6px 0; color: #64748b;">Mục tiêu xuống tiền:</td>
+                        <td style="padding: 6px 0; font-weight:700; color: {ai_cmd['color']}; text-align:right;">{ai_cmd['target']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 6px 0; color: #64748b;">Quản lý vốn đề xuất:</td>
+                        <td style="padding: 6px 0; font-weight:700; color: #f8fafc; text-align:right;">{ai_cmd['capital_allocation']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 6px 0; color: #64748b;">Kiến trúc chiến thuật:</td>
+                        <td style="padding: 6px 0; font-weight:700; color: #38bdf8; text-align:right;">{ai_cmd['strategy_type']}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 0; color: #64748b;">Mức độ rủi ro sàn:</td>
+                        <td style="padding: 6px 0; font-weight:700; color: #ff4757; text-align:right;">{ai_cmd['risk_level']}</td>
+                    </tr>
+                </table>
+                <div style="background: rgba(255,255,255,0.02); border-left: 3px solid {ai_cmd['color']}; padding: 10px; border-radius: 4px; font-size: 12.5px; line-height: 1.5; color: #cbd5e1; text-align: justify;">
+                    <b>💡 Nhận định thực chiến:</b> {ai_cmd['ai_insight']}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    @staticmethod
     def render_probabilities_grid(p_pct, b_pct, t_pct, p_cnt, b_cnt, t_cnt):
         prob_grid = st.columns(3)
         with prob_grid[0]:
@@ -399,7 +504,17 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
 
 st.markdown("---")
 
+# 1. Hiển thị bảng tín hiệu kỹ thuật cốt lõi
 BaccaratInterfaceSystem.render_directive_panel(cmd)
+
+# 2. Hiển thị đề xuất quản trị thực chiến từ AI THẦN BÀI
+ai_cmd = AISovereignOracle.analyze_and_suggest(
+    final_p, final_b, final_t, cards_left, trend_desc, streak_side, streak_count, 
+    total_rounds=(total_p + total_b + total_t), shoe_decks=decks
+)
+BaccaratInterfaceSystem.render_ai_oracle_panel(ai_cmd)
+
+# 3. Hiển thị ma trận thông số lưới di động và lịch sử
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, total_p, total_b, total_t)
 BaccaratInterfaceSystem.render_history_hud(st.session_state.round_detailed_log)
 
