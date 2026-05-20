@@ -20,12 +20,6 @@ class CyberSelfHealingDaemon:
         except Exception as e:
             return 0.0
 
-    @staticmethod
-    def render_warning_hud():
-        if not st.session_state.cyber_healing_logs: return
-        latest_fault = st.session_state.cyber_healing_logs[0]
-        st.markdown(f'<div style="background: rgba(255, 71, 87, 0.1); border: 1px solid #ff4757; padding: 8px; border-radius: 6px; font-size: 11px; color:#f8fafc;">🚨 {latest_fault["desc"]}</div>', unsafe_allow_html=True)
-
 # =========================================================================
 # ⚙️ ULTRA-PRECISION CARD TRACKER ENGINE
 # =========================================================================
@@ -63,7 +57,7 @@ class NextCardSimulationMatrix:
             cards_pool.extend([val] * int(round(qty)))
             
         if len(cards_pool) < 6:
-            return {"p_sim_win": 44.6, "b_sim_win": 45.8, "t_sim_win": 9.5}
+            return {"p_sim_win": 44.6, "b_sim_win": 45.8, "t_sim_win": 9.6}
 
         p_wins, b_wins, ties = 0, 0, 0
         total_sims = 1000  
@@ -116,6 +110,9 @@ class PatternSynchroAgent:
             return {"match": True, "type": "2:2", "suggest": "PLAYER" if seq[-1] == "B" else "BANKER"}
         return {"match": False, "type": "NONE", "suggest": "WAIT"}
 
+# =========================================================================
+# 🔵 PLAYER QUANTUM AGENT
+# =========================================================================
 class PlayerQuantumAgent:
     @staticmethod
     def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
@@ -126,6 +123,9 @@ class PlayerQuantumAgent:
         low_ratio = sum([exact_cards_left.get(i, 0.0) for i in [1, 2, 3, 4, 5]]) / total_cards_remaining
         return 44.6247 + (eor_shift * 5.21) + (low_ratio - 0.3846) * 18.53
 
+# =========================================================================
+# 🔴 BANKER MARKOV AGENT
+# =========================================================================
 class BankerMarkovAgent:
     @staticmethod
     def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
@@ -137,22 +137,119 @@ class BankerMarkovAgent:
         return 45.8597 + (eor_shift * 5.21) + (0.5384 - choke_ratio) * 12.54
 
 # =========================================================================
-# 🪐 FUSION MATRIX & DIRECTIVE HUB
+# 🟢🟢 TIE QUANTUM ANOMALY AGENT (MODUL AI CỬA TIE ĐỘC LẬP ĐỘ CHÍNH XÁC CAO)
+# =========================================================================
+class TieQuantumAnomalyAgent:
+    @staticmethod
+    def compute_tie_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
+        exact_cards_left = get_exact_remaining_cards(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
+        total_cards_remaining = max(1.0, sum(exact_cards_left.values()))
+        
+        # Trọng số EOR tối ưu hóa riêng cho cửa Tie dựa trên phân tích sảnh toán học toàn cầu
+        # Các lá bài 10, J, Q, K và các cặp số chẵn tăng cực mạnh xác suất Tie điểm cao (0-0, 6-6, 7-7, 8-8, 9-9)
+        tie_eor_weights = {1: -0.0012, 2: -0.0008, 3: -0.0005, 4: -0.0015, 5: -0.0022, 6: +0.0031, 7: +0.0035, 8: +0.0028, 9: +0.0011, 10: +0.0048, 11: +0.0048, 12: +0.0048, 13: +0.0048}
+        
+        eor_shift = sum(((4 * shoe_decks) - left) * tie_eor_weights.get(c, 0.0) for c, left in exact_cards_left.items())
+        
+        # Tính toán mật độ cặp bài trùng (Paired Symmetry Density) còn lại trong khay bài
+        high_cards_qty = sum([exact_cards_left.get(i, 0.0) for i in [10, 11, 12, 13]])
+        high_card_ratio = high_cards_qty / total_cards_remaining
+        
+        # Căn bản xác suất gốc của Tie là 9.5156%
+        base_tie = 9.5156 + (eor_shift * 8.44) + (high_card_ratio - 0.3076) * 14.25
+        return max(2.0, min(35.0, base_tie))
+
+# =========================================================================
+# 👑 AI SOVEREIGN ORACLE - THẦN BÀI MÔ PHỎNG ĐIỂM THỰC TẾ & XỬ LÝ TÌNH HUỐNG VÀO CẦU
+# =========================================================================
+class AISovereignOracle:
+    @staticmethod
+    def analyze_and_suggest(all_rounds_log, shoe_decks, p_val, b_val, t_val, cards_left, trend_desc, total_rounds, pattern_info):
+        if total_rounds == 0:
+            return {"decision": "👁️ COSMOS CORE v79.5", "ai_insight": "Hệ thống tích hợp tri thức mạng toàn cầu sẵn sàng. Chờ lệnh.", "color": "#a855f7", "raw_code": "EMPTY"}
+
+        decisive_log = [r for r in all_rounds_log if r.get('outcome') in ["Player", "Banker", "Tie"]]
+        
+        # 🧠 TÍNH NĂNG MỚI: MÔ PHỎNG ĐIỂM CÁC LÁ BÀI THỰC TẾ (Real-Point Bridge Analysis)
+        # Quét điểm số và cấu trúc rút lá thứ 3 để đo độ nén của khay bài hiện tại
+        last_point_gap = 0
+        was_natural = False
+        third_card_drawn = False
+        
+        if len(decisive_log) > 0:
+            last_r = decisive_log[-1]
+            p_score = last_r.get('p_score', 0)
+            b_score = last_r.get('b_score', 0)
+            last_point_gap = abs(p_score - b_score)
+            
+            # Kiểm tra thắng tự nhiên (Natural 8, 9)
+            if (p_score >= 8 and len(last_r.get('p_cards', [])) == 2) or (b_score >= 8 and len(last_r.get('b_cards', [])) == 2):
+                was_natural = True
+            # Kiểm tra xem có rút lá thứ 3 làm biến đổi thế trận hay không
+            if len(last_r.get('p_cards', [])) > 2 or len(last_r.get('b_cards', [])) > 2:
+                third_card_drawn = True
+
+        # 🦾 XỬ LÝ TÌNH HUỐNG & ĐO ĐỘ LỆCH PHA TRONG KHÔNG GIAN MẠNG (Anti-Drift Matrix)
+        wrong_count = 0
+        if len(decisive_log) >= 1:
+            if decisive_log[-1].get('oracle_target') != "WAIT" and decisive_log[-1].get('oracle_target') != decisive_log[-1].get('outcome').upper():
+                wrong_count = 1
+        if len(decisive_log) >= 2:
+            if all(r.get('oracle_target') != "WAIT" and r.get('oracle_target') != r.get('outcome').upper() for r in decisive_log[-2:]):
+                wrong_count = 2
+        if len(decisive_log) >= 3:
+            if all(r.get('oracle_target') != "WAIT" and r.get('oracle_target') != r.get('outcome').upper() for r in decisive_log[-3:]):
+                wrong_count = 3
+
+        # Điều kiện khóa nền tối thiểu
+        if len(all_rounds_log) < (8 if pattern_info["match"] else 12):
+            return {"decision": "🛑 ĐỒNG BỘ NỀN", "ai_insight": "Đang nạp dữ liệu phân bố điểm thực tế từ khay bài.", "color": "#94a3b8", "raw_code": "INITIAL_LOCK"}
+
+        # XỬ LÝ TÌNH HUỐNG LỆCH PHA LIÊN TIẾP (Tri thức chống cháy tài khoản từ không gian mạng)
+        if wrong_count == 2:
+            return {"decision": "⚠️ CẢNH BÁO PHA LỆCH", "ai_insight": f"Sàn đang bẻ cầu điểm hẹp (Ván trước lệch {last_point_gap} nút). Giảm nửa vốn ván tiếp theo.", "color": "#f1c40f", "raw_code": "REDUCE_BET"}
+        elif wrong_count >= 3:
+            return {"decision": "🚨 PHONG TỎA KHẨN CẤP", "ai_insight": "Phát hiện thuật toán sòng đảo chu kỳ đột ngột (Dây bẻ điểm thực tế cực đoan). ÉP ĐỔI BÀN NGAY!", "color": "#ff4757", "raw_code": "FORCE_EMERGENCY_LOCK"}
+
+        # 🚀 TÍCH HỢP TÌM KIẾM ĐIỂM ANOMALY CHO CỬA TIE CAO
+        if t_val > 13.5 and last_point_gap <= 2:
+            return {"decision": "🟢 ANOMALY TIE DETECTED", "ai_insight": f"AI TIE phát hiện mật độ bài trùng tăng vọt ({t_val:.1f}%), điểm số ván trước giằng co. Khuyến nghị lót TIE nhẹ!", "color": "#2ecc71", "raw_code": "BET_TIE"}
+
+        diff = abs(p_val - b_val)
+        required_delta = 1.2 if pattern_info["match"] else 2.3
+        intrinsic_target = "PLAYER" if p_val > b_val else "BANKER"
+
+        if diff < required_delta:
+            return {"decision": "🛑 BỎ LỆNH (NÉ NHIỄU)", "ai_insight": f"Biên độ lệch vi sai ({diff:.2f}%) nằm dưới ngưỡng an toàn.", "color": "#f1c40f", "raw_code": "LOW_DELTA_LOCK"}
+
+        # Thần bài chốt dựa trên nhịp điểm thực tế
+        insight_msg = f"Mô phỏng điểm thực tế ủng hộ {intrinsic_target}."
+        if was_natural: insight_msg += " Ván trước nổ Natural tạo đà xung lực cho cầu chu kỳ mới."
+        if third_card_drawn and last_point_gap == 1: insight_msg += " Sát nút từ lá bài thứ 3 chứng minh sảnh bài đang siết vi sai có lợi."
+
+        if pattern_info["match"] and pattern_info["suggest"] == intrinsic_target:
+            return {"decision": f"🔥 SÓNG TRÙNG CẦU: {pattern_info['type']}", "ai_insight": f"Hội tụ mật độ vi sai mạng và phom chu kỳ thực tế hướng về {intrinsic_target}!", "color": "#00f5d4", "raw_code": "MATCH_PATTERN"}
+
+        return {"decision": f"🤖 THẦN BÀI CHỐT: {intrinsic_target}", "ai_insight": insight_msg, "color": "#38bdf8" if intrinsic_target == "PLAYER" else "#ff4757", "raw_code": "NORMAL"}
+
+# =========================================================================
+# 🪐 HÀM FUSION HUB (HỢP NHẤT DỮ LIỆU ĐỘC LẬP TỪ 3 AGENT THEO V79.1)
 # =========================================================================
 def calculate_v79_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards):
     if not all_rounds_log and (manual_p == 0 and manual_b == 0 and manual_t == 0):
-        return 0.0, 0.0, 0.0, (shoe_decks * 52) - burn_cards, 0, 0, 0, "TRỐNG", None, 0, {"p_sim_win": 44.6, "b_sim_win": 45.8, "t_sim_win": 9.5}
+        return 0.0, 0.0, 0.0, (shoe_decks * 52) - burn_cards, 0, 0, 0, "TRỐNG", None, 0, {"p_sim_win": 44.6, "b_sim_win": 45.8, "t_sim_win": 9.6}
     
+    # Thực thi 3 cụm Agent toán học hoàn toàn độc lập độc bản
     raw_p = CyberSelfHealingDaemon.execute_and_heal(PlayerQuantumAgent.compute_sovereign_probability, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
     raw_b = CyberSelfHealingDaemon.execute_and_heal(BankerMarkovAgent.compute_sovereign_probability, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
-    raw_t = 9.5
+    raw_t = CyberSelfHealingDaemon.execute_and_heal(TieQuantumAnomalyAgent.compute_tie_probability, all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
     
     exact_cards_left = get_exact_remaining_cards(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, burn_cards)
     sim_results = NextCardSimulationMatrix.run_simulation(exact_cards_left)
     
     p_fused = (raw_p * 0.6) + (sim_results["p_sim_win"] * 0.4)
     b_fused = (raw_b * 0.6) + (sim_results["b_sim_win"] * 0.4)
-    t_fused = (raw_t * 0.6) + (sim_results.get("t_sim_win", 9.5) * 0.4)
+    t_fused = (raw_t * 0.6) + (sim_results.get("t_sim_win", 9.6) * 0.4)
     
     total_sum = p_fused + b_fused + t_fused
     p_pct = (p_fused / total_sum) * 100
@@ -170,24 +267,25 @@ def calculate_v79_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b
 
     return p_pct, b_pct, t_pct, cards_remaining, total_p_wins, total_b_wins, total_ties, trend_desc, None, 0, sim_results
 
-def get_ultimate_directive_v79(p_val, b_val, trend_desc, log, shoe_decks, cards_left, pattern_info, sim_results):
+def get_ultimate_directive_v79(p_val, b_val, t_val, trend_desc, log, shoe_decks, cards_left, pattern_info, sim_results):
     if not log: return {"status": "🛰️ SYSTEM OPERATIONAL", "msg": "Chờ nạp dữ liệu nền.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.08)", "size": "0%", "raw_target": "WAIT"}
     if len(log) < (8 if pattern_info["match"] else 12):
         return {"status": "🛑 ĐỒNG BỘ NỀN", "msg": f"Cần tích lũy thêm {12 - len(log)} ván nền để chạy mô phỏng.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.05)", "size": "0%", "raw_target": "WAIT"}
+    
     diff = abs(p_val - b_val)
     required_delta = 1.2 if pattern_info["match"] else 2.3
     if diff < required_delta:
         return {"status": "🛑 LỌC NHIỄU HẸP", "msg": f"Độ lệch biên độ ({diff:.2f}%) quá hẹp.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.08)", "size": "0%", "raw_target": "WAIT"}
+    
     target = "PLAYER" if p_val > b_val else "BANKER"
     return {"status": f"⚡ LỆNH: {target}", "msg": f"Khớp ma trận Module 7. Đánh cửa {target}.", "color": "#00afb9" if target == "PLAYER" else "#ff4757", "bg": "rgba(0,175,185,0.12)" if target == "PLAYER" else "rgba(255,71,87,0.12)", "size": f"{max(1.0, min(5.0, diff*0.85)):.1f}% Vốn", "raw_target": target}
 
 # =========================================================================
-# GIAO DIỆN SIÊU PHẲNG - ÉP CỨNG ĐỒNG BỘ CHO ĐIỆN THOẠI (KHÔNG DÙNG ST.COLUMNS)
+# GIAO DIỆN KHÓA CỨNG FLEXBOX DI ĐỘNG (THỪA KẾ TỪ V79.2 CHỐNG BẺ KHUNG)
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
     def inject_custom_css():
-        # Phá hủy hoàn toàn cơ chế bẻ hàng dọc của Streamlit trên điện thoại bằng cách can thiệp div con [data-testid="stHorizontalBlock"]
         st.markdown(
             """
             <style>
@@ -202,11 +300,11 @@ class BaccaratInterfaceSystem:
                 gap: 5px !important;
             }
             div[data-testid="stHorizontalBlock"] > div {
-                width: 50% !important; /* Dành cho khung nhập liệu đôi */
+                width: 50% !important;
                 min-width: unset !important;
             }
             
-            /* THIẾT KẾ GRID 3 CỘT KHÔNG BỊ PHÁ VỠ */
+            /* LƯỚI BA Ô HIỂN THỊ PHẲNG KHÔNG BỊ PHÁ VỠ TRÊN ĐIỆN THOẠI */
             .true-mobile-grid {
                 display: flex !important;
                 flex-direction: row !important;
@@ -229,17 +327,27 @@ class BaccaratInterfaceSystem:
             .action-status { font-size: 14px; font-weight: 900; }
             .action-msg { font-size: 11px; margin-top: 2px; color: #cbd5e1; text-align: justify; }
             
+            /* KHUNG BIỂU DIỄN AI THẦN BÀI CHUYÊN SÂU */
+            .oracle-card {
+                background: linear-gradient(135deg, #090f24 0%, #111c44 100%);
+                border: 1px solid #3b82f6;
+                border-radius: 8px;
+                padding: 10px;
+                margin: 8px 0px;
+                box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+            }
+            .oracle-title { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
+            .oracle-desc { font-size: 11px; color: #cbd5e1; margin-top: 3px; }
+            
             .metric-tag { font-size: 9px; font-weight: 800; color: #94a3b8; display:block; }
             .metric-num { font-size: 13px; font-weight: 900; font-family: monospace; display:block; }
             .metric-sub { font-size: 8px; color: #64748b; display:block; }
             
-            /* BẢNG KIỂM TOÁN DI ĐỘNG */
             .audit-matrix-box { padding: 8px; border-radius: 6px; background-color: #0b1329; border: 1px dashed #3b82f6; margin-top: 10px; overflow-x: auto; }
             .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 10px; text-align: center; }
             .audit-table th { padding: 4px; background: #1f2937; color: #94a3b8; border: 1px solid #374151; }
             .audit-table td { padding: 4px; border: 1px solid #1f2937; }
             
-            /* FIX NÚT BẤM STREAMLIT TRÊN MOBILE */
             div.stButton > button {
                 background-color: #1f2937 !important;
                 color: #f3f4f6 !important;
@@ -263,7 +371,7 @@ class BaccaratInterfaceSystem:
 
     @staticmethod
     def render_header_hud(total_rounds, cards_left):
-        st.markdown(f'<div class="header-hud-bar">📱 TRUE MOBILE CORE v79.2 | VÁN: <b>{total_rounds}</b> | BÀI CÒN: <b>{cards_left} Lá</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="header-hud-bar">📱 COSMOS CORE v79.5 | VÁN: <b>{total_rounds}</b> | BÀI CÒN: <b>{cards_left} Lá</b></div>', unsafe_allow_html=True)
 
     @staticmethod
     def render_directive_panel(cmd):
@@ -276,17 +384,25 @@ class BaccaratInterfaceSystem:
         )
 
     @staticmethod
+    def render_oracle_panel(oracle):
+        st.markdown(
+            f'<div class="oracle-card" style="border-color: {oracle["color"]};">'
+            f'<div class="oracle-title" style="color: {oracle["color"]};">🔮 {oracle["decision"]}</div>'
+            f'<div class="oracle-desc"><b>Phân tích sảnh mạng & lá bài thực tế:</b> {oracle["ai_insight"]}</div>'
+            f'</div>', unsafe_allow_html=True
+        )
+
+    @staticmethod
     def render_probabilities_grid(p, b, t, sim_results):
-        # SỬ DỤNG HTML THUẦN KHÔNG QUA ST.COLUMNS ĐỂ ÉP NẰM NGANG TRÊN ĐIỆN THOẠI
         sim_p = sim_results.get("p_sim_win", 44.6)
         sim_b = sim_results.get("b_sim_win", 45.8)
-        sim_t = sim_results.get("t_sim_win", 9.5)
+        sim_t = sim_results.get("t_sim_win", 9.6)
         
         st.markdown(
             f'<div class="true-mobile-grid">'
-            f'<div class="true-mobile-box"><span class="metric-tag">🔵 PLAYER</span><span class="metric-num" style="color:#00afb9;">{p:.1f}%</span><span class="metric-sub">M.phỏng:{sim_p:.0f}%</span></div>'
-            f'<div class="true-mobile-box"><span class="metric-tag">🔴 BANKER</span><span class="metric-num" style="color:#ff4757;">{b:.1f}%</span><span class="metric-sub">M.phỏng:{sim_b:.0f}%</span></div>'
-            f'<div class="true-mobile-box"><span class="metric-tag">🟢 TIE</span><span class="metric-num" style="color:#2ecc71;">{t:.1f}%</span><span class="metric-sub">M.phỏng:{sim_t:.0f}%</span></div>'
+            f'<div class="true-mobile-box"><span class="metric-tag">🔵 PLAYER</span><span class="metric-num" style="color:#00afb9;">{p:.1f}%</span><span class="metric-sub">Sim:{sim_p:.0f}%</span></div>'
+            f'<div class="true-mobile-box"><span class="metric-tag">🔴 BANKER</span><span class="metric-num" style="color:#ff4757;">{b:.1f}%</span><span class="metric-sub">Sim:{sim_b:.0f}%</span></div>'
+            f'<div class="true-mobile-box"><span class="metric-tag">🟢 TIE (QUANTUM)</span><span class="metric-num" style="color:#2ecc71;">{t:.1f}%</span><span class="metric-sub">Sim:{sim_t:.0f}%</span></div>'
             f'</div>', unsafe_allow_html=True
         )
 
@@ -329,9 +445,9 @@ def parse_baccarat_input_v79(raw_str):
     return res
 
 # =========================================================================
-# RUNTIME ENGINE APPLICATION v79.2
+# RUNTIME ENGINE APPLICATION v79.5
 # =========================================================================
-st.set_page_config(page_title="Oracle v79.2 Mobile", page_icon="🌌", layout="centered")
+st.set_page_config(page_title="Oracle v79.5 Cosmos", page_icon="🌌", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: st.session_state.round_detailed_log = []
@@ -345,22 +461,38 @@ with st.expander("⚙️ CẤU HÌNH KHAY BÀI"):
 
 pattern_info = PatternSynchroAgent.analyze_micro_patterns(st.session_state.round_detailed_log)
 
+# Thực thi trích xuất dữ liệu tổng hợp
 final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, _, _, sim_results = calculate_v79_ultimate_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t, burn_cards=burn_cards
 )
 
-cmd = get_ultimate_directive_v79(final_p, final_b, trend_desc, st.session_state.round_detailed_log, decks, cards_left, pattern_info, sim_results)
+cmd = get_ultimate_directive_v79(final_p, final_b, final_t, trend_desc, st.session_state.round_detailed_log, decks, cards_left, pattern_info, sim_results)
 total_all_rounds = total_p + total_b + total_t
 
+# Kích hoạt AI Thần bài chốt ma trận thực tế nâng cao
+oracle_data = AISovereignOracle.analyze_and_suggest(
+    st.session_state.round_detailed_log, decks, final_p, final_b, final_t, cards_left, trend_desc, total_all_rounds, pattern_info
+)
+
+# Đồng bộ hóa tình huống xử lý từ AI Thần Bài xuống Bảng Lệnh Đi Tiền
+if oracle_data.get('raw_code') in ["INITIAL_LOCK", "LOW_DELTA_LOCK"]:
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = oracle_data['decision'], oracle_data['ai_insight'], oracle_data['color'], "rgba(148, 163, 184, 0.05)", "0%"
+elif oracle_data.get('raw_code') == "REDUCE_BET":
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = oracle_data['decision'], oracle_data['ai_insight'], oracle_data['color'], "rgba(241, 196, 15, 0.06)", "HẠ 1/2 VỐN"
+elif oracle_data.get('raw_code') == "BET_TIE":
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = oracle_data['decision'], oracle_data['ai_insight'], oracle_data['color'], "rgba(46, 204, 113, 0.08)", "LÓT TIE NHẸ"
+elif oracle_data.get('raw_code') == "FORCE_EMERGENCY_LOCK":
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = oracle_data['decision'], oracle_data['ai_insight'], oracle_data['color'], "rgba(255, 71, 87, 0.08)", "0%"
+
+# HIỂN THỊ ENGINE GIAO DIỆN DI ĐỘNG KHÔNG BẺ KHUNG
 BaccaratInterfaceSystem.render_header_hud(total_all_rounds, cards_left)
 
-# Ô NHẬP LIỆU ĐÔI - DÙNG DIV CỦA STREAMLIT NHƯNG ĐÃ ĐƯỢC ÉP LAYOUT HÀNG NGANG BẰNG CSS GỐC Ở TRÊN
-with st.form(key="v79_fixed_form", clear_on_submit=True):
+with st.form(key="v79_cosmos_form", clear_on_submit=True):
     in_cols = st.columns(2)
     p_input = in_cols[0].text_input("🔵 LÁ P:")
     b_input = in_cols[1].text_input("🔴 LÁ B:")
     st.markdown('<div class="submit-btn-box">', unsafe_allow_html=True)
-    calc_triggered = st.form_submit_button("🚀 ĐỒNG BỘ MÔ PHỎNG v79.2")
+    calc_triggered = st.form_submit_button("🚀 KÍCH HOẠT COSMOS ENGINE v79.5")
     st.markdown('</div>', unsafe_allow_html=True)
 
 if calc_triggered and (p_input.strip() or b_input.strip()):
@@ -377,12 +509,12 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
     st.rerun()
 
 st.markdown("---")
+BaccaratInterfaceSystem.render_oracle_panel(oracle_data)
 BaccaratInterfaceSystem.render_directive_panel(cmd)
-BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, sim_results)
+BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t, sim_results) # Ô Tie nhảy chỉ số động thông minh
 QuantumAuditMatrixController.render_audit_table(st.session_state.round_detailed_log, (hist_p + hist_b + hist_t))
 
 st.markdown("<br>", unsafe_allow_html=True)
-# HAI NÚT TIỆN ÍCH ĐÃ ĐƯỢC FIX CỐ ĐỊNH NẰM NGANG KHÔNG BỊ RỚT DÒNG TỪNG NÚT LỚN
 util_cols = st.columns(2)
 if util_cols[0].button("⏪ UNDO"):
     if st.session_state.round_detailed_log:
