@@ -53,7 +53,6 @@ class PlayerQuantumAgent:
                 else: break
             
             effective_streak = min(streak_count, 18)
-            # Chống bẻ Banker quá sớm bằng cách tối ưu hóa hàm Trend Force lũy thừa động
             if current_streak_side == "Banker" and effective_streak >= 2:
                 trend_force += 3.1416 * (effective_streak ** 1.95) / (1.0 + 0.025 * (effective_streak ** 1.95))
 
@@ -115,7 +114,6 @@ class BankerMarkovAgent:
                 else: break
             
             effective_streak = min(streak_count, 18)
-            # Tăng cường quán tính dòng chảy để bảo vệ chuỗi Player không bị bẻ non
             if current_streak_side == "Player" and effective_streak >= 2:
                 trend_force += 3.1416 * (effective_streak ** 1.95) / (1.0 + 0.025 * (effective_streak ** 1.95))
             
@@ -279,7 +277,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
     if not log and (m_p == 0 and m_b == 0):
         return {
             "status": "🛰️ SYSTEM READY",
-            "msg": "Hệ thống toán học xác suất lượng tử đã thiết lập.",
+            "msg": "Hệ thống toán học xác suất lượng tử đã thiết lập. Chờ nạp bài khay mới.",
             "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.08)", "size": "0%", "raw_target": "WAIT"
         }
     
@@ -306,7 +304,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
 
 
 # =========================================================================
-# 🌌 MODULE 7: AI SOVEREIGN ORACLE - SIÊU MÔ HÌNH CHỐNG BẺ CẦU NON
+# 🪐 AI SOVEREIGN ORACLE - SIÊU MÔ HÌNH CHỐNG BẺ CẦU NON
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -325,7 +323,7 @@ class AISovereignOracle:
         if total_rounds == 0 and burn_cards == 0:
             return {
                 "decision": "👁️ ORACLE SẴN SÀNG", "target": "QUÉT KHÔNG GIAN...", "capital_allocation": "0%", "strategy_type": "Cosmological Array 2026",
-                "ai_insight": "Siêu máy tính tối cao đã liên kết trường dữ liệu sảnh bài.",
+                "ai_insight": "Siêu máy tính tối cao đã liên kết trường dữ liệu sảnh bài bài độc lập.",
                 "risk_level": "Chờ đồng bộ", "color": "#a855f7", "memory_hud": "Không gian Hilbert trống", "cyber_knowledge": "Đang định vị hằng số Hubble...",
                 "raw_code": "EMPTY_ORACLE"
             }
@@ -370,18 +368,14 @@ class AISovereignOracle:
         raw_kelly = (max(p_val, b_val) / 100.0) - (min(p_val, b_val) / 100.0)
         dynamic_alloc = raw_kelly * 38.0 * (1.0 + 1.8 * shoe_progress)
 
-        # 🔥 KHU VỰC NÂNG CẤP CHỐNG BẺ CẦU NON (ANTI-PREMATURE BREAK FILTER)
         if streak_side and streak_count >= 3:
             current_streak_upper = streak_side.upper()
             
-            # Kiểm tra xem quyết định toán học gốc có muốn BẺ cầu hay không
             if intrinsic_target != current_streak_upper:
-                # Điều kiện kiểm toán 1: Điểm kháng cự chuỗi dựa trên Fibonacci hoặc Đỉnh bão hòa Entropy
                 is_fibonacci_node = streak_count in [3, 5, 8, 13, 21]
                 is_extreme_entropy = (entropy_score < 0.72) and (streak_count >= 6)
-                is_powerful_bias = (diff >= 6.5)  # Biên độ sóng lệch cực mạnh mới đáng tin
+                is_powerful_bias = (diff >= 6.5)  
                 
-                # Nếu muốn bẻ mà không thỏa mãn điều kiện an toàn cường độ cao => ÉP QUAY LẠI DUY TRÌ THEO DÒNG (FLOW)
                 if not (is_powerful_bias or is_extreme_entropy or (is_fibonacci_node and diff >= 4.5)):
                     final_alloc = max(3.5, min(12.0, dynamic_alloc * 1.2))
                     return {
@@ -394,7 +388,6 @@ class AISovereignOracle:
                         "raw_code": "FLOW_STREAK_PREVENT_PREMATURE"
                     }
                 else:
-                    # Đủ điều kiện chín muồi để thực hiện lệnh BẺ CẦU TỐI CAO
                     final_alloc = max(6.0, min(26.0, dynamic_alloc * 2.1))
                     return {
                         "decision": f"💥 FORCE: BẺ CẦU TỐI CAO ➡️ {intrinsic_target}", "target": intrinsic_target,
@@ -404,7 +397,6 @@ class AISovereignOracle:
                         "raw_code": "FORCE_COUNTER_STREAK"
                     }
             else:
-                # Bản thân toán học gốc đã muốn ĐU THEO CHUỖI
                 final_alloc = max(4.0, min(18.0, dynamic_alloc * 1.55))
                 return {
                     "decision": f"🌊 FLOW: ĐU THEO CHUỖI ➡️ {current_streak_upper}", "target": current_streak_upper,
@@ -679,7 +671,7 @@ class BaccaratInterfaceSystem:
             min_value=0, max_value=50, 
             value=7, 
             step=1, 
-            help="Nếu không biết sòng rút bao nhiêu lá, hãy giữ nguyên số 7 (Kỳ vọng toán học trung bình của sòng bài)."
+            help="Số lượng lá rút bỏ đầu khay."
         )
         
         st.sidebar.markdown("---")
@@ -762,23 +754,25 @@ class BaccaratInterfaceSystem:
     def render_utilities():
         util_grid = st.columns(2)
         undo_triggered = util_grid[0].button("⏪ QUAY LẠI (UNDO)")
-        clear_triggered = util_grid[1].button("🔄 LÀM TRỐNG DỮ LIỆU")
+        clear_triggered = util_grid[1].button("🔄 LÀM TRỐNG KHAY BÀI")
         return undo_triggered, clear_triggered
 
 
 # =========================================================================
 # 🎮 RUNTIME EXECUTION CONTROLLER
 # =========================================================================
-st.set_page_config(page_title="Cosmological Oracle v67.8", page_icon="🌌", layout="centered")
+st.set_page_config(page_title="Cosmological Oracle v68.0", page_icon="🌌", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
+# Khởi tạo bộ đệm Log dữ liệu sảnh
 if 'round_detailed_log' not in st.session_state: 
     st.session_state.round_detailed_log = []
 
 decks, hist_p, hist_b, hist_t, burn_cards = BaccaratInterfaceSystem.render_sidebar()
 
-st.markdown("### 🌌 ORACLE MULTI-AGENT QUANTUM DECENTRALIZED v67.8")
+st.markdown("### 🌌 ORACLE MULTI-AGENT QUANTUM DECENTRALIZED v68.0")
 
+# Thực hiện giải phương trình ma trận
 final_p, final_b, final_t, cards_left, total_p, total_b, total_t, trend_desc, streak_side, streak_count = calculate_v67_8_ultimate_fusion(
     st.session_state.round_detailed_log, shoe_decks=decks, manual_p=hist_p, manual_b=hist_b, manual_t=hist_t, burn_cards=burn_cards
 )
@@ -809,6 +803,7 @@ current_arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(
     burn_cards=burn_cards
 )
 
+# Thêm bản ghi mới khi nhấn nút Kích hoạt
 if calc_triggered and (p_input.strip() or b_input.strip()):
     p_list = parse_baccarat_input_v67_8(p_input.strip())
     b_list = parse_baccarat_input_v67_8(b_input.strip())
@@ -841,10 +836,27 @@ QuantumAuditMatrixController.render_audit_table(
 st.markdown("<br>", unsafe_allow_html=True)
 
 undo_btn, clear_btn = BaccaratInterfaceSystem.render_utilities()
+
+# Xử lý nút Undo ván bài liền kề
 if undo_btn:
     if st.session_state.round_detailed_log:
         st.session_state.round_detailed_log.pop()
         st.rerun()
+
+# 🔥 KHU VỰC RESET VÀ LÀM SẠCH BỘ NHỚ VÔ HẠN TUYỆT ĐỐI (ANTI-MEMORY LEAK)
 if clear_btn:
+    # 1. Giải phóng sâu tài nguyên mảng log để Python Garbage Collector thu hồi vùng nhớ lập tức
+    if 'round_detailed_log' in st.session_state:
+        st.session_state.round_detailed_log.clear()
+        del st.session_state['round_detailed_log']
+    
+    # 2. Quét sạch tất cả các trạng thái rác sinh ra do nhập liệu form cũ
+    for key in list(st.session_state.keys()):
+        if "baccarat_cosmological" in key or "intelligence" in key:
+            del st.session_state[key]
+            
+    # 3. Tạo lại một mảng không gian trống chuẩn cấu trúc lõi
     st.session_state.round_detailed_log = []
+    
+    # 4. Ép buộc hệ thống Streamlit Rerun sạch sẽ từ trạng thái cơ bản
     st.rerun()
