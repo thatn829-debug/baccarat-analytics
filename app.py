@@ -10,7 +10,6 @@ class PlayerQuantumAgent:
     def compute_sovereign_probability(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, total_decisive, burn_cards):
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
         
-        # Khấu trừ bài từ số ván nhập tay ở Sidebar + Số lá bài rút bỏ (Burn Cards)
         sidebar_total_rounds = manual_p + manual_b + manual_t
         estimated_cards_removed = (sidebar_total_rounds * 4.9452) + burn_cards
         
@@ -54,8 +53,9 @@ class PlayerQuantumAgent:
                 else: break
             
             effective_streak = min(streak_count, 18)
+            # Chống bẻ Banker quá sớm bằng cách tối ưu hóa hàm Trend Force lũy thừa động
             if current_streak_side == "Banker" and effective_streak >= 2:
-                trend_force += 3.1416 * (effective_streak ** 1.8) / (1.0 + 0.03 * (effective_streak ** 1.8))
+                trend_force += 3.1416 * (effective_streak ** 1.95) / (1.0 + 0.025 * (effective_streak ** 1.95))
 
         if total_decisive > 0:
             p_ratio = (manual_p + sum(1 for r in all_rounds_log if r['outcome'] == "Player")) / total_decisive
@@ -115,8 +115,9 @@ class BankerMarkovAgent:
                 else: break
             
             effective_streak = min(streak_count, 18)
+            # Tăng cường quán tính dòng chảy để bảo vệ chuỗi Player không bị bẻ non
             if current_streak_side == "Player" and effective_streak >= 2:
-                trend_force += 3.1416 * (effective_streak ** 1.8) / (1.0 + 0.03 * (effective_streak ** 1.8))
+                trend_force += 3.1416 * (effective_streak ** 1.95) / (1.0 + 0.025 * (effective_streak ** 1.95))
             
             if current_streak_side == "Banker" and effective_streak >= 3:
                 wave_damping = MathQuantumUniverse.quantum_wave_damping(effective_streak)
@@ -131,7 +132,7 @@ class BankerMarkovAgent:
 
 
 # =========================================================================
-# 🟢 AI AGENT 3: TIE COGNITIVE - UPGRADED RIEMANN ZETA & STREAK ENTROPY GAP
+# 🟢 AI AGENT 3: TIE COGNITIVE - RIEMANN ZETA & STREAK ENTROPY GAP
 # =========================================================================
 class TieHypergeometricAgent:
     @staticmethod
@@ -305,7 +306,7 @@ def get_ultimate_directive(p_val, b_val, trend_desc, streak_side, streak_count, 
 
 
 # =========================================================================
-# 🌌 MODULE 7: AI SOVEREIGN ORACLE - COSMOLOGICAL SUPERINTELLIGENCE
+# 🌌 MODULE 7: AI SOVEREIGN ORACLE - SIÊU MÔ HÌNH CHỐNG BẺ CẦU NON
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -369,25 +370,46 @@ class AISovereignOracle:
         raw_kelly = (max(p_val, b_val) / 100.0) - (min(p_val, b_val) / 100.0)
         dynamic_alloc = raw_kelly * 38.0 * (1.0 + 1.8 * shoe_progress)
 
+        # 🔥 KHU VỰC NÂNG CẤP CHỐNG BẺ CẦU NON (ANTI-PREMATURE BREAK FILTER)
         if streak_side and streak_count >= 3:
             current_streak_upper = streak_side.upper()
             
-            if intrinsic_target != current_streak_upper and diff >= 4.5 and entropy_score < 0.88:
-                final_alloc = max(6.0, min(28.0, dynamic_alloc * 1.95))
-                return {
-                    "decision": f"💥 FORCE: BẺ CẦU TỐI CAO ➡️ {intrinsic_target}", "target": intrinsic_target,
-                    "capital_allocation": f"🔥 KÝ DỊ: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING OVERRIDE",
-                    "ai_insight": f"Chuỗi bệt {current_streak_upper} đạt giới hạn Entropy. Ép đảo chiều về {intrinsic_target}.",
-                    "risk_level": "Cực thấp (Lợi thế)", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
-                    "raw_code": "FORCE_COUNTER_STREAK"
-                }
+            # Kiểm tra xem quyết định toán học gốc có muốn BẺ cầu hay không
+            if intrinsic_target != current_streak_upper:
+                # Điều kiện kiểm toán 1: Điểm kháng cự chuỗi dựa trên Fibonacci hoặc Đỉnh bão hòa Entropy
+                is_fibonacci_node = streak_count in [3, 5, 8, 13, 21]
+                is_extreme_entropy = (entropy_score < 0.72) and (streak_count >= 6)
+                is_powerful_bias = (diff >= 6.5)  # Biên độ sóng lệch cực mạnh mới đáng tin
+                
+                # Nếu muốn bẻ mà không thỏa mãn điều kiện an toàn cường độ cao => ÉP QUAY LẠI DUY TRÌ THEO DÒNG (FLOW)
+                if not (is_powerful_bias or is_extreme_entropy or (is_fibonacci_node and diff >= 4.5)):
+                    final_alloc = max(3.5, min(12.0, dynamic_alloc * 1.2))
+                    return {
+                        "decision": f"🌊 FLOW: PHANH BẺ NON ➡️ THUẬN {current_streak_upper}", 
+                        "target": current_streak_upper,
+                        "capital_allocation": f"💎 ĐU DÒNG: {final_alloc:.1f}% VỐN", 
+                        "strategy_type": "🛡️ ANTI-PREMATURE DAMPING",
+                        "ai_insight": f"Phát hiện xu hướng bẻ cầu non quá sớm tại ván thứ {streak_count}. Biên độ sóng ({diff:.2f}%) chưa chín muồi. Hạ cấp lệnh để tiếp tục đu dòng bệt.",
+                        "risk_level": "Thấp (Đã triệt tiêu nhiễu bẻ non)", "color": "#cbd5e1", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
+                        "raw_code": "FLOW_STREAK_PREVENT_PREMATURE"
+                    }
+                else:
+                    # Đủ điều kiện chín muồi để thực hiện lệnh BẺ CẦU TỐI CAO
+                    final_alloc = max(6.0, min(26.0, dynamic_alloc * 2.1))
+                    return {
+                        "decision": f"💥 FORCE: BẺ CẦU TỐI CAO ➡️ {intrinsic_target}", "target": intrinsic_target,
+                        "capital_allocation": f"🔥 KÝ DỊ: {final_alloc:.1f}% VỐN", "strategy_type": "⚡ HAWKING OVERRIDE",
+                        "ai_insight": f"Chuỗi bệt {current_streak_upper} ({streak_count} ván) đã chạm điểm kỳ dị toán học. Áp suất phân phối khay bài đạt cực hạn, kích hoạt lệnh bẻ.",
+                        "risk_level": "Cực thấp (Lợi thế biên đảo chiều)", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
+                        "raw_code": "FORCE_COUNTER_STREAK"
+                    }
             else:
-                final_alloc = max(4.0, min(16.0, dynamic_alloc * 1.45))
-                target_to_follow = current_streak_upper
+                # Bản thân toán học gốc đã muốn ĐU THEO CHUỖI
+                final_alloc = max(4.0, min(18.0, dynamic_alloc * 1.55))
                 return {
-                    "decision": f"🌊 FLOW: ĐU THEO CHUỖI ➡️ {target_to_follow}", "target": target_to_follow,
+                    "decision": f"🌊 FLOW: ĐU THEO CHUỖI ➡️ {current_streak_upper}", "target": current_streak_upper,
                     "capital_allocation": f"💎 ĐU DÒNG: {final_alloc:.1f}% VỐN", "strategy_type": "🌊 WAVE EXPANSION",
-                    "ai_insight": f"Mật độ phân phối ẩn ủng hộ chuỗi bệt {target_to_follow} tiếp diễn.",
+                    "ai_insight": f"Cấu trúc hình học khay bài đồng thuận tuyệt đối. Đu dòng bệt {current_streak_upper} đến khi gãy cấu trúc nền.",
                     "risk_level": "An toàn", "color": "#a855f7", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge,
                     "raw_code": "FLOW_STREAK"
                 }
@@ -407,7 +429,7 @@ class AISovereignOracle:
 
 
 # =========================================================================
-# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (RÚT GỌN TỐI ƯU GIAO DIỆN)
+# 🎛️ MODULE 9: QUANTUM ARBITRATION MATRIX (BỘ LỌC TRỌNG TÀI)
 # =========================================================================
 class QuantumArbitrationMatrix:
     @staticmethod
@@ -461,7 +483,7 @@ class QuantumArbitrationMatrix:
             if o_code == "FORCE_COUNTER_STREAK":
                 arbitrator_final_verdict = o_target
                 rule_title = "⚖️ TRỌNG TÀI TỐI CAO - KHỚP LỆNH BẺ CẦU"
-                rule_desc = f"Quán tính ngắn hạn ép theo {target_badge(m_target)} nhưng Oracle báo điểm gãy chuỗi bệt. <br><b>HÀNH ĐỘNG: Đánh theo Oracle ({target_badge(o_target)}) - HẠ 50% KHỐI LƯỢNG.</b>"
+                rule_desc = f"Quán tính ngắn hạn ép theo {target_badge(m_target)} nhưng Oracle báo điểm gãy chuỗi bệt chuẩn xác. <br><b>HÀNH ĐỘNG: Đánh theo Oracle ({target_badge(o_target)}) - HẠ 50% KHỐI LƯỢNG.</b>"
             else:
                 if high_cards > low_cards * 1.15:
                     decision_override = "BANKER"
@@ -482,13 +504,13 @@ class QuantumArbitrationMatrix:
             panel_color = "#00f5d4"
             panel_bg = "rgba(0, 245, 212, 0.1)"
 
-        elif m_target == "WAIT" and o_code == "FLOW_STREAK":
+        elif m_target == "WAIT" and (o_code in ["FLOW_STREAK", "FLOW_STREAK_PREVENT_PREMATURE"]):
             has_conflict = True
             arbitrator_final_verdict = o_target
-            rule_title = "⚖️ TRỌNG TÀI TỐI CAO - THUẬN DÒNG LƯỢNG TỬ"
-            rule_desc = f"Độc lập báo Chờ (WAIT) nhưng bộ nhớ tích lũy của Oracle xác nhận bệt sâu giữ nguyên cấu trúc. <br><b>HÀNH ĐỘNG: Đu dòng theo Oracle ({target_badge(o_target)}) mức tối thiểu (1% vốn).</b>"
-            panel_color = "#a855f7"
-            panel_bg = "rgba(168, 85, 247, 0.12)"
+            rule_title = "⚖️ TRỌNG TÀI TỐI CAO - THUẬN DÒNG LƯỢNG TỬ (CHỐNG BẺ NON)"
+            rule_desc = f"Độc lập báo Chờ (WAIT) nhưng Oracle đã kích hoạt bộ phanh chống bẻ cầu non để tiếp tục đu dòng bệt {target_badge(o_target)}. <br><b>HÀNH ĐỘNG: Thuận dòng theo Oracle mức tối thiểu (1%-2% vốn).</b>"
+            panel_color = "#cbd5e1"
+            panel_bg = "rgba(203, 213, 225, 0.08)"
 
         if has_conflict:
             st.markdown(
@@ -652,7 +674,6 @@ class BaccaratInterfaceSystem:
         st.sidebar.markdown("### ⚙️ CẤU HÌNH KHAY BÀI VŨ TRỤ")
         decks = st.sidebar.selectbox("Số bộ bài sòng dùng:", [8, 6, 4], index=0)
         
-        # ĐẶT MẶC ĐỊNH LÀ 7 LÁ NẾU KHÔNG BIẾT SỐ LÁ RÚT BỎ (KỲ VỌNG TOÁN HỌC TRUNG BÌNH)
         burn_cards = st.sidebar.number_input(
             "🎴 SỐ LÁ RÚT BỎ (BURN CARDS):", 
             min_value=0, max_value=50, 
