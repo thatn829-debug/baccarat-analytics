@@ -3,6 +3,44 @@ import numpy as np
 import math
 
 # =========================================================================
+# 🆕 MODULE: GRANDMASTER ADVISOR (TẦNG THAM MƯU CHIẾN LƯỢC)
+# =========================================================================
+class GrandmasterAdvisor:
+    """
+    Module tham mưu chuyên sâu: Lưu trữ toàn bộ thư viện thế bài,
+    nhận diện cầu và đưa ra các chỉ dấu (signals) điều chỉnh quyết định.
+    """
+    @staticmethod
+    def analyze_strategy(all_rounds_log):
+        if len(all_rounds_log) < 5:
+            return {"advice": "THẬN TRỌNG", "intensity": 0, "note": "Đang thu thập dữ liệu khởi đầu."}
+        
+        # Trích xuất lịch sử
+        outcomes = [r['outcome'].upper() for r in all_rounds_log if r['outcome'].upper() in ["PLAYER", "BANKER"]]
+        
+        # 1. Nhận diện Cầu Bệt (Streak)
+        last_op = outcomes[-1]
+        streak = 1
+        for i in range(len(outcomes) - 2, -1, -1):
+            if outcomes[i] == last_op: streak += 1
+            else: break
+        
+        # 2. Nhận diện Cầu Nhảy (Ping-pong)
+        is_pingpong = True
+        if len(outcomes) >= 4:
+            for i in range(-1, -4, -1):
+                if outcomes[i] == outcomes[i-1]: is_pingpong = False; break
+        
+        # Đưa ra tham mưu dựa trên thế bài
+        if streak >= 4:
+            return {"advice": "THEO BỆT", "intensity": streak, "note": f"Cầu bệt {last_op} đang mạnh, không nên bẻ cầu."}
+        elif is_pingpong:
+            return {"advice": "CẦU NHẢY", "intensity": 2, "note": "Thế bài nhảy 1-1, ưu tiên bắt nhịp đối nghịch."}
+        else:
+            return {"advice": "CÂN BẰNG", "intensity": 1, "note": "Thế bài hỗn hợp, ưu tiên bám sát tỷ lệ toán học."}
+            
+#
+# =========================================================================
 # 🔵 ALL-SHARE DATA ENGINE: INFINITE MEMORY CARD TRACKER CORE
 # =========================================================================
 class ShoeCardTracker:
