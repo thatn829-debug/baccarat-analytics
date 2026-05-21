@@ -8,30 +8,19 @@ import math
 class ShoeCardTracker:
     @staticmethod
     def get_exact_cards_left(all_rounds_log, shoe_decks, burn_cards, init_p=0, init_b=0, init_t=0):
-        """
-        [BỘ NHỚ VÔ HẠN V72.0] Bộ đếm bài tuyệt đối, phân rã chính xác số lượng từ A đến K.
-        """
-        # Khởi tạo số lượng bài ban đầu: mỗi nút có 4 lá * số bộ bài
         exact_cards_left = {i: float(4 * shoe_decks) for i in range(1, 14)}
-        
-        # 1. TRỪ LÁ BÀI ĐÃ BỎ (BURN CARDS) - Phân phối đều
         if burn_cards > 0:
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - (burn_cards / 13.0))
-                
-        # 2. KHẤU TRỪ SỐ LÁ GIẢ ĐỊNH TỪ SỐ VÁN CŨ TRÊN SIDEBAR
         total_mid_rounds = init_p + init_b + init_t
         if total_mid_rounds > 0:
             estimated_cards_removed = total_mid_rounds * 4.9
             for i in range(1, 14):
                 exact_cards_left[i] = max(0.0, exact_cards_left[i] - (estimated_cards_removed / 13.0))
-                
-        # 3. TRỪ CHÍNH XÁC CÁC LÁ BÀI ĐÃ XUẤT HIỆN TRONG LỊCH SỬ NHẬP TAY
         for r in all_rounds_log:
             for card in (r.get('p_cards', []) + r.get('b_cards', [])):
                 if card in exact_cards_left:
                     exact_cards_left[card] = max(0.0, exact_cards_left[card] - 1.0)
-                    
         return exact_cards_left
 
     @staticmethod
@@ -46,7 +35,6 @@ class ShoeCardTracker:
             p_score = r.get('p_score', 0)
             b_score = r.get('b_score', 0)
             recency_multiplier = (idx + 1) / len(all_rounds_log)
-            
             if oracle_target == "PLAYER" and outcome == "BANKER":
                 p_error_weight -= 0.01 * max(1, b_score - p_score) * recency_multiplier
                 b_error_weight += 0.01 * max(1, b_score - p_score) * recency_multiplier
@@ -105,7 +93,6 @@ class TieHypergeometricAgent:
         cards_remaining = max(1.0, sum(exact_cards_left.values()))
         zero_cards = sum([exact_cards_left[i] for i in [10, 11, 12, 13]])
         non_zero_cards = max(0.0, cards_remaining - zero_cards)
-        
         z_cards_i = max(0, int(zero_cards))
         nz_cards_i = max(0, int(non_zero_cards))
         rem_cards_i = max(0, int(cards_remaining))
@@ -175,7 +162,6 @@ class AISovereignOracle:
         raw_kelly = (win_prob * payout_ratio - loss_prob) / payout_ratio
         adaptive_fraction = 0.15 * (1.1 - entropy_score) 
         fractional_kelly = max(0.0, raw_kelly * max(0.05, adaptive_fraction)) * 100 
-        
         final_alloc = min(12.0, max(1.0, fractional_kelly)) 
 
         return {
@@ -204,7 +190,6 @@ def calculate_v72_quantum_fusion(all_rounds_log, shoe_decks, burn_cards, init_p,
     p_pct = (raw_p / total_sum) * 100
     b_pct = (raw_b / total_sum) * 100
     t_pct = (raw_t / total_sum) * 100
-    
     cards_remaining = max(0, int(sum(exact_cards_left.values())))
 
     return p_pct, b_pct, t_pct, cards_remaining, total_p_wins, total_b_wins, total_ties, p_error_weight, b_error_weight
@@ -238,15 +223,9 @@ def get_ultimate_directive(p_val, b_val):
 class QuantumAuditMatrixController:
     @staticmethod
     def render_card_memory_table(exact_cards_left):
-        """
-        [MỚI v72.0] Hiển thị trực quan số lượng từng quân bài đơn lẻ còn lại trong bộ nhớ AI.
-        """
         st.markdown('<div class="card-matrix-box"><div class="card-matrix-title">🎴 BẢNG THEO VẾT SỐ LƯỢNG QUÂN BÀI THỜI GIAN THỰC (A - K)</div>', unsafe_allow_html=True)
-        
-        # Ánh xạ nhãn hiển thị cho trực quan
         labels = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'}
         
-        # Chia làm 2 hàng để hiển thị đẹp mắt trên Mobile
         th_html_1 = "".join([f"<th>{labels[i]}</th>" for i in range(1, 8)])
         td_html_1 = "".join([f"<td><b>{exact_cards_left[i]:.1f}</b></td>" for i in range(1, 8)])
         
@@ -390,7 +369,12 @@ class BaccaratInterfaceSystem:
             .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 10px; color: #c9d1d9; table-layout: fixed; }
             .audit-table th { padding: 5px 2px; text-align: center; background: #161b22; border: 1px solid #30363d; font-size: 9px; }
             .audit-table td { padding: 6px 2px; text-align: center; border: 1px solid #21262d; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .status-dot { inline-block; width: 8px; height: 8px; border-radius: 50%; }
+            .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+            
+            /* [MỚI CHỈNH SỬA CSS v72.1] Khóa cứng nút bấm luôn song song trái phải trên cả PC lẫn di động */
+            .side-by-side-row { display: flex !important; flex-direction: row !important; width: 100% !important; gap: 8px !important; }
+            .side-by-side-row > div { flex: 1 !important; min-width: 0px !important; }
+            
             div.stButton > button { background-color: #21262d !important; color: #c9d1d9 !important; border: 1px solid #30363d !important; border-radius: 6px; font-weight: 800; width: 100% !important; font-size: 12px !important; }
             .submit-btn-box div.stButton > button { background-color: #238636 !important; color: #ffffff !important; border: none !important; box-shadow: 0 0 10px rgba(35,134,54,0.3); padding: 10px 0px !important; }
             .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
@@ -425,11 +409,15 @@ class BaccaratInterfaceSystem:
     def render_input_form():
         st.markdown("##### 🎴 NHẬP LÁ BÀI RÚT SÀN THỰC TẾ:")
         with st.form(key="mobile_tensor_form", clear_on_submit=True):
+            # [MỚI CHỈNH SỬA v72.1] Ép khối DIV song song trái phải cố định cho 2 ô nhập bài
+            st.markdown('<div class="side-by-side-row">', unsafe_allow_html=True)
             input_grid = st.columns(2)
             with input_grid[0]:
                 p_str = st.text_input("🔵 PLAYER CARD:", placeholder="Ví dụ: 8 k a")
             with input_grid[1]:
                 b_str = st.text_input("🔴 BANKER CARD:", placeholder="Ví dụ: 7 10 2")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             st.write("")
             st.markdown('<div class="submit-btn-box">', unsafe_allow_html=True)
             triggered = st.form_submit_button("🚀 KÍCH HOẠT HỆ THỐNG AI TÍNH TOÁN")
@@ -450,7 +438,7 @@ class BaccaratInterfaceSystem:
     def render_ai_oracle_panel(ai_cmd):
         html_string = (
             f"<div style='background: #0d1117; border: 1px dashed {ai_cmd['color']}; border-radius: 8px; padding: 10px; margin: 4px 0px; font-size: 11px;'>"
-            f"<div style='font-size: 8px; color: #58a6ff; letter-spacing: 0.5px; font-weight:800; margin-bottom: 2px;'>🌌 AI SOVEREIGN MATRIX V72.0 (THẦN BÀI VÔ HẠN)</div>"
+            f"<div style='font-size: 8px; color: #58a6ff; letter-spacing: 0.5px; font-weight:800; margin-bottom: 2px;'>🌌 AI SOVEREIGN MATRIX V72.1 (THẦN BÀI VÔ HẠN)</div>"
             f"<div style='font-size: 14px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 6px;'>{ai_cmd['decision']}</div>"
             f"<div style='color: #79c0ff; font-family: monospace; font-size: 10px; margin-bottom: 4px;'>{ai_cmd['memory_hud']}</div>"
             f"<div style='color: #a5d6ff; font-family: monospace; font-size: 10px; margin-bottom: 6px;'>🛰️ {ai_cmd['cyber_knowledge']}</div>"
@@ -475,16 +463,21 @@ class BaccaratInterfaceSystem:
 
     @staticmethod
     def render_utilities():
+        # [MỚI CHỈNH SỬA v72.1] Khóa cứng bố cục flex trái phải cho cụm nút Undo / Reset Memory
+        st.markdown('<div class="side-by-side-row">', unsafe_allow_html=True)
         util_grid = st.columns(2)
-        undo_triggered = util_grid[0].button("⏪ XOÁ VÁN CUỐI (UNDO)")
-        clear_triggered = util_grid[1].button("🔄 RESET BỘ NHỚ KHAY")
+        with util_grid[0]:
+            undo_triggered = st.button("⏪ XOÁ VÁN CUỐI (UNDO)")
+        with util_grid[1]:
+            clear_triggered = st.button("🔄 RESET BỘ NHỚ KHAY")
+        st.markdown('</div>', unsafe_allow_html=True)
         return undo_triggered, clear_triggered
 
 
 # =========================================================================
 # 🎮 RUNTIME EXECUTION CONTROLLER
 # =========================================================================
-st.set_page_config(page_title="Quantum Tensor Infinite v72.0", page_icon="🌌", layout="centered")
+st.set_page_config(page_title="Quantum Tensor Infinite v72.1", page_icon="🌌", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: 
@@ -492,7 +485,7 @@ if 'round_detailed_log' not in st.session_state:
 
 decks, burn_cards, init_p, init_b, init_t = BaccaratInterfaceSystem.render_sidebar()
 
-st.markdown("### 🌌 QUANTUM TENSOR INFINITE v72.0")
+st.markdown("### 🌌 QUANTUM TENSOR INFINITE v72.1")
 
 calc_triggered, p_input, b_input = BaccaratInterfaceSystem.render_input_form()
 
@@ -535,7 +528,7 @@ current_oracle_analysis = AISovereignOracle.analyze_and_suggest(
 )
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_oracle_analysis)
 
-# 3. [MỚI v72.0] BẢNG HIỂN THỊ TRỰC QUAN SỐ LƯỢNG QUÂN BÀI CÒN LẠI TRONG BỘ NHỚ
+# 3. Bảng đếm bài chi tiết A-K
 current_cards_left_dict = ShoeCardTracker.get_exact_cards_left(st.session_state.round_detailed_log, decks, burn_cards, init_p, init_b, init_t)
 QuantumAuditMatrixController.render_card_memory_table(current_cards_left_dict)
 
@@ -547,6 +540,7 @@ QuantumAuditMatrixController.render_audit_table(log=st.session_state.round_detai
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# 6. Các tính năng điều hướng bộ nhớ (Nút Undo và Reset đã được khóa song song)
 undo_btn, clear_btn = BaccaratInterfaceSystem.render_utilities()
 if undo_btn:
     if st.session_state.round_detailed_log:
