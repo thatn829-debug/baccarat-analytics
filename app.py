@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 
 # =========================================================================
-# 🌌 SYSTEM HEALING REGISTRY (LÕI VÁ LỖI TỰ ĐỘNG THẾ HỆ V79.5)
+# 🌌 SYSTEM HEALING REGISTRY (LÕI VÁ LỖI TỰ ĐỘNG THẾ HỆ V79.6)
 # =========================================================================
 if 'cyber_healing_logs' not in st.session_state:
     st.session_state.cyber_healing_logs = []
@@ -35,7 +35,7 @@ class CyberSelfHealingDaemon:
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = {
             "time": timestamp, "type": fault_type, "desc": description,
-            "action": "🛠️ AI V79.5: Khôi phục Grid song song trái/phải cho di động."
+            "action": "🛠️ AI V79.6: Thiết lập Elastic Grid chống tràn viền điện thoại."
         }
         st.session_state.cyber_healing_logs.insert(0, log_entry)
         if len(st.session_state.cyber_healing_logs) > 3: st.session_state.cyber_healing_logs.pop()
@@ -45,10 +45,10 @@ class CyberSelfHealingDaemon:
         if not st.session_state.cyber_healing_logs: return
         latest_fault = st.session_state.cyber_healing_logs[0]
         st.markdown(
-            f'<div style="background: rgba(0, 245, 212, 0.03); border: 1px solid #00f5d4; border-radius: 6px; padding: 6px; margin: 4px 0px;">'
-            f'<div style="font-size: 10px; font-weight: 900; color: #00f5d4; display: flex; justify-content: space-between;">'
-            f'<span>⚡ MOBILE PARALLEL DAEMON v79.5</span><span>[{latest_fault["time"]}]</span></div>'
-            f'<div style="font-size: 10px; color: #cbd5e1; margin-top: 1px; font-family: monospace;"><b>Sửa lỗi:</b> {latest_fault["desc"]}</div>'
+            f'<div style="background: rgba(0, 245, 212, 0.02); border: 1px solid #00f5d4; border-radius: 4px; padding: 4px; margin: 2px 0px;">'
+            f'<div style="font-size: 9px; font-weight: 900; color: #00f5d4; display: flex; justify-content: space-between;">'
+            f'<span>⚡ ANTI-OVERFLOW DAEMON v79.6</span><span>[{latest_fault["time"]}]</span></div>'
+            f'<div style="font-size: 9px; color: #cbd5e1; margin-top: 1px; font-family: monospace;"><b>Sửa lỗi:</b> {latest_fault["desc"]}</div>'
             f'</div>', unsafe_allow_html=True
         )
 
@@ -193,24 +193,24 @@ def calculate_v79_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b
 
 def get_ultimate_directive_v79(p_val, b_val, trend_desc, log, shoe_decks, cards_left, pattern_info):
     if not log:
-        return {"status": "🛰️ SYSTEM READY v79.5", "msg": "Hệ thống sẵn sàng quét dữ liệu sảnh bài.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.05)", "size": "0%", "raw_target": "WAIT"}
+        return {"status": "🛰️ SYSTEM READY v79.6", "msg": "Hệ thống sẵn sàng quét dữ liệu.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.03)", "size": "0%", "raw_target": "WAIT"}
 
     diff = abs(p_val - b_val)
     min_rounds = 6 if pattern_info["match"] else 10
     if len(log) < min_rounds:
-        return {"status": "🛑 ĐỒNG BỘ SÓNG NỀN", "msg": f"Đang đồng bộ chu kỳ ngắn (Thiếu {min_rounds - len(log)} ván).", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.04)", "size": "0%", "raw_target": "WAIT"}
+        return {"status": "🛑 ĐỒNG BỘ SÓNG NỀN", "msg": f"Thiếu {min_rounds - len(log)} ván.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.03)", "size": "0%", "raw_target": "WAIT"}
 
     required_delta = 1.0 if pattern_info["match"] else 2.2
     if diff < required_delta:
-        return {"status": "🛑 LỌC NHIỄU BIÊN ĐỘ", "msg": f"Độ lệch vi sai ({diff:.2f}%) dưới ngưỡng an toàn.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.06)", "size": "0%", "raw_target": "WAIT"}
+        return {"status": "🛑 LỌC NHIỄU BIÊN ĐỘ", "msg": f"Độ lệch vi sai ({diff:.2f}%) thấp.", "color": "#f1c40f", "bg": "rgba(241, 196, 15, 0.04)", "size": "0%", "raw_target": "WAIT"}
 
     target = "PLAYER" if p_val > b_val else "BANKER"
     color = "#00afb9" if target == "PLAYER" else "#ff4757"
-    bg = "rgba(0, 175, 185, 0.08)" if target == "PLAYER" else "rgba(255, 71, 87, 0.08)"
+    bg = "rgba(0, 175, 185, 0.05)" if target == "PLAYER" else "rgba(255, 71, 87, 0.05)"
     
     msg = f"Lợi thế cấu trúc: {target} (+{diff:.2f}%)."
     if pattern_info["match"]:
-        msg = f"🔥 KHỚP HÌNH THÁI: {pattern_info['type']} ({pattern_info['confidence']}%)."
+        msg = f"🔥 HÌNH THÁI: {pattern_info['type']} ({pattern_info['confidence']}%)."
 
     return {"status": f"⚡ LỆNH KHỚP: {target}", "msg": msg, "color": color, "bg": bg, "size": "1% - 2% Vốn Kỷ Luật", "raw_target": target}
 
@@ -218,7 +218,7 @@ class AISovereignOracle:
     @staticmethod
     def analyze_and_suggest(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds, burn_cards, pattern_info):
         if total_rounds == 0:
-            return {"decision": "👁️ ORACLE CORE v79.5", "ai_insight": "Sửa lỗi: Giao diện lưới song song trái/phải hoạt động mượt.", "risk_level": "Calibration", "color": "#a855f7", "memory_hud": "Chưa có dữ liệu", "cyber_knowledge": "Bảo vệ chủ động", "raw_code": "EMPTY", "target": "WAIT", "capital_allocation": "0%"}
+            return {"decision": "👁️ ORACLE CORE v79.6", "ai_insight": "Sửa lỗi: Ép co dãn khung lưới chống tràn màn hình.", "risk_level": "Calibration", "color": "#a855f7", "memory_hud": "Không dữ liệu", "cyber_knowledge": "Bảo vệ", "raw_code": "EMPTY", "target": "WAIT", "capital_allocation": "0%"}
 
         decisive_log = [r for r in all_rounds_log if r.get('outcome') in ["Player", "Banker"]]
         wrong_count = 0
@@ -249,9 +249,9 @@ class AISovereignOracle:
 
         final_alloc = max(1.0, min(6.0, (diff / 100.0) * 14.0 * (1.0 + shoe_progress)))
         if pattern_info["match"] and pattern_info["suggest"] == intrinsic_target:
-            return {"decision": f"🔥 SÓNG TRÙNG: {pattern_info['type']}", "target": intrinsic_target, "capital_allocation": f"{final_alloc * 1.2:.1f}% Vốn", "ai_insight": "Thuật toán vi sai lượng tử trùng khớp tuyệt đối với phom cầu hình thái.", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge, "raw_code": "MATCH_PATTERN"}
+            return {"decision": f"🔥 SÓNG TRÙNG: {pattern_info['type']}", "target": intrinsic_target, "capital_allocation": f"{final_alloc * 1.2:.1f}% Vốn", "ai_insight": "Thuật toán vi sai lượng tử trùng khớp phom cầu hình thái.", "color": "#00f5d4", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge, "raw_code": "MATCH_PATTERN"}
 
-        return {"decision": f"⚡ THẦN LỆNH: {intrinsic_target}", "target": intrinsic_target, "capital_allocation": f"{final_alloc:.1f}% Vốn", "ai_insight": f"Định vị cấu trúc phân phối quân vị nghiêng mạnh về cửa {intrinsic_target}.", "color": "#38bdf8" if intrinsic_target == "PLAYER" else "#ff4757", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge, "raw_code": "NORMAL"}
+        return {"decision": f"⚡ THẦN LỆNH: {intrinsic_target}", "target": intrinsic_target, "capital_allocation": f"{final_alloc:.1f}% Vốn", "ai_insight": f"Định vị quân vị nghiêng mạnh về cửa {intrinsic_target}.", "color": "#38bdf8" if intrinsic_target == "PLAYER" else "#ff4757", "memory_hud": memory_hud, "cyber_knowledge": cyber_knowledge, "raw_code": "NORMAL"}
 
 class QuantumArbitrationMatrix:
     @staticmethod
@@ -263,7 +263,7 @@ class QuantumArbitrationMatrix:
         return o_target
 
 # =========================================================================
-# 📦 SIÊU CSS SONG SONG GRID TOÀN DIỆN (PARALLEL MOBILE GRID FIX v79.5)
+# 📦 SIÊU CSS ĐÀN HỒI CHỐNG TRÀN KHUNG DI ĐỘNG (ELASTIC ANTI-OVERFLOW v79.6)
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -271,93 +271,120 @@ class BaccaratInterfaceSystem:
         st.markdown(
             """
             <style>
-            /* Reset & Dark Mode Base CSS Optimization */
-            .stApp { background: #02040a !important; color: #f8fafc !important; }
+            /* Reset & Core Elastic Settings */
+            *, *:before, *:after {
+                box-sizing: border-box !important; /* Khống chế tuyệt đối không cho phần tử phình ra ngoài viền */
+            }
+            .stApp { 
+                background: #02040a !important; 
+                color: #f8fafc !important;
+                overflow-x: hidden !important; /* Chặn hoàn toàn thanh cuộn ngang của web */
+            }
             
-            /* SỬA LỖI: CHO PHÉP KHỐI NGANG ĐƯỢC PHÉP HIỂN THỊ SONG SONG TRÊN DI ĐỘNG */
+            /* THIẾT LẬP LƯỚI GRID SONG SONG CHỐNG ĐẨY BÊN TRÊN DI ĐỘNG */
             div[data-testid="stHorizontalBlock"] {
-                display: flex !important;
-                flex-direction: row !important; /* Buộc phải xếp hàng ngang song song Trái / Phải */
-                flex-wrap: nowrap !important;   /* Tuyệt đối không cho tự rớt dòng xuống dưới */
-                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* Ép chia đôi 50/50 hoàn hảo */
                 gap: 6px !important;
+                width: 100% !important;
+                padding: 0px !important;
+                margin: 0px !important;
             }
             
-            /* Ép các cột con tự động chia đều không gian trên một hàng */
+            /* Triệt tiêu các khoảng trống thừa đẩy cột của Streamlit */
             div[data-testid="column"] {
-                flex: 1 1 0% !important;
-                min-width: 0px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+                padding: 0px !important;
             }
             
-            /* Thu nhỏ khoảng trống đệm */
-            .block-container { padding-top: 0.8rem !important; padding-bottom: 0.8rem !important; }
+            /* Nén hẹp lề của màn hình di động */
+            .block-container { 
+                padding-top: 0.5rem !important; 
+                padding-bottom: 0.5rem !important; 
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                max-width: 100% !important;
+            }
+
+            /* Thu nhỏ ô nhập liệu Text Input để nó không tràn viền điện thoại */
+            div[data-testid="stTextInput"] input {
+                padding: 4px 6px !important;
+                font-size: 11px !important;
+                height: 34px !important;
+            }
+            div[data-testid="stTextInput"] label {
+                font-size: 10px !important;
+                margin-bottom: 2px !important;
+            }
 
             /* Header HUD */
             .header-hud-bar { 
                 background: #090d16; 
                 border: 1px solid #1f2937; 
-                border-radius: 6px; 
-                padding: 6px; 
+                border-radius: 4px; 
+                padding: 4px; 
                 margin-bottom: 4px; 
                 text-align: center; 
                 font-family: monospace; 
-                font-size: 11px; 
+                font-size: 10px; 
                 color: #cbd5e1; 
             }
             
-            /* Panels Siêu Nén */
-            .action-panel { border-radius: 8px; padding: 8px; margin: 4px 0px; border: 1px solid #334155; }
-            .action-status { font-size: 14px; font-weight: 900; }
-            .action-msg { font-size: 11px; margin-top: 2px; }
+            /* Panels HUD */
+            .action-panel { border-radius: 6px; padding: 6px; margin: 3px 0px; border: 1px solid #334155; }
+            .action-status { font-size: 12px; font-weight: 900; }
+            .action-msg { font-size: 10px; margin-top: 1px; }
             
-            /* Mobile Metrics Grid - Xếp chồng sọc dọc khít nhau trên di động */
+            /* Metrics List */
             .mobile-metric-container {
                 display: flex;
                 flex-direction: column; 
-                gap: 4px;
+                gap: 3px;
                 width: 100%;
-                margin: 4px 0px;
+                margin: 3px 0px;
             }
             .mobile-metric-box { 
                 background: #050b14; 
                 border: 1px solid #1e293b; 
-                border-radius: 5px; 
-                padding: 6px 10px; 
+                border-radius: 4px; 
+                padding: 5px 8px; 
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
             .metric-tag { font-size: 9px; font-weight: 800; color: #64748b; }
-            .metric-num { font-size: 13px; font-weight: 900; font-family: monospace; }
+            .metric-num { font-size: 12px; font-weight: 900; font-family: monospace; }
             
-            /* BẢNG KIỂM TOÁN CHỐNG TRÀN */
+            /* Bảng kiểm toán cuộn hộp */
             .audit-matrix-box { 
-                padding: 8px; 
-                border-radius: 6px; 
+                padding: 6px; 
+                border-radius: 4px; 
                 background-color: #050b14; 
                 border: 1px dashed #38bdf8; 
-                margin-top: 6px; 
-                max-height: 180px; 
+                margin-top: 4px; 
+                max-height: 140px; 
                 overflow-y: auto;  
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                overflow-x: hidden;
             }
-            .audit-title { font-size: 10px; font-weight: 800; color: #38bdf8; margin-bottom: 4px; }
-            .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
-            .audit-table th { padding: 4px; background: #0f172a; border: 1px solid #1e293b; color: #94a3b8; }
-            .audit-table td { padding: 4px; border: 1px solid #0f172a; text-align: center; }
-            .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
+            .audit-title { font-size: 9px; font-weight: 800; color: #38bdf8; margin-bottom: 2px; }
+            .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 10px; }
+            .audit-table th { padding: 3px; background: #0f172a; border: 1px solid #1e293b; color: #94a3b8; }
+            .audit-table td { padding: 3px; border: 1px solid #0f172a; text-align: center; }
+            .status-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 2px; }
             
-            /* Tối ưu hóa Nút bấm */
+            /* Nút bấm dẹt siêu nén */
             div.stButton > button { 
                 background-color: #0f172a !important; 
                 color: #cbd5e1 !important; 
                 border: 1px solid #1e293b !important; 
-                border-radius: 6px; 
+                border-radius: 4px; 
                 width: 100% !important; 
-                min-height: 38px !important; 
+                min-height: 32px !important; 
                 font-size: 11px !important;
-                margin-top: 2px !important;
+                margin-top: 1px !important;
+                padding: 2px !important;
             }
             .submit-btn-box div.stButton > button { 
                 background-color: #00f5d4 !important; 
@@ -383,17 +410,17 @@ class BaccaratInterfaceSystem:
             f'<div class="action-panel" style="background: {cmd["bg"]}; border-color: {cmd["color"]};">'
             f'<div class="action-status" style="color: {cmd["color"]};">{cmd["status"]}</div>'
             f'<div class="action-msg">{cmd["msg"]}</div>'
-            f'<div style="font-size: 10px; margin-top: 2px; color: #94a3b8;"><b>QUẢN LÝ VỐN:</b> {cmd["size"]}</div>'
+            f'<div style="font-size: 9px; margin-top: 1px; color: #94a3b8;"><b>QUẢN LÝ VỐN:</b> {cmd["size"]}</div>'
             f'</div>', unsafe_allow_html=True
         )
 
     @staticmethod
     def render_ai_oracle_panel(oracle):
         st.markdown(
-            f'<div style="background: #090d16; border: 1px solid #a855f7; border-radius: 6px; padding: 6px; margin: 4px 0px;">'
-            f'<div style="color: {oracle["color"]}; font-weight: bold; font-size: 12px;">{oracle["decision"]}</div>'
-            f'<div style="font-size: 11px; margin-top: 1px;">{oracle["ai_insight"]}</div>'
-            f'<div style="font-size: 9px; color: #64748b; margin-top: 2px;">{oracle["memory_hud"]} | {oracle["cyber_knowledge"]}</div>'
+            f'<div style="background: #090d16; border: 1px solid #a855f7; border-radius: 4px; padding: 5px; margin: 3px 0px;">'
+            f'<div style="color: {oracle["color"]}; font-weight: bold; font-size: 11px;">{oracle["decision"]}</div>'
+            f'<div style="font-size: 10px; margin-top: 1px;">{oracle["ai_insight"]}</div>'
+            f'<div style="font-size: 8px; color: #64748b; margin-top: 1px;">{oracle["memory_hud"]} | {oracle["cyber_knowledge"]}</div>'
             f'</div>', unsafe_allow_html=True
         )
 
@@ -411,7 +438,7 @@ class QuantumAuditMatrixController:
     @staticmethod
     def render_audit_table(log, start_round_index):
         if not log: return
-        st.markdown('<div class="audit-matrix-box"><div class="audit-title">📊 KIỂM TOÁN LƯỢNG TỬ (V79.5 AUTO-SCROLL)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="audit-matrix-box"><div class="audit-title">📊 KIỂM TOÁN LƯỢNG TỬ (V79.6 ELASTIC)</div>', unsafe_allow_html=True)
         table_rows = ""
         for idx, r in enumerate(log):
             real_round_num = start_round_index + idx + 1
@@ -424,7 +451,7 @@ class QuantumAuditMatrixController:
             elif active_target == "WAIT" or "LOCK" in oracle_decision or "CHỜ" in oracle_decision:
                 dot_html, status_text = '<span class="status-dot" style="background-color: #94a3b8;"></span>', "<span style='color:#94a3b8;'>KHÓA</span>"
             elif active_target in outcome or outcome in active_target:
-                dot_html, status_text = '<span class="status-dot" style="background-color: #00f5d4;"></span>', "<span style='color:#00f5d4; font-weight:bold;'>WIN</span>"
+                dot_html, status_text = '<span class="status-dot" style="background-color: #00f5d4;"></span>', "<span style='color:#00f5d4;'>WIN</span>"
             else:
                 dot_html, status_text = '<span class="status-dot" style="background-color: #ff4757;"></span>', "<span style='color:#ff4757;'>LỆCH</span>"
             
@@ -432,7 +459,7 @@ class QuantumAuditMatrixController:
             elif "BANKER" in active_target: oracle_display = "<span style='color:#ff4757;'>🔴 B</span>"
             else: oracle_display = "<span style='color:#64748b;'>🛑 BỎ</span>"
                 
-            outcome_display = f"<span style='color:#00afb9;'>P({r.get('p_score',0)})</span>" if outcome == "PLAYER" else (f"<span style='color:#ff4757;'>B({r.get('b_score',0)})</span>" if outcome == "BANKER" else "<span style='color:#2ecc71;'>TIE</span>")
+            outcome_display = f"<span style='color:#00afb9;'>P{r.get('p_score',0)}</span>" if outcome == "PLAYER" else (f"<span style='color:#ff4757;'>B{r.get('b_score',0)}</span>" if outcome == "BANKER" else "<span style='color:#2ecc71;'>TIE</span>")
             table_rows += f"<tr><td>V{real_round_num}</td><td>{oracle_display}</td><td>{outcome_display}</td><td>{dot_html}{status_text}</td></tr>"
             
         st.markdown(f"<table class='audit-table'><thead><tr><th>VÁN</th><th>ORACLE</th><th>SÀN</th><th>KQ</th></tr></thead><tbody>{table_rows}</tbody></table></div>", unsafe_allow_html=True)
@@ -449,23 +476,23 @@ def parse_baccarat_input_v79(raw_str):
     return res
 
 # =========================================================================
-# RUNTIME ENGINE v79.5 RESPONSIVE VERIFICATION
+# RUNTIME ENGINE v79.6 RESPONSIVE VERIFICATION
 # =========================================================================
-st.set_page_config(page_title="Cosmological Oracle v79.5", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Cosmological Oracle v79.6", page_icon="🔮", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: 
     st.session_state.round_detailed_log = []
 
 # Sidebar cấu hình tham số khay bài (Ẩn gọn gàng trên Mobile)
-st.sidebar.markdown("### ⚙️ THAM SỐ KHAY v79.5")
+st.sidebar.markdown("### ⚙️ THAM SỐ KHAY v79.6")
 decks = st.sidebar.selectbox("Tổng số bộ bài:", [8, 6, 4], index=0)
 burn_cards = st.sidebar.number_input("🎴 Số lá bài Burn đầu khay:", min_value=0, value=7)
 hist_p = st.sidebar.number_input("🔵 Ván Player đã ra:", min_value=0, value=0)
 hist_b = st.sidebar.number_input("🔴 Ván Banker đã ra:", min_value=0, value=0)
 hist_t = st.sidebar.number_input("🟢 Ván Tie đã ra:", min_value=0, value=0)
 
-st.markdown("### 🔮 COSMOLOGICAL ORACLE v79.5")
+st.markdown("### 🔮 COSMOLOGICAL ORACLE v79.6")
 CyberSelfHealingDaemon.render_warning_hud()
 
 # Đồng bộ dữ liệu lõi
@@ -485,19 +512,19 @@ current_ai_oracle = AISovereignOracle.analyze_and_suggest(
 )
 
 if current_ai_oracle.get('raw_code') in ["INITIAL_LOCK", "LOW_DELTA_LOCK"]:
-    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = current_ai_oracle['decision'], current_ai_oracle['ai_insight'], current_ai_oracle['color'], "rgba(148, 163, 184, 0.04)", "0%"
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = current_ai_oracle['decision'], current_ai_oracle['ai_insight'], current_ai_oracle['color'], "rgba(148, 163, 184, 0.03)", "0%"
 elif current_ai_oracle.get('raw_code') == "FORCE_EMERGENCY_LOCK":
-    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = current_ai_oracle['decision'], current_ai_oracle['ai_insight'], current_ai_oracle['color'], "rgba(255, 71, 87, 0.05)", "0%"
+    cmd['status'], cmd['msg'], cmd['color'], cmd['bg'], cmd['size'] = current_ai_oracle['decision'], current_ai_oracle['ai_insight'], current_ai_oracle['color'], "rgba(255, 71, 87, 0.04)", "0%"
 
 arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(current_ai_oracle)
 
-# FORM NHẬP LIỆU: ÉP BUỘC SONG SONG TRÁI PHẢI TRÊN MỌI THIẾT BỊ
+# FORM NHẬP LIỆU LƯỚI GRID KHÔNG BỊ PHÌNH RA NGOÀI MÀN HÌNH
 with st.form(key="v79_form", clear_on_submit=True):
-    col1, col2 = st.columns(2) # Khởi tạo 2 cột trái phải song song
+    col1, col2 = st.columns(2)
     with col1:
-        p_input = st.text_input("🔵 PLAYER:", key="p_in", placeholder="5,6,k")
+        p_input = st.text_input("🔵 PLAYER:", key="p_in", placeholder="VD: 5,6")
     with col2:
-        b_input = st.text_input("🔴 BANKER:", key="b_in", placeholder="9,q")
+        b_input = st.text_input("🔴 BANKER:", key="b_in", placeholder="VD: 9,q")
         
     st.markdown('<div class="submit-btn-box">', unsafe_allow_html=True)
     calc_triggered = st.form_submit_button("🚀 ĐỒNG BỘ ORACLE")
@@ -516,14 +543,14 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
     })
     st.rerun()
 
-# HIỂN THỊ KẾT QUẢ PHÂN TÍCH ĐƯỢC CO GỌN
+# RENDER CÁC THÀNH PHẦN KẾT QUẢ ĐỒNG BỘ NÉN GỌN
 BaccaratInterfaceSystem.render_directive_panel(cmd)
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_ai_oracle)
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t)
 QuantumAuditMatrixController.render_audit_table(st.session_state.round_detailed_log, (hist_p + hist_b + hist_t))
 
-# CỤM NÚT ĐIỀU KHIỂN CHÂN TRANG: CŨNG ÉP SONG SONG TRÁI/PHẢI CHỐNG CHIẾM DIỆN TÍCH
-st.markdown("<div style='margin-top: 4px;'></div>", unsafe_allow_html=True)
+# CỤM NÚT ĐIỀU KHIỂN CHÂN TRANG GRID SONG SONG AN TOÀN
+st.markdown("<div style='margin-top: 3px;'></div>", unsafe_allow_html=True)
 ctrl_col1, ctrl_col2 = st.columns(2)
 with ctrl_col1:
     if st.button("⏪ UNDO") and st.session_state.round_detailed_log:
