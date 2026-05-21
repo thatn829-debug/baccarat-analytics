@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 
 # =========================================================================
-# 🌌 SYSTEM HEALING REGISTRY (LÕI VÁ LỖI TỰ ĐỘNG THẾ HỆ V79.4)
+# 🌌 SYSTEM HEALING REGISTRY (LÕI VÁ LỖI TỰ ĐỘNG THẾ HỆ V79.5)
 # =========================================================================
 if 'cyber_healing_logs' not in st.session_state:
     st.session_state.cyber_healing_logs = []
@@ -35,7 +35,7 @@ class CyberSelfHealingDaemon:
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = {
             "time": timestamp, "type": fault_type, "desc": description,
-            "action": "🛠️ AI V79.4: Tái cấu trúc CSS ép co cụm giao diện trục dọc di động."
+            "action": "🛠️ AI V79.5: Khôi phục Grid song song trái/phải cho di động."
         }
         st.session_state.cyber_healing_logs.insert(0, log_entry)
         if len(st.session_state.cyber_healing_logs) > 3: st.session_state.cyber_healing_logs.pop()
@@ -47,7 +47,7 @@ class CyberSelfHealingDaemon:
         st.markdown(
             f'<div style="background: rgba(0, 245, 212, 0.03); border: 1px solid #00f5d4; border-radius: 6px; padding: 6px; margin: 4px 0px;">'
             f'<div style="font-size: 10px; font-weight: 900; color: #00f5d4; display: flex; justify-content: space-between;">'
-            f'<span>⚡ MOBILE VERTICAL DAEMON v79.4</span><span>[{latest_fault["time"]}]</span></div>'
+            f'<span>⚡ MOBILE PARALLEL DAEMON v79.5</span><span>[{latest_fault["time"]}]</span></div>'
             f'<div style="font-size: 10px; color: #cbd5e1; margin-top: 1px; font-family: monospace;"><b>Sửa lỗi:</b> {latest_fault["desc"]}</div>'
             f'</div>', unsafe_allow_html=True
         )
@@ -193,7 +193,7 @@ def calculate_v79_ultimate_fusion(all_rounds_log, shoe_decks, manual_p, manual_b
 
 def get_ultimate_directive_v79(p_val, b_val, trend_desc, log, shoe_decks, cards_left, pattern_info):
     if not log:
-        return {"status": "🛰️ SYSTEM READY v79.4", "msg": "Hệ thống sẵn sàng quét dữ liệu sảnh bài.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.05)", "size": "0%", "raw_target": "WAIT"}
+        return {"status": "🛰️ SYSTEM READY v79.5", "msg": "Hệ thống sẵn sàng quét dữ liệu sảnh bài.", "color": "#94a3b8", "bg": "rgba(148, 163, 184, 0.05)", "size": "0%", "raw_target": "WAIT"}
 
     diff = abs(p_val - b_val)
     min_rounds = 6 if pattern_info["match"] else 10
@@ -218,7 +218,7 @@ class AISovereignOracle:
     @staticmethod
     def analyze_and_suggest(all_rounds_log, shoe_decks, manual_p, manual_b, manual_t, p_val, b_val, t_val, cards_left, trend_desc, streak_side, streak_count, total_rounds, burn_cards, pattern_info):
         if total_rounds == 0:
-            return {"decision": "👁️ ORACLE CORE v79.4", "ai_insight": "Giao diện siêu nén thẳng đứng di động hoạt động.", "risk_level": "Calibration", "color": "#a855f7", "memory_hud": "Chưa có dữ liệu", "cyber_knowledge": "Bảo vệ chủ động", "raw_code": "EMPTY", "target": "WAIT", "capital_allocation": "0%"}
+            return {"decision": "👁️ ORACLE CORE v79.5", "ai_insight": "Sửa lỗi: Giao diện lưới song song trái/phải hoạt động mượt.", "risk_level": "Calibration", "color": "#a855f7", "memory_hud": "Chưa có dữ liệu", "cyber_knowledge": "Bảo vệ chủ động", "raw_code": "EMPTY", "target": "WAIT", "capital_allocation": "0%"}
 
         decisive_log = [r for r in all_rounds_log if r.get('outcome') in ["Player", "Banker"]]
         wrong_count = 0
@@ -263,7 +263,7 @@ class QuantumArbitrationMatrix:
         return o_target
 
 # =========================================================================
-# 📦 SIÊU CSS NÉN KHỐI TRỤC DỌC TUYỆT ĐỐI CHỐNG TRÀN DƯỚI (HARD VERTICAL MOBILE FIX)
+# 📦 SIÊU CSS SONG SONG GRID TOÀN DIỆN (PARALLEL MOBILE GRID FIX v79.5)
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -274,21 +274,23 @@ class BaccaratInterfaceSystem:
             /* Reset & Dark Mode Base CSS Optimization */
             .stApp { background: #02040a !important; color: #f8fafc !important; }
             
-            /* HỦY BỎ HOÀN TOÀN CẤU TRÚC ĐẨY NGANG CỦA STREAMLIT TRÊN MOBILE */
+            /* SỬA LỖI: CHO PHÉP KHỐI NGANG ĐƯỢC PHÉP HIỂN THỊ SONG SONG TRÊN DI ĐỘNG */
             div[data-testid="stHorizontalBlock"] {
                 display: flex !important;
-                flex-direction: column !important; /* Ép buộc xếp dọc trên mọi thiết bị di động */
+                flex-direction: row !important; /* Buộc phải xếp hàng ngang song song Trái / Phải */
+                flex-wrap: nowrap !important;   /* Tuyệt đối không cho tự rớt dòng xuống dưới */
                 width: 100% !important;
-                gap: 4px !important;
-            }
-            div[data-testid="column"] {
-                width: 100% !important;
-                max-width: 100% !important;
-                flex: unset !important;
+                gap: 6px !important;
             }
             
-            /* Thu nhỏ khoảng trống đệm chống kéo màn hình dài xuống dưới */
-            .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+            /* Ép các cột con tự động chia đều không gian trên một hàng */
+            div[data-testid="column"] {
+                flex: 1 1 0% !important;
+                min-width: 0px !important;
+            }
+            
+            /* Thu nhỏ khoảng trống đệm */
+            .block-container { padding-top: 0.8rem !important; padding-bottom: 0.8rem !important; }
 
             /* Header HUD */
             .header-hud-bar { 
@@ -311,7 +313,7 @@ class BaccaratInterfaceSystem:
             /* Mobile Metrics Grid - Xếp chồng sọc dọc khít nhau trên di động */
             .mobile-metric-container {
                 display: flex;
-                flex-direction: column; /* Biến thành các thanh ngang dọc từ trên xuống dưới */
+                flex-direction: column; 
                 gap: 4px;
                 width: 100%;
                 margin: 4px 0px;
@@ -328,25 +330,25 @@ class BaccaratInterfaceSystem:
             .metric-tag { font-size: 9px; font-weight: 800; color: #64748b; }
             .metric-num { font-size: 13px; font-weight: 900; font-family: monospace; }
             
-            /* BẢNG KIỂM TOÁN CHỐNG TRÀN VỀ CHIỀU DỌC (GIỚI HẠN CHIỀU CAO) */
+            /* BẢNG KIỂM TOÁN CHỐNG TRÀN */
             .audit-matrix-box { 
                 padding: 8px; 
                 border-radius: 6px; 
                 background-color: #050b14; 
                 border: 1px dashed #38bdf8; 
                 margin-top: 6px; 
-                max-height: 200px; /* Khống chế không cho bảng đẩy dài giao diện xuống dưới */
-                overflow-y: auto;  /* Tự cuộn dọc bên trong khối nếu quá nhiều ván bài */
+                max-height: 180px; 
+                overflow-y: auto;  
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
             .audit-title { font-size: 10px; font-weight: 800; color: #38bdf8; margin-bottom: 4px; }
             .audit-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
-            .audit-table th { padding: 4px; background: #0f172a; border: 1px solid #1e293b; color: #94a3b8; sticky-top: 0; }
+            .audit-table th { padding: 4px; background: #0f172a; border: 1px solid #1e293b; color: #94a3b8; }
             .audit-table td { padding: 4px; border: 1px solid #0f172a; text-align: center; }
             .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
             
-            /* Tối ưu hóa Nút bấm Form mỏng mượt dễ ấn */
+            /* Tối ưu hóa Nút bấm */
             div.stButton > button { 
                 background-color: #0f172a !important; 
                 color: #cbd5e1 !important; 
@@ -399,9 +401,9 @@ class BaccaratInterfaceSystem:
     def render_probabilities_grid(p, b, t):
         st.markdown(
             f'<div class="mobile-metric-container">'
-            f'<div class="mobile-metric-box"><span class="metric-tag">🔵 PLAYER (QUANTUM)</span><span class="metric-num" style="color: #00afb9;">{p:.2f}%</span></div>'
-            f'<div class="mobile-metric-box"><span class="metric-tag">🔴 BANKER (MARKOV)</span><span class="metric-num" style="color: #ff4757;">{b:.2f}%</span></div>'
-            f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE (HYPER)</span><span class="metric-num" style="color: #2ecc71;">{t:.2f}%</span></div>'
+            f'<div class="mobile-metric-box"><span class="metric-tag">🔵 PLAYER</span><span class="metric-num" style="color: #00afb9;">{p:.2f}%</span></div>'
+            f'<div class="mobile-metric-box"><span class="metric-tag">🔴 BANKER</span><span class="metric-num" style="color: #ff4757;">{b:.2f}%</span></div>'
+            f'<div class="mobile-metric-box"><span class="metric-tag">🟢 TIE</span><span class="metric-num" style="color: #2ecc71;">{t:.2f}%</span></div>'
             f'</div>', unsafe_allow_html=True
         )
 
@@ -409,7 +411,7 @@ class QuantumAuditMatrixController:
     @staticmethod
     def render_audit_table(log, start_round_index):
         if not log: return
-        st.markdown('<div class="audit-matrix-box"><div class="audit-title">📊 KIỂM TOÁN LƯỢNG TỬ (V79.4 CO DỌC)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="audit-matrix-box"><div class="audit-title">📊 KIỂM TOÁN LƯỢNG TỬ (V79.5 AUTO-SCROLL)</div>', unsafe_allow_html=True)
         table_rows = ""
         for idx, r in enumerate(log):
             real_round_num = start_round_index + idx + 1
@@ -447,23 +449,23 @@ def parse_baccarat_input_v79(raw_str):
     return res
 
 # =========================================================================
-# RUNTIME ENGINE v79.4 RESPONSIVE VERIFICATION
+# RUNTIME ENGINE v79.5 RESPONSIVE VERIFICATION
 # =========================================================================
-st.set_page_config(page_title="Cosmological Oracle v79.4", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="Cosmological Oracle v79.5", page_icon="🔮", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: 
     st.session_state.round_detailed_log = []
 
 # Sidebar cấu hình tham số khay bài (Ẩn gọn gàng trên Mobile)
-st.sidebar.markdown("### ⚙️ THAM SỐ KHAY v79.4")
+st.sidebar.markdown("### ⚙️ THAM SỐ KHAY v79.5")
 decks = st.sidebar.selectbox("Tổng số bộ bài:", [8, 6, 4], index=0)
 burn_cards = st.sidebar.number_input("🎴 Số lá bài Burn đầu khay:", min_value=0, value=7)
 hist_p = st.sidebar.number_input("🔵 Ván Player đã ra:", min_value=0, value=0)
 hist_b = st.sidebar.number_input("🔴 Ván Banker đã ra:", min_value=0, value=0)
 hist_t = st.sidebar.number_input("🟢 Ván Tie đã ra:", min_value=0, value=0)
 
-st.markdown("### 🔮 COSMOLOGICAL ORACLE v79.4")
+st.markdown("### 🔮 COSMOLOGICAL ORACLE v79.5")
 CyberSelfHealingDaemon.render_warning_hud()
 
 # Đồng bộ dữ liệu lõi
@@ -489,12 +491,16 @@ elif current_ai_oracle.get('raw_code') == "FORCE_EMERGENCY_LOCK":
 
 arbitrator_verdict = QuantumArbitrationMatrix.render_arbitration_logic(current_ai_oracle)
 
-# Form nhập liệu gọn nhẹ, không bị chiếm diện tích màn hình đứng
+# FORM NHẬP LIỆU: ÉP BUỘC SONG SONG TRÁI PHẢI TRÊN MỌI THIẾT BỊ
 with st.form(key="v79_form", clear_on_submit=True):
-    p_input = st.text_input("🔵 LÁ PLAYER (VD: 5,6,k):", key="p_in")
-    b_input = st.text_input("🔴 LÁ BANKER (VD: 9,q):", key="b_in")
+    col1, col2 = st.columns(2) # Khởi tạo 2 cột trái phải song song
+    with col1:
+        p_input = st.text_input("🔵 PLAYER:", key="p_in", placeholder="5,6,k")
+    with col2:
+        b_input = st.text_input("🔴 BANKER:", key="b_in", placeholder="9,q")
+        
     st.markdown('<div class="submit-btn-box">', unsafe_allow_html=True)
-    calc_triggered = st.form_submit_button("🚀 ĐỒNG BỘ ORACLE v79.4")
+    calc_triggered = st.form_submit_button("🚀 ĐỒNG BỘ ORACLE")
     st.markdown('</div>', unsafe_allow_html=True)
 
 if calc_triggered and (p_input.strip() or b_input.strip()):
@@ -510,17 +516,20 @@ if calc_triggered and (p_input.strip() or b_input.strip()):
     })
     st.rerun()
 
-# RENDER KẾT QUẢ ĐỒNG BỘ XUỐNG DƯỚI FORM THEO TRỤC DỌC KHÍT NHAU
+# HIỂN THỊ KẾT QUẢ PHÂN TÍCH ĐƯỢC CO GỌN
 BaccaratInterfaceSystem.render_directive_panel(cmd)
 BaccaratInterfaceSystem.render_ai_oracle_panel(current_ai_oracle)
 BaccaratInterfaceSystem.render_probabilities_grid(final_p, final_b, final_t)
 QuantumAuditMatrixController.render_audit_table(st.session_state.round_detailed_log, (hist_p + hist_b + hist_t))
 
-# Cụm công cụ điều khiển siêu phẳng (Chân trang di động)
+# CỤM NÚT ĐIỀU KHIỂN CHÂN TRANG: CŨNG ÉP SONG SONG TRÁI/PHẢI CHỐNG CHIẾM DIỆN TÍCH
 st.markdown("<div style='margin-top: 4px;'></div>", unsafe_allow_html=True)
-if st.button("⏪ HỦY VÁN VỪA NHẬP (UNDO)") and st.session_state.round_detailed_log:
-    st.session_state.round_detailed_log.pop()
-    st.rerun()
-if st.button("🔄 LÀM TRỐNG KHAY BÀI (RESET)"):
-    st.session_state.round_detailed_log.clear()
-    st.rerun()
+ctrl_col1, ctrl_col2 = st.columns(2)
+with ctrl_col1:
+    if st.button("⏪ UNDO") and st.session_state.round_detailed_log:
+        st.session_state.round_detailed_log.pop()
+        st.rerun()
+with ctrl_col2:
+    if st.button("🔄 RESET"):
+        st.session_state.round_detailed_log.clear()
+        st.rerun()
