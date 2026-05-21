@@ -40,7 +40,8 @@ class ShoeCardTracker:
                 b_error_weight += 0.01 * max(1, b_score - p_score) * recency_multiplier
             elif oracle_target == "BANKER" and outcome == "PLAYER":
                 b_error_weight -= 0.01 * max(1, p_score - b_score) * recency_multiplier
-                p_error_weight += 0.01 * max(1, p_score - b_score) * recency_multiplier
+                p_weight = 0.01 * max(1, p_score - b_score) * recency_multiplier
+                p_error_weight += p_weight
         return p_error_weight, b_error_weight
 
 
@@ -120,7 +121,7 @@ class TieHypergeometricAgent:
 
 
 # =========================================================================
-# 🪐 AI SOVEREIGN ORACLE - KELLY RISK ADAPTIVE ALLOCATION (THẦN BÀI)
+# 🪐 AI SOVEREIGN ORACLE - KELLY RISK ADAPTIVE ALLOCATION
 # =========================================================================
 class AISovereignOracle:
     @staticmethod
@@ -335,7 +336,7 @@ def parse_baccarat_input_v72(raw_str):
 
 
 # =========================================================================
-# 🎛️ MODULE 6: GIAO DIỆN INTERFACE SYSTEM (MOBILE-FIRST)
+# 🎛️ MODULE 6: GIAO DIỆN INTERFACE SYSTEM (FORCE FIXED SIDE-BY-SIDE)
 # =========================================================================
 class BaccaratInterfaceSystem:
     @staticmethod
@@ -371,9 +372,19 @@ class BaccaratInterfaceSystem:
             .audit-table td { padding: 6px 2px; text-align: center; border: 1px solid #21262d; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
             
-            /* [MỚI CHỈNH SỬA CSS v72.1] Khóa cứng nút bấm luôn song song trái phải trên cả PC lẫn di động */
-            .side-by-side-row { display: flex !important; flex-direction: row !important; width: 100% !important; gap: 8px !important; }
-            .side-by-side-row > div { flex: 1 !important; min-width: 0px !important; }
+            /* 🔥 [NÂNG CẤP CHỐNG BẺ HÀNG CHO DI ĐỘNG] */
+            /* Ép cứng tất cả các phần tử nằm trong class này luôn có thuộc tính Row bất chấp kích thước màn hình */
+            .fixed-side-by-side {
+                display: flex !important;
+                flex-direction: row !important;
+                width: 100% !important;
+                gap: 10px !important;
+                align-items: flex-end !important;
+            }
+            .fixed-side-by-side > div {
+                flex: 1 !important;
+                min-width: 0px !important;
+            }
             
             div.stButton > button { background-color: #21262d !important; color: #c9d1d9 !important; border: 1px solid #30363d !important; border-radius: 6px; font-weight: 800; width: 100% !important; font-size: 12px !important; }
             .submit-btn-box div.stButton > button { background-color: #238636 !important; color: #ffffff !important; border: none !important; box-shadow: 0 0 10px rgba(35,134,54,0.3); padding: 10px 0px !important; }
@@ -409,13 +420,16 @@ class BaccaratInterfaceSystem:
     def render_input_form():
         st.markdown("##### 🎴 NHẬP LÁ BÀI RÚT SÀN THỰC TẾ:")
         with st.form(key="mobile_tensor_form", clear_on_submit=True):
-            # [MỚI CHỈNH SỬA v72.1] Ép khối DIV song song trái phải cố định cho 2 ô nhập bài
-            st.markdown('<div class="side-by-side-row">', unsafe_allow_html=True)
-            input_grid = st.columns(2)
-            with input_grid[0]:
-                p_str = st.text_input("🔵 PLAYER CARD:", placeholder="Ví dụ: 8 k a")
-            with input_grid[1]:
-                b_str = st.text_input("🔴 BANKER CARD:", placeholder="Ví dụ: 7 10 2")
+            # Dùng cấu trúc HTML flexbox kết hợp trực tiếp để triệt tiêu thuộc tính bẻ hàng của Streamlit CSS trên điện thoại
+            st.markdown('<div class="fixed-side-by-side">', unsafe_allow_html=True)
+            
+            # Khởi tạo hai container rỗng lồng vào nhau nhận thuộc tính CSS flex
+            c1, c2 = st.container(), st.container()
+            with c1:
+                p_str = st.text_input("🔵 PLAYER CARD:", placeholder="8 k a", key="p_input_holder")
+            with c2:
+                b_str = st.text_input("🔴 BANKER CARD:", placeholder="7 10 2", key="b_input_holder")
+                
             st.markdown('</div>', unsafe_allow_html=True)
             
             st.write("")
@@ -438,7 +452,7 @@ class BaccaratInterfaceSystem:
     def render_ai_oracle_panel(ai_cmd):
         html_string = (
             f"<div style='background: #0d1117; border: 1px dashed {ai_cmd['color']}; border-radius: 8px; padding: 10px; margin: 4px 0px; font-size: 11px;'>"
-            f"<div style='font-size: 8px; color: #58a6ff; letter-spacing: 0.5px; font-weight:800; margin-bottom: 2px;'>🌌 AI SOVEREIGN MATRIX V72.1 (THẦN BÀI VÔ HẠN)</div>"
+            f"<div style='font-size: 8px; color: #58a6ff; letter-spacing: 0.5px; font-weight:800; margin-bottom: 2px;'>🌌 AI SOVEREIGN MATRIX V72.2 (THẦN BÀI MOBILE FIX)</div>"
             f"<div style='font-size: 14px; font-weight: 900; color: {ai_cmd['color']}; margin-bottom: 6px;'>{ai_cmd['decision']}</div>"
             f"<div style='color: #79c0ff; font-family: monospace; font-size: 10px; margin-bottom: 4px;'>{ai_cmd['memory_hud']}</div>"
             f"<div style='color: #a5d6ff; font-family: monospace; font-size: 10px; margin-bottom: 6px;'>🛰️ {ai_cmd['cyber_knowledge']}</div>"
@@ -463,13 +477,13 @@ class BaccaratInterfaceSystem:
 
     @staticmethod
     def render_utilities():
-        # [MỚI CHỈNH SỬA v72.1] Khóa cứng bố cục flex trái phải cho cụm nút Undo / Reset Memory
-        st.markdown('<div class="side-by-side-row">', unsafe_allow_html=True)
-        util_grid = st.columns(2)
-        with util_grid[0]:
-            undo_triggered = st.button("⏪ XOÁ VÁN CUỐI (UNDO)")
-        with util_grid[1]:
-            clear_triggered = st.button("🔄 RESET BỘ NHỚ KHAY")
+        # Ép khối div cố định dạng Row để chống bẻ hàng dọc cho nút bấm trên Mobile
+        st.markdown('<div class="fixed-side-by-side" style="margin-top:15px;">', unsafe_allow_html=True)
+        u1, u2 = st.container(), st.container()
+        with u1:
+            undo_triggered = st.button("⏪ XOÁ VÁN (UNDO)", key="undo_btn_holder")
+        with u2:
+            clear_triggered = st.button("🔄 RE-SET KHAY", key="clear_btn_holder")
         st.markdown('</div>', unsafe_allow_html=True)
         return undo_triggered, clear_triggered
 
@@ -477,7 +491,7 @@ class BaccaratInterfaceSystem:
 # =========================================================================
 # 🎮 RUNTIME EXECUTION CONTROLLER
 # =========================================================================
-st.set_page_config(page_title="Quantum Tensor Infinite v72.1", page_icon="🌌", layout="centered")
+st.set_page_config(page_title="Quantum Tensor Infinite v72.2", page_icon="🌌", layout="centered")
 BaccaratInterfaceSystem.inject_custom_css()
 
 if 'round_detailed_log' not in st.session_state: 
@@ -485,7 +499,7 @@ if 'round_detailed_log' not in st.session_state:
 
 decks, burn_cards, init_p, init_b, init_t = BaccaratInterfaceSystem.render_sidebar()
 
-st.markdown("### 🌌 QUANTUM TENSOR INFINITE v72.1")
+st.markdown("### 🌌 QUANTUM TENSOR INFINITE v72.2")
 
 calc_triggered, p_input, b_input = BaccaratInterfaceSystem.render_input_form()
 
@@ -540,7 +554,7 @@ QuantumAuditMatrixController.render_audit_table(log=st.session_state.round_detai
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# 6. Các tính năng điều hướng bộ nhớ (Nút Undo và Reset đã được khóa song song)
+# 6. Các tính năng điều hướng bộ nhớ (Nút Undo và Reset đã được khóa song song cứng bằng Flexbox)
 undo_btn, clear_btn = BaccaratInterfaceSystem.render_utilities()
 if undo_btn:
     if st.session_state.round_detailed_log:
